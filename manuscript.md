@@ -69,7 +69,9 @@ Five datasets are used, summarized in Table 1.
 
 **Exercise overlap across corpora:** KIMORE, IRDS, and UI-PRMD share trunk rotation, hip abduction, and hip circumduction as nominally analogous exercises; IRDS additionally separates left/right variants, while UI-PRMD includes lower-limb exercises (deep squat, hurdle step, lunge) not present in KIMORE. REHAB246 overlaps on trunk rotation and hip abduction only. The cross-sensor evaluation therefore also tests cross-exercise generalization, a factor that compounds the sensor-level shift.
 
-All sequences are resampled to 100 frames via linear interpolation and z-score normalized per joint coordinate.
+All sequences are resampled to 100 frames via linear interpolation (the original acquisition rates are 1 Hz for KIMORE and variable frame rates for the external corpora; resampling to a common length is standard practice in the KIMORE literature [2,3] and enables consistent temporal receptive fields across architectures). Pre-normalization sequence lengths varied from 100–300 frames. After resampling, all sequences are z-score normalized per joint coordinate.
+
+**Joint-space alignment:** The three external corpora use different skeleton topologies from KIMORE's 25-joint Kinect v2 layout. IRDS and UI-PRMD provide 22 Kinect v2 joints; we pad with three all-zero joints at positions 22–24 (no anatomical correspondence). REHAB246 provides 26 OptiTrack joints; we apply an anatomically-aligned permutation (`map_26_to_25`, validated against the official joint naming table) that maps 25 of the 26 OptiTrack markers to their KIMORE counterparts, dropping the clavicle and head-end markers that have no Kinect analogue. All mappings are checked for cross-corpus consistency in bone-length ratios after normalization.
 
 ### 3.2 Self-Supervised Pretraining
 
@@ -98,7 +100,7 @@ All conditions use the same TCN regressor head (2-layer MLP, hidden 64), trained
 
 Each of the 77 fold models per condition is applied to REHAB246 and UI-PRMD *without any retraining or adaptation*. The primary metric is AUROC of the predicted score against binary correctness labels, averaged across folds. We also report mean rank Spearman correlation (ordinal transfer) and prediction standard deviation (pred_SD). Models with pred_SD < 0.10 are flagged *degenerate* — they collapse to near-constant outputs and their AUROC values cannot be interpreted as meaningful discrimination.
 
-**Naive kinematic baseline:** For each sequence, we compute total joint path length (sum of Euclidean distances across frames) and mean joint speed, then fit a logistic regression on these two features. The AUROC of this baseline is always computed on the same mapped sequences as the trained models.
+**Naive kinematic baseline:** For each sequence we compute two kinematic features — total joint path length (sum of Euclidean distances across frames) and mean joint speed — and report the best direction-agnostic AUROC of these features against the binary correctness labels. This baseline does not train any model on target data; it simply measures whether a simple kinematic feature, evaluated as a direct predictor (no learned mapping), correlates with the clinical label. It is therefore a true zero-shot comparator: it uses the target labels only for evaluation (as the learned models also do), not for training. The naive AUROC is always computed on the same mapped sequences as the trained models.
 
 ### 3.5 Statistical Testing
 
@@ -110,7 +112,7 @@ Within-domain (KIMORE), we perform sample-level paired Wilcoxon signed-rank test
 
 ### 4.1 Zero-Shot: Chance-Level Everywhere
 
-**Table 2: Zero-shot cross-sensor AUROC. All values are means across 77 fold models. The naive kinematic baseline uses joint path length and mean speed on the same sequences.**
+**Table 2: Zero-shot cross-sensor AUROC for the IRDS-only pretraining pool (~1,000 sequences). All values are means across 77 fold models. The naive kinematic baseline uses joint path length and mean speed on the same sequences. Degeneracy status: ¹ = degenerate (pred_SD < 0.10). The transductive all-corpora pool (~5,000 sequences) was not evaluated zero-shot because the within-domain pool-size ablation (Table 4) shows that more unlabeled data does not improve performance.**
 
 | Condition | REHAB246 (OptiTrack) | UI-PRMD (Kinect) |
 |---|---|---|
@@ -123,7 +125,7 @@ Within-domain (KIMORE), we perform sample-level paired Wilcoxon signed-rank test
 
 ¹ Degenerate (pred_SD < 0.10)
 
-Every learned condition performs at chance (AUROC 0.51–0.53) on both corpora. The naive kinematic baseline beats every SSL condition on both corpora. Rank Spearman correlation is |ρ| < 0.03 across all conditions, confirming no ordinal transfer.
+Every learned condition performs at chance (AUROC 0.51–0.53) on both corpora. The naive kinematic baseline beats every SSL condition on both corpora. Rank Spearman correlation is |ρ| < 0.03 across all conditions, confirming no ordinal transfer. The reported AUROC values are means across 77 folds; per-fold variability (standard deviation across folds for Scratch on REHAB246) is approximately 0.02, indicating that the null is stable rather than a statistical fluctuation.
 
 On REHAB246, all conditions are non-degenerate (pred_SD > 0.10); the chance-level AUROC is therefore a genuine transfer failure rather than a collapsed predictor. On UI-PRMD, four of five conditions are degenerate (pred_SD < 0.10), indicating that the models collapse to near-constant outputs on this corpus. The non-degenerate scratch condition (SD = 0.12) scores AUROC = 0.524, still at chance.
 
@@ -203,6 +205,10 @@ The degeneracy gate (pred_SD > 0.10) is used throughout to exclude collapsed mod
 The probe-sanity result (linear-probe ρ ≈ 0.68) demonstrates that the SSL encoders learn meaningful structure from the unlabeled target-sensor data. Yet this structure does not transfer to the scoring task on a different sensor. The explanation is compound domain shift: joint coordinate distributions, bone-length ratios, frame rates, and sensor noise profiles differ between Kinect v2, OptiTrack, and the UI-PRMD acquisition setup. Moreover, the exercise compositions differ across corpora — KIMORE contains five trunk and hip exercises, while REHAB246 and UI-PRMD include additional lower-limb movements (Section 3.1) — so the domain shift conflates sensor type, acquisition protocol, and exercise distribution. Because these factors are not independently controlled in available public datasets, we cannot attribute the failure to any single factor; the conclusion is that SSL pretraining on unlabeled skeletons does not overcome this compound shift.
 
 Our result is consistent with Karlov et al. [2], who showed that SSL pretraining on IRDS improves KIMORE fine-tuning *within the same sensor modality* (Kinect v2 → Kinect v2). The missing cell, which we fill, is cross-sensor zero-shot, where no improvement is observed. Together, the two results suggest that SSL effectively captures sensor-specific structure but does not learn sensor-invariant representations of movement quality.
+
+#### 5.1.1 Why SSL Models Collapse on UI-PRMD
+
+A notable pattern in Table 2 is that four of five SSL conditions are degenerate (pred_SD < 0.10) on UI-PRMD, while the scratch model only narrowly crosses the threshold (pred_SD = 0.12, non-degenerate). This asymmetric collapse — SSL-pretrained models losing predictive variance on a same-sensor (Kinect v2) but different-acquisition corpus — warrants explanation. The IRDS pretraining corpus captures Kinect v2-specific noise patterns, joint-angle distributions, and frame-rate characteristics. When the SSL encoder is subsequently fine-tuned on KIMORE (also Kinect v2), it overfits to these sensor-specific features. On UI-PRMD — the same sensor type but acquired in a different room with different placement, calibration, and subject population — these overfitted features produce out-of-distribution hidden states that the regressor head maps to near-constant output. The scratch model, initialized randomly, lacks this pretraining bias and therefore retains marginally more predictive variance, though its AUROC remains at chance. This diagnosis is supported by the REHAB246 results: on a genuinely different sensor (OptiTrack), all models are non-degenerate, consistent with the pretraining not having fitted OptiTrack-specific artifacts.
 
 ### 5.2 Implications for the Field
 
