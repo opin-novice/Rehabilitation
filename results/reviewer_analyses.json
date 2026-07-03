@@ -588,5 +588,185 @@
     "pred_sd": 0.08692877739667892,
     "degenerate": true,
     "pool": "all_corpora"
+  },
+  "sensor_id_probe": {
+    "mean_3way_balanced_acc": 1.0,
+    "std_3way_balanced_acc": 0.0,
+    "mean_kimore_vs_rehab246_balanced_acc": 1.0,
+    "mean_kimore_vs_uiprmd_balanced_acc": 1.0,
+    "chance_3way": 0.3333333333333333,
+    "chance_2way": 0.5
+  },
+  "fewshot/A_scratch/REHAB246": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.5066200746596863
+    },
+    "n10": {
+      "mean_auroc": 0.5080930286719808
+    },
+    "n20": {
+      "mean_auroc": 0.5376592756689854
+    }
+  },
+  "fewshot/A_scratch/UIPRMD": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.534900328142115
+    },
+    "n10": {
+      "mean_auroc": 0.5299333202988207
+    },
+    "n20": {
+      "mean_auroc": 0.5180275606001898
+    }
+  },
+  "fewshot/B_contrastive_lp/REHAB246": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.5060564722239559
+    },
+    "n10": {
+      "mean_auroc": 0.5156925029779217
+    },
+    "n20": {
+      "mean_auroc": 0.5275519884793742
+    }
+  },
+  "fewshot/B_contrastive_lp/UIPRMD": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.521897202259854
+    },
+    "n10": {
+      "mean_auroc": 0.5332701034322875
+    },
+    "n20": {
+      "mean_auroc": 0.5200930279354101
+    }
+  },
+  "fewshot/C_contrastive_ft/REHAB246": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.5132635529724658
+    },
+    "n10": {
+      "mean_auroc": 0.5160802001774434
+    },
+    "n20": {
+      "mean_auroc": 0.5161607360728462
+    }
+  },
+  "fewshot/C_contrastive_ft/UIPRMD": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.5334105588998295
+    },
+    "n10": {
+      "mean_auroc": 0.5332756530982387
+    },
+    "n20": {
+      "mean_auroc": 0.5215629221166728
+    }
+  },
+  "fewshot/D_masked_lp/REHAB246": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.5271352981723597
+    },
+    "n10": {
+      "mean_auroc": 0.5161813787112716
+    },
+    "n20": {
+      "mean_auroc": 0.5155356989079672
+    }
+  },
+  "fewshot/D_masked_lp/UIPRMD": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.5068634528951077
+    },
+    "n10": {
+      "mean_auroc": 0.5124670351341498
+    },
+    "n20": {
+      "mean_auroc": 0.519189682627503
+    }
+  },
+  "fewshot/E_masked_ft/REHAB246": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.5253282359134043
+    },
+    "n10": {
+      "mean_auroc": 0.5087099874978814
+    },
+    "n20": {
+      "mean_auroc": 0.5374715338046757
+    }
+  },
+  "fewshot/E_masked_ft/UIPRMD": {
+    "n1": {
+      "mean_auroc": null
+    },
+    "n5": {
+      "mean_auroc": 0.5104781688882956
+    },
+    "n10": {
+      "mean_auroc": 0.5084853293204478
+    },
+    "n20": {
+      "mean_auroc": 0.5094552440230243
+    }
+  },
+  "partial_ft/contrastive_freeze_proj_b01/REHAB246": {
+    "mean_auroc": 0.5052560317768152,
+    "pred_sd": 0.12444359809160233
+  },
+  "partial_ft/contrastive_freeze_proj/REHAB246": {
+    "mean_auroc": 0.5261706208115156,
+    "pred_sd": 0.17013990879058838
+  },
+  "partial_ft/contrastive_freeze_proj_b01/UIPRMD": {
+    "mean_auroc": 0.509754,
+    "pred_sd": 0.061632219702005386
+  },
+  "partial_ft/contrastive_freeze_proj/UIPRMD": {
+    "mean_auroc": 0.5076905,
+    "pred_sd": 0.08163982629776001
+  },
+  "partial_ft/masked_freeze_proj_b01/REHAB246": {
+    "mean_auroc": 0.5002765387405635,
+    "pred_sd": 1.2834680080413818
+  },
+  "partial_ft/masked_freeze_proj/REHAB246": {
+    "mean_auroc": 0.5133205479058476,
+    "pred_sd": 0.677160382270813
+  },
+  "partial_ft/masked_freeze_proj_b01/UIPRMD": {
+    "mean_auroc": 0.536971,
+    "pred_sd": 1.1833583116531372
+  },
+  "partial_ft/masked_freeze_proj/UIPRMD": {
+    "mean_auroc": 0.5550225,
+    "pred_sd": 0.2803483009338379
   }
 }

@@ -69,15 +69,16 @@ def _extract_features(model, X, batch=256):
 # 1. Extended zero-shot evaluation (per-fold + per-exercise)
 # ============================================================
 def extended_zeroshot(condition_dir, corpus, X, labels, manifest):
-    from sklearn.metrics import roc_auc_score
+    from sklearn.metrics import roc_auc_score, average_precision_score
     from scipy.stats import spearmanr
 
     ckpts = sorted(glob.glob(os.path.join(condition_dir, "fold_*", "best_model.pt")))
     if not ckpts:
         return None
 
-    # Per-fold AUROCs
+    # Per-fold metrics
     fold_aurocs = []
+    fold_auprcs = []
     fold_rhos = []
     fold_sds = []
     # Per-exercise AUROCs (if manifest has exercise_id)
@@ -92,11 +93,23 @@ def extended_zeroshot(condition_dir, corpus, X, labels, manifest):
         fold_sds.append(sd)
 
         if labels is not None and len(np.unique(labels)) > 1:
+            # AUROC
             try:
                 a = roc_auc_score(labels, preds)
                 a = float(max(a, 1.0 - a))
                 fold_aurocs.append(a)
             except ValueError:
+                pass
+            # AUPRC (threshold-independent, uses direction from AUROC)
+            try:
+                # Use direction-agnostic: flip preds if needed
+                if fold_aurocs and fold_aurocs[-1] < 0.5:
+                    p_adj = 1.0 - preds
+                else:
+                    p_adj = preds
+                ap = average_precision_score(labels, p_adj)
+                fold_auprcs.append(float(ap))
+            except Exception:
                 pass
             fold_rhos.append(float(spearmanr(preds, labels).correlation))
 
@@ -137,6 +150,8 @@ def extended_zeroshot(condition_dir, corpus, X, labels, manifest):
         "min_auroc": float(np.min(fold_aurocs)) if fold_aurocs else None,
         "max_auroc": float(np.max(fold_aurocs)) if fold_aurocs else None,
         "fold_aurocs": [round(x, 4) for x in fold_aurocs[:10]] + ["..."],
+        "mean_auprc": float(np.mean(fold_auprcs)) if fold_auprcs else None,
+        "std_auprc": float(np.std(fold_auprcs)) if len(fold_auprcs) > 1 else None,
         "mean_rank_spearman": float(np.nanmean(fold_rhos)) if fold_rhos else None,
         "mean_pred_sd": mean_sd,
         "degenerate": bool(mean_sd < DEGENERACY_PRED_SD),
@@ -433,6 +448,216 @@ def evaluate_all_corpora_zeroshot(X_kimore, y_kimore, X_rehab, labels_rehab,
     return results
 
 # ============================================================
+# 5. Sensor-ID probe — quantify sensor-specific encoding
+# ============================================================
+def compute_sensor_id_probe(condition_dir, X_rehab, X_uiprmd, X_kimore):
+    """Train a classifier to predict sensor source from TCN features.
+    
+    High accuracy => TCN features encode sensor identity, not just movement.
+    """
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import balanced_accuracy_score
+    from sklearn.model_selection import cross_val_score
+
+    ckpts = sorted(glob.glob(os.path.join(condition_dir, "fold_*", "best_model.pt")))[:5]
+    if not ckpts:
+        return None
+
+    # Build dataset: combine all three corpora, label by source
+    datasets = [("KIMORE", X_kimore), ("REHAB246", X_rehab), ("UIPRMD", X_uiprmd)]
+    labels_map = {"KIMORE": 0, "REHAB246": 1, "UIPRMD": 2}
+
+    fold_accs_3way = []
+    fold_accs_kr = []   # KIMORE vs REHAB246 (same sensor vs different)
+    fold_accs_ku = []   # KIMORE vs UI-PRMD (same sensor type, different acquisition)
+
+    for cp in ckpts:
+        model = _rebuild_model(cp)
+        all_feats, all_labels = [], []
+        src_labels = {}
+        for name, X_ds in datasets:
+            feats = _extract_features(model, X_ds)
+            src_labels[name] = feats
+            all_feats.append(feats)
+            all_labels.append(np.full(len(feats), labels_map[name]))
+
+        F = np.concatenate(all_feats, axis=0)
+        y = np.concatenate(all_labels, axis=0)
+
+        # 3-way sensor classification
+        accs = cross_val_score(LogisticRegression(max_iter=1000, C=1.0),
+                               F, y, cv=3, scoring="balanced_accuracy")
+        fold_accs_3way.append(float(accs.mean()))
+
+        # 2-way: KIMORE (Kinect v2) vs REHAB246 (OptiTrack)
+        F_kr = np.concatenate([src_labels["KIMORE"], src_labels["REHAB246"]], axis=0)
+        y_kr = np.array([0]*len(src_labels["KIMORE"]) + [1]*len(src_labels["REHAB246"]))
+        acc_kr = float(np.mean(cross_val_score(
+            LogisticRegression(max_iter=1000, C=1.0), F_kr, y_kr, cv=3,
+            scoring="balanced_accuracy")))
+        fold_accs_kr.append(acc_kr)
+
+        # 2-way: KIMORE (Kinect v2, clinical) vs UI-PRMD (Kinect v2, lab)
+        F_ku = np.concatenate([src_labels["KIMORE"], src_labels["UIPRMD"]], axis=0)
+        y_ku = np.array([0]*len(src_labels["KIMORE"]) + [1]*len(src_labels["UIPRMD"]))
+        acc_ku = float(np.mean(cross_val_score(
+            LogisticRegression(max_iter=1000, C=1.0), F_ku, y_ku, cv=3,
+            scoring="balanced_accuracy")))
+        fold_accs_ku.append(acc_ku)
+
+    return {
+        "n_folds": len(ckpts),
+        "mean_3way_balanced_acc": float(np.mean(fold_accs_3way)),
+        "std_3way_balanced_acc": float(np.std(fold_accs_3way)),
+        "mean_kimore_vs_rehab246_balanced_acc": float(np.mean(fold_accs_kr)),
+        "mean_kimore_vs_uiprmd_balanced_acc": float(np.mean(fold_accs_ku)),
+        "chance_3way": 1.0 / 3,
+        "chance_2way": 0.5,
+    }
+
+# ============================================================
+# 6. Few-shot calibration analysis
+# ============================================================
+SHOT_N = [1, 5, 10, 20]
+FEWSHOT_SEEDS = 5
+
+def compute_fewshot(condition_dir, X_source, y_source, X_target, labels_target):
+    """Evaluate few-shot calibration: N labeled target samples.
+    
+    Uses frozen TCN features + logistic regression.
+    """
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import roc_auc_score
+    from sklearn.preprocessing import StandardScaler
+
+    ckpts = sorted(glob.glob(os.path.join(condition_dir, "fold_*", "best_model.pt")))[:10]
+    if not ckpts or labels_target is None:
+        return None
+
+    F_source = None
+    Ft_list = []
+    for cp in ckpts:
+        model = _rebuild_model(cp)
+        if F_source is None:
+            F_source = _extract_features(model, X_source)
+        Ft_list.append(_extract_features(model, X_target))
+
+    Ft = np.mean(Ft_list, axis=0)  # average features across folds
+
+    # Standardize
+    scaler = StandardScaler()
+    Fs = scaler.fit_transform(F_source)
+    Ft_s = scaler.transform(Ft)
+
+    # Source labels: binarize KIMORE
+    y_source_bin = (y_source > y_source.mean()).astype(int) if y_source is not None else None
+
+    results = {}
+    for n in SHOT_N:
+        n_aurocs = []
+        for seed in range(FEWSHOT_SEEDS):
+            rng = np.random.RandomState(seed)
+            idx = rng.choice(len(Ft_s), n, replace=False)
+            mask = np.zeros(len(Ft_s), dtype=bool)
+            mask[idx] = True
+
+            y_few = labels_target[mask]
+            if len(np.unique(y_few)) < 2:
+                continue
+            clf = LogisticRegression(max_iter=1000, C=1.0)
+            clf.fit(Ft_s[mask], y_few)
+            preds = clf.predict_proba(Ft_s[~mask])[:, 1]
+            true = labels_target[~mask]
+            if len(np.unique(true)) > 1:
+                try:
+                    a = roc_auc_score(true, preds)
+                    n_aurocs.append(float(max(a, 1.0 - a)))
+                except ValueError:
+                    pass
+        results[f"n{n}"] = {
+            "mean_auroc": float(np.mean(n_aurocs)) if n_aurocs else None,
+            "std_auroc": float(np.std(n_aurocs)) if len(n_aurocs) > 1 else None,
+        }
+    return results
+
+# ============================================================
+# 7. Partial fine-tuning (freeze early TCN blocks)
+# ============================================================
+def evaluate_partial_finetune(X_kimore, y_kimore, X_rehab, labels_rehab,
+                               X_uiprmd, labels_uiprmd):
+    """Fine-tune all-corpora SSL encoders while freezing early TCN blocks.
+    
+    Blocks: input_proj, block0, block1 frozen; block2, block3, head trained.
+    """
+    from sklearn.metrics import roc_auc_score
+
+    pool = "all_corpora"
+    results = {}
+    ssl_configs = [
+        ("contrastive", "contrastive"),
+        ("masked", "masked"),
+    ]
+    freeze_configs = [
+        ("freeze_proj_b01", 2, "Freeze input_proj + block0-1"),
+        ("freeze_proj", 0, "Freeze only input_proj"),
+    ]
+
+    for ssl_name, ssl_file in ssl_configs:
+        ckpt_path = os.path.join(PRETRAIN_DIR, pool, f"{ssl_file}_encoder.pt")
+        if not os.path.isfile(ckpt_path):
+            continue
+        ssl_ckpt = torch.load(ckpt_path, map_location="cpu")
+        enc_state = ssl_ckpt.get("encoder_state", ssl_ckpt.get("model_state", {}))
+
+        for freeze_mode, freeze_blocks, freeze_label in freeze_configs:
+            key_prefix = f"partial_ft/{ssl_name}_{freeze_mode}"
+            print(f"\n  --- {key_prefix} ({freeze_label}) ---")
+
+            for corpus_name, X_c, labels_c in [
+                ("REHAB246", X_rehab, labels_rehab),
+                ("UIPRMD", X_uiprmd, labels_uiprmd),
+            ]:
+                t0 = time.time()
+                model = TCNRegressor(seq_len=TORCH_SEQ_LEN, d_model=128,
+                                     num_blocks=4, dropout=0.3)
+                model.load_state_dict(enc_state, strict=False)
+
+                # Freeze specified blocks
+                frozen_params = []
+                if freeze_mode == "freeze_proj_b01":
+                    for n, p in model.named_parameters():
+                        if n.startswith("input_proj") or n.startswith("blocks.0") or n.startswith("blocks.1"):
+                            p.requires_grad = False
+                            frozen_params.append(n)
+                elif freeze_mode == "freeze_proj":
+                    for n, p in model.named_parameters():
+                        if n.startswith("input_proj"):
+                            p.requires_grad = False
+                            frozen_params.append(n)
+
+                model = _train_kimore(model, X_kimore, y_kimore)
+                preds = _predict(model, X_c)
+                sd_val = float(np.std(preds))
+                auroc = None
+                if labels_c is not None and len(np.unique(labels_c)) > 1:
+                    try:
+                        a = roc_auc_score(labels_c, preds)
+                        auroc = float(max(a, 1.0 - a))
+                    except ValueError:
+                        pass
+                t = time.time() - t0
+                key = f"{key_prefix}/{corpus_name}"
+                results[key] = {
+                    "mean_auroc": auroc,
+                    "pred_sd": sd_val,
+                    "degenerate": bool(sd_val < DEGENERACY_PRED_SD),
+                    "frozen_params": frozen_params[:5],
+                }
+                print(f"    {corpus_name}: AUROC={auroc:.4f} pred_SD={sd_val:.3f} t={t:.0f}s")
+
+    return results
+
+# ============================================================
 # Main
 # ============================================================
 def main():
@@ -474,8 +699,9 @@ def main():
             if r:
                 key = f"{cond_dir}/{corpus_name}"
                 all_results[key] = r
-                print(f"  {corpus_name}: AUROC={r['mean_auroc']:.4f}±{r['std_auroc']:.4f} "
-                      f"CI95=[{r['mean_auroc']-1.96*r['std_auroc']:.4f},{r['mean_auroc']+1.96*r['std_auroc']:.4f}]"
+                auprc_str = f" AUPRC={r['mean_auprc']:.4f}" if r.get("mean_auprc") else ""
+                print(f"  {corpus_name}: AUROC={r['mean_auroc']:.4f}±{r['std_auroc']:.4f}{auprc_str}"
+                      f" CI95=[{r['mean_auroc']-1.96*r['std_auroc']:.4f},{r['mean_auroc']+1.96*r['std_auroc']:.4f}]"
                       f" pred_SD={r['mean_pred_sd']:.3f} t={t:.0f}s")
                 if r.get("per_exercise_mean_auroc"):
                     for ex, v in r["per_exercise_mean_auroc"].items():
@@ -529,6 +755,49 @@ def main():
     all_corpora_results = evaluate_all_corpora_zeroshot(
         X_kimore, y_kimore, X_rehab, labels_rehab, X_uiprmd, labels_uiprmd)
     all_results.update(all_corpora_results)
+
+    # -------------------------------------------------------
+    # 5. Sensor-ID probe
+    # -------------------------------------------------------
+    print("\n--- Sensor-ID probe (quantifying sensor-specific encoding) ---")
+    scratch_path = os.path.join(RESULTS_DIR, "A_scratch")
+    sensor_id_result = compute_sensor_id_probe(
+        scratch_path, X_rehab, X_uiprmd, X_kimore)
+    if sensor_id_result:
+        all_results["sensor_id_probe"] = sensor_id_result
+        print(f"  3-way balanced acc={sensor_id_result['mean_3way_balanced_acc']:.3f} "
+              f"(chance={sensor_id_result['chance_3way']:.2f})")
+        print(f"  KIMORE vs REHAB246 (different sensor): acc={sensor_id_result['mean_kimore_vs_rehab246_balanced_acc']:.3f}")
+        print(f"  KIMORE vs UI-PRMD (same sensor type):  acc={sensor_id_result['mean_kimore_vs_uiprmd_balanced_acc']:.3f}")
+
+    # -------------------------------------------------------
+    # 6. Few-shot calibration
+    # -------------------------------------------------------
+    print("\n--- Few-shot calibration on target corpora ---")
+    for cond_dir, cond_label in CONDITIONS:
+        cond_path = os.path.join(RESULTS_DIR, cond_dir)
+        for corpus_name, X_c, labels_c in [
+            ("REHAB246", X_rehab, labels_rehab),
+            ("UIPRMD", X_uiprmd, labels_uiprmd),
+        ]:
+            t0 = time.time()
+            r = compute_fewshot(cond_path, X_kimore, y_kimore, X_c, labels_c)
+            t = time.time() - t0
+            if r:
+                key = f"fewshot/{cond_dir}/{corpus_name}"
+                all_results[key] = r
+                print(f"  {cond_label} -> {corpus_name} (t={t:.0f}s):")
+                for n_str, v in r.items():
+                    if v.get("mean_auroc") is not None:
+                        print(f"    {n_str}: AUROC={v['mean_auroc']:.4f}±{v.get('std_auroc',0):.4f}")
+
+    # -------------------------------------------------------
+    # 7. Partial fine-tuning
+    # -------------------------------------------------------
+    print("\n--- Partial fine-tuning (freezing early TCN blocks) ---")
+    partial_results = evaluate_partial_finetune(
+        X_kimore, y_kimore, X_rehab, labels_rehab, X_uiprmd, labels_uiprmd)
+    all_results.update(partial_results)
 
     # Save
     Path(OUT_PATH).parent.mkdir(parents=True, exist_ok=True)
