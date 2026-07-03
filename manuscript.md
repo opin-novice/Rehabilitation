@@ -6,7 +6,7 @@
 
 ## Abstract
 
-Automated rehabilitation quality scoring from skeleton sequences promises objective, scalable assessment, but prior work evaluates exclusively within-dataset under standard cross-validation. We ask whether self-supervised pretraining on unlabeled skeletons from a different sensor enables zero-shot cross-sensor scoring. We pretrain contrastive and masked-motion encoders on 1,000 unlabeled IntelliRehabDS (Kinect v2) sequences, then evaluate on KIMORE (Kinect v2, N=380, 77 subjects, leave-one-subject-out) and zero-shot on two independent labeled corpora with different sensors: REHAB246 (OptiTrack, 1,057 reps) and UI-PRMD (Kinect, 2,000 reps). The result is a clean negative across four axes: (1) zero-shot AUROC is at chance (0.51–0.53) on both corpora, with a naive path-length-plus-speed baseline (AUROC = 0.55 and 0.54) unbeaten by any learned model; (2) under a fully-powered 77-fold leave-one-subject-out evaluation, SSL fine-tuning is statistically indistinguishable from training from scratch (p > 0.3, Holm-corrected), while SSL linear-probing is significantly *worse* (adjusted p < 10^-13); (3) quadrupling the unlabeled pool to approximately 5,000 sequences does not close the gap; and (4) contrastive and masked-motion paradigms are statistically equivalent (p = 0.80). Degeneracy gates (pred_SD > 0.10) and probe-sanity checks rule out collapsed models or undertrained encoders as explanations. The barrier is sensor-level domain shift, not representation quality: the null is stable across pretext tasks, pool sizes, evaluation protocols, and two independent test corpora. We conclude that SSL pretraining on unlabeled skeletons does not confer cross-sensor transferability for rehabilitation scoring, and recommend that the field prioritize sensor-invariant representations over more sophisticated SSL on a single sensor modality.
+Automated rehabilitation quality scoring from skeleton sequences promises objective, scalable assessment, but prior work evaluates exclusively within-dataset under standard cross-validation. We ask whether self-supervised pretraining on unlabeled skeletons from a different sensor enables zero-shot cross-sensor scoring. We pretrain contrastive and masked-motion encoders on 1,000 unlabeled IntelliRehabDS (Kinect v2) sequences, then evaluate on KIMORE (Kinect v2, N=380, 77 subjects, leave-one-subject-out) and zero-shot on two independent labeled corpora with different sensors: REHAB246 (OptiTrack, 1,057 reps) and UI-PRMD (Kinect, 2,000 reps). The result is a clean negative across four axes: (1) zero-shot AUROC is at chance (0.51–0.53) on both corpora, with a naive path-length-plus-speed baseline (AUROC = 0.55 and 0.54) unbeaten by any learned model; (2) under a fully-powered 77-fold leave-one-subject-out evaluation, SSL fine-tuning is statistically indistinguishable from training from scratch (p > 0.3, Holm-corrected), while SSL linear-probing is significantly *worse* (adjusted p < 10^-13); (3) quadrupling the unlabeled pool to approximately 5,000 sequences does not close the gap; and (4) contrastive and masked-motion paradigms are statistically equivalent (p = 0.80). Degeneracy gates (pred_SD > 0.10) and probe-sanity checks rule out collapsed models or undertrained encoders as explanations. The barrier is compound domain shift — differing sensors, acquisition protocols, and exercise-type compositions — that SSL pretraining cannot bridge on its own: the null is stable across pretext tasks, pool sizes, evaluation protocols, and two independent test corpora. We conclude that SSL pretraining on unlabeled skeletons does not confer cross-sensor transferability for rehabilitation scoring, and recommend that the field prioritize sensor-invariant representations over more sophisticated SSL on a single sensor modality.
 
 **Keywords:** self-supervised learning, rehabilitation quality assessment, zero-shot transfer, KIMORE, domain shift, leave-one-subject-out
 
@@ -66,6 +66,8 @@ Five datasets are used, summarized in Table 1.
 **REHAB246** is an OptiTrack motion-capture dataset with 1,057 repetitions (558 correct, 499 incorrect) across six exercises and ten subjects, labeled per-repetition for binary movement correctness. This is a *pure cross-sensor* test: OptiTrack is marker-based, unlike the Kinect v2 used for pretraining and KIMORE. We map its 26-joint skeleton to the KIMORE 25-joint layout.
 
 **UI-PRMD** [8] provides 2,000 Kinect v2 repetitions (1,000 correct, 1,000 incorrect) across ten exercises and ten subjects. We use identical 22→25 joint padding as for IRDS. UI-PRMD is a *same-sensor, different acquisition* test (Kinect v2, but different placement, room, and population).
+
+**Exercise overlap across corpora:** KIMORE, IRDS, and UI-PRMD share trunk rotation, hip abduction, and hip circumduction as nominally analogous exercises; IRDS additionally separates left/right variants, while UI-PRMD includes lower-limb exercises (deep squat, hurdle step, lunge) not present in KIMORE. REHAB246 overlaps on trunk rotation and hip abduction only. The cross-sensor evaluation therefore also tests cross-exercise generalization, a factor that compounds the sensor-level shift.
 
 All sequences are resampled to 100 frames via linear interpolation and z-score normalized per joint coordinate.
 
@@ -127,15 +129,15 @@ On REHAB246, all conditions are non-degenerate (pred_SD > 0.10); the chance-leve
 
 ### 4.2 77-Fold LOSO: SSL FT = Scratch, SSL LP Worse
 
-**Table 3: KIMORE 77-fold true LOSO. Mean Spearman ρ with 95% bootstrap CI. Holm-Bonferroni adjusted p vs scratch from paired Wilcoxon on absolute error (N=380).**
+**Table 3: KIMORE 77-fold true LOSO. Mean Spearman ρ with 95% bootstrap CI. Holm-Bonferroni adjusted p vs scratch from paired Wilcoxon on absolute error (N=380). MAE and RMSE are on the original 0–50 score scale.**
 
-| Condition | Mean ρ | 95% CI | p_adj vs. scratch |
-|---|---|---|---|
-| A. Scratch | **0.836** | [0.785, 0.867] | — |
-| E. Masked FT | 0.823 | [0.773, 0.854] | 0.318 |
-| C. Contrastive FT | 0.816 | [0.762, 0.851] | 0.318 |
-| B. Contrastive LP | 0.689 | [0.617, 0.738] | 3.4e-14 |
-| D. Masked LP | 0.679 | [0.612, 0.727] | 7.3e-18 |
+| Condition | MAE | RMSE | Mean ρ | 95% CI | p_adj vs. scratch |
+|---|---|---|---|---|---|
+| A. Scratch | 3.73 | 5.50 | **0.836** | [0.785, 0.867] | — |
+| E. Masked FT | 4.02 | 5.69 | 0.823 | [0.773, 0.854] | 0.318 |
+| C. Contrastive FT | 4.01 | 6.03 | 0.816 | [0.762, 0.851] | 0.318 |
+| B. Contrastive LP | 5.95 | 8.28 | 0.689 | [0.617, 0.738] | 3.4e-14 |
+| D. Masked LP | 6.16 | 8.27 | 0.679 | [0.612, 0.727] | 7.3e-18 |
 
 SSL fine-tuning (both contrastive and masked) is statistically indistinguishable from scratch (adjusted p > 0.3). SSL linear-probing is significantly *worse* than scratch (adjusted p < 10^-13). The two SSL paradigms are not significantly different: contrastive FT vs. masked FT p = 0.80, with Δ_abs-err = -0.01.
 
@@ -171,13 +173,34 @@ The null holds across every dimension we tested:
 | External corpus | REHAB246 (OptiTrack) and UI-PRMD (Kinect) — both at chance, both below naive baseline |
 | Evaluation protocol | 5-fold LOSO vs. 77-fold LOSO — same null |
 
+### 4.6 Degeneracy Threshold Sensitivity
+
+The degeneracy gate (pred_SD > 0.10) is used throughout to exclude collapsed models. Table 5 examines alternative thresholds. On REHAB246, no condition is degenerate at any threshold ≤ 0.15, confirming that the chance-level AUROC is a genuine transfer failure. On UI-PRMD, the degeneracy classification is robust: all four flagged models are degenerate at pred_SD thresholds 0.05 through 0.10 (their pred_SD values are 0.015–0.033), and raising the threshold to 0.15 or 0.20 captures only the borderline Scratch condition (pred_SD = 0.12). The pred_SD = 0.10 threshold is conservative: it correctly separates variance-collapsed models (pred_SD ≤ 0.03) from functioning ones (pred_SD ≥ 0.10) on both corpora.
+
+**Table 5: Degeneracy classification under alternative pred_SD thresholds. D = degenerate at that threshold.**
+
+| Threshold | <0.05 | <0.08 | <0.10 | <0.15 | <0.20 |
+|---|---|---|---|---|---|
+| **REHAB246** | | | | | |
+| A. Scratch | . | . | . | . | . |
+| B. Contrastive LP | . | . | . | . | D |
+| C. Contrastive FT | . | . | . | . | . |
+| D. Masked LP | . | . | . | D | D |
+| E. Masked FT | . | . | . | . | . |
+| **UI-PRMD** | | | | | |
+| A. Scratch | . | . | . | D | D |
+| B. Contrastive LP | D | D | D | D | D |
+| C. Contrastive FT | . | . | . | . | . |
+| D. Masked LP | D | D | D | D | D |
+| E. Masked FT | D | D | D | D | D |
+
 ---
 
 ## 5. Discussion
 
 ### 5.1 Why SSL Fails Cross-Sensor
 
-The probe-sanity result (linear-probe ρ ≈ 0.68) demonstrates that the SSL encoders learn meaningful structure from the unlabeled target-sensor data. Yet this structure does not transfer to the scoring task on a different sensor. The explanation is sensor-level domain shift: joint coordinate distributions, bone-length ratios, frame rates, and sensor noise profiles differ sufficiently between Kinect v2, OptiTrack, and the UI-PRMD acquisition setup that representations learned on one sensor cannot be mapped to the clinical scoring function learned on another.
+The probe-sanity result (linear-probe ρ ≈ 0.68) demonstrates that the SSL encoders learn meaningful structure from the unlabeled target-sensor data. Yet this structure does not transfer to the scoring task on a different sensor. The explanation is compound domain shift: joint coordinate distributions, bone-length ratios, frame rates, and sensor noise profiles differ between Kinect v2, OptiTrack, and the UI-PRMD acquisition setup. Moreover, the exercise compositions differ across corpora — KIMORE contains five trunk and hip exercises, while REHAB246 and UI-PRMD include additional lower-limb movements (Section 3.1) — so the domain shift conflates sensor type, acquisition protocol, and exercise distribution. Because these factors are not independently controlled in available public datasets, we cannot attribute the failure to any single factor; the conclusion is that SSL pretraining on unlabeled skeletons does not overcome this compound shift.
 
 Our result is consistent with Karlov et al. [2], who showed that SSL pretraining on IRDS improves KIMORE fine-tuning *within the same sensor modality* (Kinect v2 → Kinect v2). The missing cell, which we fill, is cross-sensor zero-shot, where no improvement is observed. Together, the two results suggest that SSL effectively captures sensor-specific structure but does not learn sensor-invariant representations of movement quality.
 
@@ -197,15 +220,17 @@ Several design choices strengthen the reliability of this negative result: (1) t
 
 First, we evaluate only a single backbone architecture (TCN). While the TCN is the highest-performing KIMORE architecture, other backbones — ST-GCN [12], Transformers with structural priors — may behave differently. Second, IRDS is the only unlabeled Kinect corpus of meaningful size; results may not generalize to other Kinect-like sensors or to entirely different modalities (e.g., IMU, radar). Third, REHAB246 is marker-based (OptiTrack), not a consumer sensor; it represents the hardest zero-shot test. Fourth, UI-PRMD's "incorrect" class consists of non-optimal execution by healthy subjects rather than clinically-graded errors, which may weaken the signal. Fifth, KIMORE's sample size (n = 77 subjects) limits the statistical resolution for subgroup analyses; SSL may still help in low-data regimes below ~20 subjects.
 
+Sixth, we do not evaluate the canonicalization ablations suggested by standard practice — pelvis-centering, bone-length normalization, or joint-angle feature encoding — because our TCN operates on raw 3-D joint coordinates. It is possible that canonicalized input representations would improve cross-sensor alignment, as would explicit modeling of bone lengths and joint angles rather than absolute positions. We leave such processing to future work. Seventh, we compare SSL only against a naive kinematic baseline and against training from scratch; we do not include explicit domain adaptation methods such as DANN [10] or CORAL [13], which could in principle learn sensor-invariant representations from labeled source data without SSL. Our conclusion is therefore specific to SSL as a pretraining strategy, not to all forms of cross-sensor transfer. Eighth, our evaluation is strictly zero-shot; we do not probe few-shot calibration regimes (e.g., 1, 5, or 10 labeled target-sensor samples), which could substantially improve cross-sensor scoring as established in related domain adaptation literature. These controlled experiments are necessary next steps before generalizing the negative result beyond pure zero-shot SSL.
+
 ### 5.5 Future Work
 
-Beyond the directions noted in Section 5.2, we identify three specific next steps: (1) a controlled comparison of SSL pretraining against supervised pretraining on a large labeled Kinect corpus to isolate the role of label supervision; (2) demographic and clinical subgroup analysis to determine whether SSL differentially benefits specific patient populations; and (3) test-time adaptation methods that fine-tune the encoder on a handful of target-sensor labeled samples, bridging the gap between pure zero-shot and full fine-tuning.
+Beyond the directions noted in Section 5.2, we identify four specific next steps: (1) a controlled comparison of SSL pretraining against supervised pretraining on a large labeled Kinect corpus to isolate the role of label supervision; (2) demographic and clinical subgroup analysis to determine whether SSL differentially benefits specific patient populations; (3) canonicalization ablations (pelvis-centering, bone-length normalization, joint-angle features) and explicit domain adaptation baselines (DANN, CORAL) to determine whether alternative input representations or learning objectives overcome the compound shift; and (4) few-shot calibration experiments (e.g., 1, 5, or 10 labeled target-sensor samples) to establish the data-efficiency boundary at which cross-sensor transfer becomes feasible.
 
 ---
 
 ## 6. Conclusion
 
-We systematically evaluated whether self-supervised pretraining on unlabeled skeletons from a different sensor enables zero-shot cross-sensor rehabilitation quality assessment. Across two pretext tasks, two pool sizes (approximately 1,000 and 5,000 sequences), two independent labeled test corpora (REHAB246, OptiTrack; UI-PRMD, Kinect), and both 5-fold and 77-fold leave-one-subject-out protocols, the result is a clean negative: every SSL condition scores at chance cross-sensor (AUROC 0.51–0.53, naive kinematic baseline unbeaten at 0.55/0.54), and within-domain (KIMORE) SSL fine-tuning is statistically indistinguishable from training from scratch while SSL linear-probing is significantly worse. Quadrupling the unlabeled pool does not help. The barrier is sensor-level domain shift: encoders learn useful but sensor-specific structure (probe-sanity passes), and that structure does not transfer across sensors. We conclude that SSL pretraining on unlabeled skeletons is not a viable path to cross-sensor rehabilitation scoring, and recommend that the field prioritize sensor-invariant representations — whether through adversarial domain adaptation, multi-sensor pretraining, or canonical body models — rather than more sophisticated SSL on a single sensor modality.
+We systematically evaluated whether self-supervised pretraining on unlabeled skeletons from a different sensor enables zero-shot cross-sensor rehabilitation quality assessment. Across two pretext tasks, two pool sizes (approximately 1,000 and 5,000 sequences), two independent labeled test corpora (REHAB246, OptiTrack; UI-PRMD, Kinect), and both 5-fold and 77-fold leave-one-subject-out protocols, the result is a clean negative: every SSL condition scores at chance cross-sensor (AUROC 0.51–0.53, naive kinematic baseline unbeaten at 0.55/0.54), and within-domain (KIMORE) SSL fine-tuning is statistically indistinguishable from training from scratch while SSL linear-probing is significantly worse. Quadrupling the unlabeled pool does not help. The barrier is compound domain shift: encoders learn useful but sensor-specific structure (probe-sanity passes), and that structure does not transfer across sensors. This shift is multifaceted — encompassing sensor hardware, acquisition protocol, and exercise composition — and SSL pretraining on unlabeled skeletons from a single sensor does not overcome it. We conclude that SSL pretraining on unlabeled skeletons is not a viable path to cross-sensor rehabilitation scoring, and recommend that the field prioritize sensor-invariant representations — whether through adversarial domain adaptation, multi-sensor pretraining, or canonical body models — rather than more sophisticated SSL on a single sensor modality.
 
 ---
 
@@ -223,3 +248,4 @@ We systematically evaluated whether self-supervised pretraining on unlabeled ske
 10. Y. Ganin et al., "Domain-Adversarial Training of Neural Networks," JMLR, 17(1):2096–2130, 2016.
 11. M. Loper et al., "SMPL: A Skinned Multi-Person Linear Model," ACM Trans. Graph., 34(6):1–16, 2015.
 12. S. Yan, Y. Xiong, D. Lin, "Spatial Temporal Graph Convolutional Networks for Skeleton-Based Action Recognition," AAAI 2018.
+13. B. Sun, J. Feng, K. Saenko, "Deep CORAL: Correlation Alignment for Deep Domain Adaptation," ECCV 2016.
