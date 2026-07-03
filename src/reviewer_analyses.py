@@ -292,6 +292,147 @@ def compute_canonical_baseline(condition_dir, corpus, X_raw, labels, manifest):
     }
 
 # ============================================================
+# 4. All-corpora pool zero-shot evaluation
+# ============================================================
+PRETRAIN_DIR = "outputs/ssl_pretrain"
+
+def _train_kimore(model, X_train, y_train, epochs=100, lr=1e-3):
+    """Train a TCN on KIMORE continuous scores with MSE loss."""
+    from torch.utils.data import DataLoader, TensorDataset
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    xt = torch.from_numpy(X_train.astype(np.float32))
+    yt = torch.from_numpy(y_train.astype(np.float32)).unsqueeze(1)
+    ds = TensorDataset(xt, yt)
+    dl = DataLoader(ds, batch_size=16, shuffle=True)
+    best_loss = float("inf")
+    patience = 100
+    stale = 0
+    for epoch in range(1, epochs + 1):
+        model.train()
+        epoch_loss = 0.0
+        for xb, yb in dl:
+            opt.zero_grad()
+            pred = model(xb)
+            if isinstance(pred, tuple): pred = pred[0]
+            loss = torch.nn.functional.mse_loss(pred, yb)
+            loss.backward()
+            opt.step()
+            epoch_loss += loss.item() * len(xb)
+        epoch_loss /= len(ds)
+        if epoch_loss < best_loss:
+            best_loss = epoch_loss
+            stale = 0
+        else:
+            stale += 1
+        if stale >= patience // 2:
+            break
+    model.eval()
+    return model
+
+def evaluate_all_corpora_zeroshot(X_kimore, y_kimore, X_rehab, labels_rehab,
+                                   X_uiprmd, labels_uiprmd):
+    """Evaluate zero-shot with all-corpora pretrained encoders."""
+    from sklearn.metrics import roc_auc_score
+    from scipy.stats import spearmanr
+
+    pool = "all_corpora"
+    results = {}
+    ssl_configs = [
+        ("contrastive", "contrastive"),
+        ("masked", "masked"),
+    ]
+    training_modes = [
+        ("lp", False, "Linear Probe"),
+        ("ft", True, "Fine-tune"),
+    ]
+
+    for ssl_name, ssl_file in ssl_configs:
+        ckpt_path = os.path.join(PRETRAIN_DIR, pool, f"{ssl_file}_encoder.pt")
+        if not os.path.isfile(ckpt_path):
+            print(f"  [SKIP] SSL checkpoint not found: {ckpt_path}")
+            continue
+        ssl_ckpt = torch.load(ckpt_path, map_location="cpu")
+        enc_state = ssl_ckpt.get("encoder_state", ssl_ckpt.get("model_state", {}))
+
+        for mode_name, freeze, mode_label in training_modes:
+            cond_key = f"all_corpora_{ssl_name}_{mode_name}"
+            print(f"\n  --- {cond_key} ({mode_label}, {pool}) ---")
+
+            for corpus_name, X_c, labels_c in [
+                ("REHAB246", X_rehab, labels_rehab),
+                ("UIPRMD", X_uiprmd, labels_uiprmd),
+            ]:
+                t0 = time.time()
+                model = TCNRegressor(seq_len=TORCH_SEQ_LEN, d_model=128,
+                                     num_blocks=4, dropout=0.3)
+                model.load_state_dict(enc_state, strict=False)
+                model.eval()
+
+                if freeze:
+                    for p in model.parameters():
+                        p.requires_grad = False
+                    # Replace + train head only
+                    model.head = torch.nn.Sequential(
+                        torch.nn.LayerNorm(128),
+                        torch.nn.Linear(128, 64),
+                        torch.nn.GELU(),
+                        torch.nn.Dropout(0.3),
+                        torch.nn.Linear(64, 1),
+                    )
+                    model = _train_kimore(model, X_kimore, y_kimore, epochs=50, lr=1e-2)
+                else:
+                    model = _train_kimore(model, X_kimore, y_kimore)
+
+                preds = _predict(model, X_c)
+                sd_val = float(np.std(preds))
+                auroc = None
+                if labels_c is not None and len(np.unique(labels_c)) > 1:
+                    try:
+                        a = roc_auc_score(labels_c, preds)
+                        auroc = float(max(a, 1.0 - a))
+                    except ValueError:
+                        pass
+                t = time.time() - t0
+                key = f"all_corpora/{ssl_name}_{mode_name}/{corpus_name}"
+                results[key] = {
+                    "mean_auroc": auroc,
+                    "pred_sd": sd_val,
+                    "degenerate": bool(sd_val < DEGENERACY_PRED_SD),
+                    "pool": pool,
+                }
+                print(f"    {corpus_name}: AUROC={auroc:.4f} pred_SD={sd_val:.3f} t={t:.0f}s")
+
+    # Also evaluate scratch (no SSL)
+    print(f"\n  --- all_corpora_scratch (from scratch, all KIMORE) ---")
+    for corpus_name, X_c, labels_c in [
+        ("REHAB246", X_rehab, labels_rehab),
+        ("UIPRMD", X_uiprmd, labels_uiprmd),
+    ]:
+        t0 = time.time()
+        model = TCNRegressor(seq_len=TORCH_SEQ_LEN, d_model=128, num_blocks=4, dropout=0.3)
+        model = _train_kimore(model, X_kimore, y_kimore)
+        preds = _predict(model, X_c)
+        sd_val = float(np.std(preds))
+        auroc = None
+        if labels_c is not None and len(np.unique(labels_c)) > 1:
+            try:
+                a = roc_auc_score(labels_c, preds)
+                auroc = float(max(a, 1.0 - a))
+            except ValueError:
+                pass
+        t = time.time() - t0
+        key = f"all_corpora/scratch/{corpus_name}"
+        results[key] = {
+            "mean_auroc": auroc,
+            "pred_sd": sd_val,
+            "degenerate": bool(sd_val < DEGENERACY_PRED_SD),
+            "pool": pool,
+        }
+        print(f"    {corpus_name}: AUROC={auroc:.4f} pred_SD={sd_val:.3f} t={t:.0f}s")
+
+    return results
+
+# ============================================================
 # Main
 # ============================================================
 def main():
@@ -380,6 +521,14 @@ def main():
                 all_results[key] = r
                 print(f"  {cond_label} on {corpus_name}: AUROC={r['mean_auroc']:.4f}±{r['std_auroc']:.4f} "
                       f"pred_SD={r['mean_pred_sd']:.3f} deg={r['degenerate']} (t={t:.0f}s)")
+
+    # -------------------------------------------------------
+    # 4. All-corpora pool zero-shot
+    # -------------------------------------------------------
+    print("\n--- All-corpora pool zero-shot (transductive upper bound) ---")
+    all_corpora_results = evaluate_all_corpora_zeroshot(
+        X_kimore, y_kimore, X_rehab, labels_rehab, X_uiprmd, labels_uiprmd)
+    all_results.update(all_corpora_results)
 
     # Save
     Path(OUT_PATH).parent.mkdir(parents=True, exist_ok=True)
