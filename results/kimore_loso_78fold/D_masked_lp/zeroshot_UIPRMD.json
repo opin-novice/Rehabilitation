@@ -1,0 +1,10 @@
+{
+  "corpus": "UIPRMD",
+  "n": 2000,
+  "n_folds": 77,
+  "mean_auroc": 0.5119307662337663,
+  "mean_rank_spearman": 0.015634932185056516,
+  "mean_pred_sd": 0.015332020785925644,
+  "degenerate": true,
+  "naive_auroc": 0.537979
+}

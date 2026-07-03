@@ -1,0 +1,10 @@
+{
+  "corpus": "REHAB246",
+  "n": 1057,
+  "n_folds": 77,
+  "mean_auroc": 0.5271747470176587,
+  "mean_rank_spearman": -0.02930507616164042,
+  "mean_pred_sd": 0.10031497634814254,
+  "degenerate": false,
+  "naive_auroc": 0.5540866679595751
+}
