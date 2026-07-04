@@ -159,6 +159,15 @@ class STGCNRegressor(nn.Module):
         self.head_po = _head(feat_dim, dropout) if multitask else None
         self.head_cf = _head(feat_dim, dropout) if multitask else None
 
+    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
+        """Return the pooled ST-GCN embedding [B, C3] (used by the sensor-ID probe)."""
+        x = x.permute(0, 3, 1, 2).contiguous()
+        x = self.bn_in(x)
+        x = self.block1(x, self.A)
+        x = self.block2(x, self.A)
+        x = self.block3(x, self.A)
+        return x.mean(dim=(2, 3))                          # [B, C3]
+
     def forward(
         self,
         x: torch.Tensor,

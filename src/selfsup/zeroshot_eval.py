@@ -18,7 +18,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/
-from models_stgcn import TCNRegressor, LSTMRegressor  # noqa: E402
+from models_stgcn import TCNRegressor, LSTMRegressor, STGCNRegressor  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 from selfsup.naive_baseline import naive_auroc  # noqa: E402
 
@@ -28,7 +28,10 @@ DEGENERACY_PRED_SD = 0.10
 def _rebuild_model(ckpt: dict) -> torch.nn.Module:
     a = ckpt.get("args", {})
     mt = a.get("model_type", "tcn")
-    if mt == "lstm":
+    if mt == "stgcn":
+        m = STGCNRegressor(seq_len=100, base_channels=a.get("base_channels", 32),
+                           dropout=a.get("dropout", 0.3))
+    elif mt == "lstm":
         m = LSTMRegressor(seq_len=100, hidden_size=a.get("lstm_hidden", 128),
                           num_layers=a.get("lstm_layers", 2), dropout=a.get("dropout", 0.3))
     else:
