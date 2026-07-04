@@ -22,11 +22,12 @@
 \citation{liang2020shot}
 \citation{wang2021tent}
 \citation{loper2015smpl}
+\citation{arjovsky2019irm}
+\citation{cha2021swad}
 \citation{capecci2019kimore}
 \citation{capecci2019kimore}
 \citation{rehab246}
 \citation{vakanski2018uiprmd}
-\citation{karlov2024,abedi2023}
 \@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{2}{section.2}\protected@file@percent }
 \newlabel{sec:related}{{II}{2}{Related Work}{section.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}KIMORE Benchmarks}{2}{subsection.2.1}\protected@file@percent }
@@ -38,6 +39,7 @@
 \newlabel{sec:methods}{{III}{2}{Methods}{section.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Datasets and Preprocessing}{2}{subsection.3.1}\protected@file@percent }
 \newlabel{sec:datasets}{{\mbox  {III-A}}{2}{Datasets and Preprocessing}{subsection.3.1}{}}
+\citation{karlov2024,abedi2023}
 \citation{bai2018tcn}
 \citation{chen2020simclr}
 \citation{he2022mae}
@@ -58,6 +60,7 @@
 \citation{yan2018stgcn}
 \citation{li2018adabn}
 \citation{ganin2016dann}
+\citation{cha2021swad}
 \@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Subject-clustered AUROC significance. Because each target corpus has only ten subjects, we bootstrap over subject clusters ($2{,}000$ resamples) with each score's orientation fixed once on the full sample. ``$>$chance?'' flags whether the $95\%$ subject CI excludes $0.50$. ``naive$-$model'' is the paired AUROC difference (naive minus that model) with its two-sided bootstrap $p$. No learned model is distinguishable from chance on REHAB246, and the naive baseline's advantage over the learned models is largely not significant.}}{5}{table.3}\protected@file@percent }
 \newlabel{tab:auroc-sig}{{III}{5}{Subject-clustered AUROC significance. Because each target corpus has only ten subjects, we bootstrap over subject clusters ($2{,}000$ resamples) with each score's orientation fixed once on the full sample. ``$>$chance?'' flags whether the $95\%$ subject CI excludes $0.50$. ``naive$-$model'' is the paired AUROC difference (naive minus that model) with its two-sided bootstrap $p$. No learned model is distinguishable from chance on REHAB246, and the naive baseline's advantage over the learned models is largely not significant}{table.3}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Naive-baseline sensitivity to joint padding and normalization (zero-shot AUROC). ``Shared joints'' drops zero-padded (UI-PRMD) and duplicated (REHAB246) joints; ``z-scored'' recomputes features on per-sequence normalized coordinates.}}{5}{table.4}\protected@file@percent }
@@ -69,18 +72,18 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}77-Fold LOSO: SSL FT = Scratch, SSL LP Worse}{6}{subsection.4.3}\protected@file@percent }
 \newlabel{sec:loso-results}{{\mbox  {IV-C}}{6}{77-Fold LOSO: SSL FT = Scratch, SSL LP Worse}{subsection.4.3}{}}
 \citation{karlov2024}
-\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Robustness of the zero-shot null to backbone, input representation, and domain adaptation. AUROC (mean $\pm $ std across 77 folds where applicable). D = degenerate ($\text  {pred\_SD}<0.10$). Naive kinematic baseline: 0.554 (REHAB246) / 0.538 (UI-PRMD).}}{7}{table.5}\protected@file@percent }
-\newlabel{tab:robustness-c}{{V}{7}{Robustness of the zero-shot null to backbone, input representation, and domain adaptation. AUROC (mean $\pm $ std across 77 folds where applicable). D = degenerate ($\text {pred\_SD}<0.10$). Naive kinematic baseline: 0.554 (REHAB246) / 0.538 (UI-PRMD)}{table.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Robustness of the zero-shot null to backbone, input representation, and domain adaptation/generalization. AUROC (mean $\pm $ std across 77 folds where applicable). D = degenerate ($\text  {pred\_SD}<0.10$). Naive kinematic baseline: 0.554 (REHAB246) / 0.538 (UI-PRMD).}}{7}{table.5}\protected@file@percent }
+\newlabel{tab:robustness-c}{{V}{7}{Robustness of the zero-shot null to backbone, input representation, and domain adaptation/generalization. AUROC (mean $\pm $ std across 77 folds where applicable). D = degenerate ($\text {pred\_SD}<0.10$). Naive kinematic baseline: 0.554 (REHAB246) / 0.538 (UI-PRMD)}{table.5}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces KIMORE 77-fold true LOSO. Mean Spearman $\rho $ with 95\% bootstrap CI. Holm-Bonferroni adjusted $p$ versus scratch from paired Wilcoxon on absolute error ($N=380$). MAE and RMSE are on the original 0--50 score scale.}}{7}{table.6}\protected@file@percent }
 \newlabel{tab:loso}{{VI}{7}{KIMORE 77-fold true LOSO. Mean Spearman $\rho $ with 95\% bootstrap CI. Holm-Bonferroni adjusted $p$ versus scratch from paired Wilcoxon on absolute error ($N=380$). MAE and RMSE are on the original 0--50 score scale}{table.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Scale Ablation: More Data Does Not Help}{7}{subsection.4.4}\protected@file@percent }
 \newlabel{sec:scale}{{\mbox  {IV-D}}{7}{Scale Ablation: More Data Does Not Help}{subsection.4.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Zero-Shot Protocol Invariance}{7}{subsection.4.5}\protected@file@percent }
-\newlabel{sec:protocol-invariance}{{\mbox  {IV-E}}{7}{Zero-Shot Protocol Invariance}{subsection.4.5}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Full 10-pair Holm-Bonferroni-corrected Wilcoxon matrix on KIMORE 77-fold LOSO absolute error ($N=380$). ``Winner'' is the lower-error condition. Scr = scratch, Con = contrastive, Msk = masked, FT = fine-tune, LP = linear-probe. The three conditions \{Scr, Con-FT, Msk-FT\} are mutually indistinguishable, as are the two linear-probe conditions; every remaining pair is significant.}}{7}{table.7}\protected@file@percent }
 \newlabel{tab:pairwise-full}{{VII}{7}{Full 10-pair Holm-Bonferroni-corrected Wilcoxon matrix on KIMORE 77-fold LOSO absolute error ($N=380$). ``Winner'' is the lower-error condition. Scr = scratch, Con = contrastive, Msk = masked, FT = fine-tune, LP = linear-probe. The three conditions \{Scr, Con-FT, Msk-FT\} are mutually indistinguishable, as are the two linear-probe conditions; every remaining pair is significant}{table.7}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Pool size ablation. Mean Spearman $\rho $ under 5-fold cross-subject split for two pretraining pool sizes.}}{7}{table.8}\protected@file@percent }
 \newlabel{tab:pool}{{VIII}{7}{Pool size ablation. Mean Spearman $\rho $ under 5-fold cross-subject split for two pretraining pool sizes}{table.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Zero-Shot Protocol Invariance}{7}{subsection.4.5}\protected@file@percent }
+\newlabel{sec:protocol-invariance}{{\mbox  {IV-E}}{7}{Zero-Shot Protocol Invariance}{subsection.4.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Robustness Summary}{7}{subsection.4.6}\protected@file@percent }
 \newlabel{sec:robustness}{{\mbox  {IV-F}}{7}{Robustness Summary}{subsection.4.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Degeneracy Threshold Sensitivity}{7}{subsection.4.7}\protected@file@percent }
@@ -88,7 +91,6 @@
 \citation{karlov2024}
 \citation{sun2016deep}
 \citation{ganin2016dann}
-\citation{loper2015smpl}
 \@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Degeneracy classification under alternative $\text  {pred\_SD}$ thresholds. D = degenerate at that threshold.}}{8}{table.9}\protected@file@percent }
 \newlabel{tab:deg-sensitivity}{{IX}{8}{Degeneracy classification under alternative $\text {pred\_SD}$ thresholds. D = degenerate at that threshold}{table.9}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {V}Discussion}{8}{section.5}\protected@file@percent }
@@ -99,14 +101,15 @@
 \newlabel{sec:collapse}{{\mbox  {V-B}}{8}{Why SSL Models Collapse on UI-PRMD}{subsection.5.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Implications for the Field}{8}{subsection.5.3}\protected@file@percent }
 \newlabel{sec:implications}{{\mbox  {V-C}}{8}{Implications for the Field}{subsection.5.3}{}}
+\citation{loper2015smpl}
 \citation{yan2018stgcn}
 \citation{thoker2021skeletonclr}
 \citation{thoker2021skeletonclr}
 \citation{sun2016deep}
 \citation{li2018adabn}
 \citation{ganin2016dann}
-\citation{arjovsky2019irm}
 \citation{cha2021swad}
+\citation{arjovsky2019irm}
 \citation{wang2021tent}
 \citation{ganin2016dann}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Rigor Contributions}{9}{subsection.5.4}\protected@file@percent }
@@ -115,8 +118,6 @@
 \newlabel{sec:limitations}{{\mbox  {V-E}}{9}{Limitations}{subsection.5.5}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-F}}Future Work}{9}{subsection.5.6}\protected@file@percent }
 \newlabel{sec:future}{{\mbox  {V-F}}{9}{Future Work}{subsection.5.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusion}{9}{section.6}\protected@file@percent }
-\newlabel{sec:conclusion}{{VI}{9}{Conclusion}{section.6}{}}
 \bibcite{capecci2019kimore}{1}
 \bibcite{karlov2024}{2}
 \bibcite{abedi2023}{3}
@@ -138,5 +139,7 @@
 \bibcite{arjovsky2019irm}{19}
 \bibcite{cha2021swad}{20}
 \bibcite{thoker2021skeletonclr}{21}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusion}{10}{section.6}\protected@file@percent }
+\newlabel{sec:conclusion}{{VI}{10}{Conclusion}{section.6}{}}
 \@writefile{toc}{\contentsline {section}{References}{10}{section*.2}\protected@file@percent }
 \gdef \@abspage@last{10}
