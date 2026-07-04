@@ -34,7 +34,7 @@ Quality Assessment}
 % ===================================================================
 \begin{abstract}
 Automated rehabilitation quality scoring from skeleton sequences promises objective, scalable assessment, but prior work evaluates exclusively within-dataset under standard cross-validation. We ask whether self-supervised pretraining on unlabeled skeletons from a different sensor enables zero-shot cross-sensor scoring. We pretrain contrastive and masked-motion encoders on 1,000 unlabeled IntelliRehabDS (Kinect v2) sequences, then evaluate on KIMORE (Kinect v2, $N=380$, 77 subjects, leave-one-subject-out) and zero-shot on two independent labeled corpora with different sensors: REHAB246 (OptiTrack, 1,057 reps) and UI-PRMD (Kinect, 2,000 reps). The result is a clean negative across four axes:
-(1) zero-shot AUROC is at chance (0.51--0.53) on both corpora, with a naive path-length-plus-speed baseline (AUROC = 0.55 and 0.54) unbeaten by any learned model;
+(1) zero-shot AUROC is at chance (0.51--0.53) on both corpora; a naive path-length-plus-speed baseline nominally leads (AUROC = 0.55 and 0.54), but under a bootstrap over the ten target subjects the learned models are statistically indistinguishable from chance and the naive baseline's advantage over them is largely not significant;
 (2) under a fully-powered 77-fold leave-one-subject-out evaluation, SSL fine-tuning is statistically indistinguishable from training from scratch ($p > 0.3$, Holm-corrected), while SSL linear-probing is significantly \emph{worse} (adjusted $p < 10^{-13}$);
 (3) quadrupling the unlabeled pool to approximately 5,000 sequences does not close the gap; and
 (4) contrastive and masked-motion paradigms are statistically equivalent ($p = 0.80$).
@@ -58,7 +58,7 @@ All existing work, however, evaluates under ideal conditions: within-dataset, wi
 In this paper we present, to our knowledge, the first systematic evaluation of self-supervised pretraining for zero-shot cross-sensor rehabilitation quality assessment. Our contributions are:
 
 \begin{enumerate}
-    \item \textbf{A definitive negative result:} SSL pretraining on unlabeled skeletons does not enable zero-shot cross-sensor transfer. Across two pretext tasks (contrastive and masked-motion), two pool sizes ($\sim$1,000 and $\sim$5,000 unlabeled sequences), two independent labeled test corpora (REHAB246, OptiTrack; UI-PRMD, Kinect), and two evaluation protocols (5-fold and 77-fold leave-one-subject-out), every condition scores at chance (AUROC 0.51--0.53), and a simple naive kinematic baseline (AUROC 0.55/0.54) is unbeaten.
+    \item \textbf{A robust negative result:} SSL pretraining on unlabeled skeletons does not enable zero-shot cross-sensor transfer. Across two pretext tasks (contrastive and masked-motion), two pool sizes ($\sim$1,000 and $\sim$5,000 unlabeled sequences), two independent labeled test corpora (REHAB246, OptiTrack; UI-PRMD, Kinect), and two evaluation protocols (5-fold and 77-fold leave-one-subject-out), every condition scores at chance (AUROC 0.51--0.53). A simple naive kinematic baseline (AUROC 0.55/0.54) nominally leads, but a bootstrap over the ten target subjects shows the learned models are statistically indistinguishable from chance and the naive baseline's advantage over them is largely not significant (Table~\ref{tab:auroc-sig})---no method, learned or naive, achieves subject-level-meaningful cross-sensor discrimination.
     \item \textbf{Within-domain evidence of the same null:} under a fully-powered 77-fold leave-one-subject-out (LOSO) evaluation with sample-level statistics ($N=380$), SSL fine-tuning is statistically indistinguishable from training from scratch, and SSL linear-probing is significantly worse. The two SSL paradigms are statistically equivalent.
     \item \textbf{Rigor safeguards:} we incorporate (a) a degeneracy gate ($\text{pred\_SD} > 0.10$) to detect collapsed near-constant predictors, (b) probe-sanity checks confirming the encoders learned meaningful structure, (c) naive-feature baselines as the simplest possible comparator, and (d) Holm-Bonferroni-corrected sample-level pairwise tests.
     \item \textbf{A mechanistic, architecture-independent diagnosis:} a sensor-identity probe classifies the acquisition sensor with perfect accuracy (1.00 vs.\ 0.33 chance) from both TCN and ST-GCN features, showing the encoders represent \emph{sensor identity} rather than movement quality as the dominant signal. The null is robust to a spatial-prior ST-GCN backbone, a translation-invariant bone-length-preserving joint-vector input, and stronger domain adaptation (AdaBN, DANN), none of which reach the naive baseline.
@@ -191,7 +191,38 @@ Naive kinem.    & \textbf{0.554} & \textbf{0.538} & ---   & --- \\
 \end{tabular}
 \end{table}
 
-Every learned condition performs at chance (AUROC 0.51--0.53) on both corpora. The naive kinematic baseline beats every SSL condition on both corpora. Rank Spearman correlation is $|\rho| < 0.03$ across all conditions, confirming no ordinal transfer. Per-fold standard deviations range from 0.009 to 0.017 (95\% CI $\approx \pm 0.003$), confirming that the null is stable rather than a statistical fluctuation. AUPRC values (0.51--0.54) mirror the AUROC results, ruling out class-imbalance artifacts. The CORAL domain adaptation baseline --- which aligns second-order statistics of scratch TCN features from labeled KIMORE data before logistic regression --- also scores at chance (AUROC 0.522 and 0.513), indicating that even labeled source data cannot overcome the compound domain shift via simple feature alignment alone.
+Every learned condition performs at chance (AUROC 0.51--0.53) on both corpora. The naive kinematic baseline nominally leads every SSL condition on both corpora at the pooled-sample level, though this ordering does not survive a subject-clustered bootstrap (Table~\ref{tab:auroc-sig}). Rank Spearman correlation is $|\rho| < 0.03$ across all conditions, confirming no ordinal transfer. Per-fold standard deviations range from 0.009 to 0.017 (95\% CI $\approx \pm 0.003$), confirming that the null is stable rather than a statistical fluctuation. AUPRC values (0.51--0.54) mirror the AUROC results, ruling out class-imbalance artifacts. The CORAL domain adaptation baseline --- which aligns second-order statistics of scratch TCN features from labeled KIMORE data before logistic regression --- also scores at chance (AUROC 0.522 and 0.513), indicating that even labeled source data cannot overcome the compound domain shift via simple feature alignment alone.
+
+\textbf{Subject-level significance (ten-subject bootstrap).} Because each target corpus contains only ten subjects, repetition-level intervals overstate the effective sample size. We therefore re-assessed every condition and the naive baseline with a bootstrap that resamples \emph{subject clusters} rather than repetitions ($2{,}000$ resamples), fixing each score's orientation once on the full sample so that resampling cannot inflate AUROC by re-taking $\max(\text{AUROC},\,1-\text{AUROC})$ per draw (Table~\ref{tab:auroc-sig}). Under this subject-honest test, \emph{no} learned model's AUROC is distinguishable from $0.50$ on REHAB246 (every $95\%$ subject CI includes chance), and only trivial effects clear chance on UI-PRMD (Scratch $0.527$, Contrastive-LP $0.526$; both within $0.03$ of chance). The naive baseline itself clears chance on both corpora (REHAB246 $0.554$, CI $[0.506,0.605]$, $p=0.035$; UI-PRMD $0.538$, $p<0.001$), but its paired advantage over the learned models is not statistically significant for eight of ten model$\times$corpus comparisons ($p=0.24$--$0.71$); the two exceptions are the fine-tuned SSL variants on UI-PRMD (Contrastive-FT $p=0.010$, Masked-FT $p=0.038$), which are themselves not above chance. The pooled-sample ordering of Table~\ref{tab:zeroshot} therefore does not survive subject-level uncertainty: at the subject level neither the learned models nor the naive baseline achieve cross-sensor discrimination that is both reliably above chance and mutually distinguishable.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Subject-clustered AUROC significance. Because each target corpus has only ten subjects, we bootstrap over subject clusters ($2{,}000$ resamples) with each score's orientation fixed once on the full sample. ``$>$chance?'' flags whether the $95\%$ subject CI excludes $0.50$. ``naive$-$model'' is the paired AUROC difference (naive minus that model) with its two-sided bootstrap $p$. No learned model is distinguishable from chance on REHAB246, and the naive baseline's advantage over the learned models is largely not significant.}
+\label{tab:auroc-sig}
+\begin{tabular}{llccccc}
+\toprule
+Corpus & Condition & AUROC & 95\% CI (subject) & $p$ vs.\ 0.50 & naive$-$model & $p$(naive$>$model) \\
+\midrule
+\multirow{6}{*}{REHAB246}
+ & Scratch        & 0.515 & [0.467, 0.558] & 0.553 & $+0.040$ & 0.238 \\
+ & Contrastive LP & 0.515 & [0.450, 0.581] & 0.631 & $+0.037$ & 0.536 \\
+ & Contrastive FT & 0.506 & [0.459, 0.556] & 0.840 & $+0.048$ & 0.253 \\
+ & Masked LP      & 0.529 & [0.470, 0.592] & 0.336 & $+0.022$ & 0.706 \\
+ & Masked FT      & 0.522 & [0.467, 0.573] & 0.444 & $+0.032$ & 0.356 \\
+ & Naive baseline & \textbf{0.554} & [0.506, 0.605] & \textbf{0.035} & --- & --- \\
+\midrule
+\multirow{6}{*}{UI-PRMD}
+ & Scratch        & 0.527 & [0.515, 0.537] & $<$0.001 & $+0.012$ & 0.279 \\
+ & Contrastive LP & 0.526 & [0.504, 0.551] & 0.018 & $+0.011$ & 0.570 \\
+ & Contrastive FT & 0.508 & [0.490, 0.519] & 0.288 & $+0.031$ & \textbf{0.010} \\
+ & Masked LP      & 0.516 & [0.496, 0.540] & 0.103 & $+0.021$ & 0.243 \\
+ & Masked FT      & 0.513 & [0.498, 0.529] & 0.083 & $+0.025$ & \textbf{0.038} \\
+ & Naive baseline & \textbf{0.538} & [0.520, 0.560] & \textbf{$<$0.001} & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 The all-corpora column in Table~\ref{tab:zeroshot} shows the transductive upper bound: SSL pretrained on a pool that includes the unlabeled target corpora. The results are identical --- every condition at chance (AUROC 0.502--0.527) --- confirming that even direct access to unlabeled target distributions during pretraining does not improve cross-sensor transfer. This is consistent with the within-domain pool-size ablation (Table~\ref{tab:pool}), which found that quadrupling the unlabeled pool does not close the gap.
 
@@ -201,7 +232,14 @@ On REHAB246, all conditions are non-degenerate ($\text{pred\_SD} > 0.10$); the c
 
 \textbf{Canonicalization ablations:} Applying pelvis-centering and bone-length normalization to the input without retraining did not meaningfully change any result. The best canonicalized condition (contrastive LP on REHAB246) reached AUROC $0.552 \pm 0.026$, marginally above the naive baseline but with higher variance; all other canonicalized conditions remained at chance (AUROC 0.506--0.524). Canonical body-model representations alone are insufficient to close the cross-sensor gap.
 
-\textbf{Sensor encoding probe:} To directly measure the degree of sensor-specific encoding, we trained a 3-way sensor classifier (KIMORE~vs~REHAB246~vs~UI-PRMD) on scratch TCN features. Balanced accuracy is $1.000 \pm 0.000$ (chance 0.33), and the same perfect separation holds for pairwise discrimination (KIMORE~vs~REHAB246: 1.00; KIMORE~vs~UI-PRMD: 1.00). This confirms that the TCN features encode sensor identity, not just movement content, substantiating the claim that SSL captures sensor-specific rather than sensor-invariant structure.
+\textbf{Sensor encoding probe:} To directly measure the degree of sensor-specific encoding, we trained a 3-way sensor classifier (KIMORE~vs~REHAB246~vs~UI-PRMD) on scratch TCN features. Balanced accuracy is $1.000 \pm 0.000$ (chance 0.33), and the same perfect separation holds for pairwise discrimination (KIMORE~vs~REHAB246: 1.00; KIMORE~vs~UI-PRMD: 1.00). This confirms that the TCN features encode sensor identity, not just movement content, substantiating the claim that SSL captures sensor-specific rather than sensor-invariant structure. This separation is not an artifact of joint zero-padding: zeroing the padded and duplicated joints ($\{7,11,22,23,24\}$) in \emph{all} three corpora --- so that no corpus carries a distinguishing zero-pattern --- leaves the 3-way probe at balanced accuracy $1.000$ for both the TCN and the ST-GCN backbones. A t-SNE projection of the penultimate features (Fig.~\ref{fig:embedding-tsne}) makes the entanglement visually explicit: the three sensors form cleanly separated clusters, whereas correct and incorrect repetitions are thoroughly intermixed within each cluster.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/embedding_tsne.png}
+\caption{t-SNE of penultimate features on pooled KIMORE, REHAB246, and UI-PRMD sequences, for the scratch TCN (top) and ST-GCN (bottom). \textbf{Left:} colored by acquisition sensor --- the three corpora form cleanly separated clusters for both backbones, the visual counterpart of the perfect ($1.00$) sensor-identity probe. \textbf{Right:} the same embedding with target repetitions colored by correctness label (KIMORE, in grey, has no binary label); correct and incorrect repetitions are intermixed within each sensor cluster. The encoders organize features by sensor, not by movement quality.}
+\label{fig:embedding-tsne}
+\end{figure*}
 
 \textbf{Few-shot calibration:} We probed whether 1, 5, 10, or 20 labeled target-sensor samples suffice to calibrate a logistic regression on frozen TCN features. For all conditions and both corpora, few-shot AUROC remains at chance (0.51--0.54 even at $n=20$), with $n=1$ failing to yield two-class evaluations. The 20-shot regime falls below the naive baseline (0.55/0.54), suggesting that even a modest handful of labeled target examples does not overcome the cross-sensor gap.
 
@@ -274,9 +312,33 @@ Masked~LP   & 6.16 & 8.27 & 0.679          & [0.612, 0.727] & $7.3{\times}10^{-1
 \end{tabular}
 \end{table}
 
-SSL fine-tuning (both contrastive and masked) is statistically indistinguishable from scratch (adjusted $p > 0.3$). SSL linear-probing is significantly \emph{worse} than scratch (adjusted $p < 10^{-13}$). The two SSL paradigms are not significantly different: contrastive FT vs.\ masked FT $p = 0.80$, with $\Delta_{\text{abs-err}} = -0.01$.
+SSL fine-tuning (both contrastive and masked) is statistically indistinguishable from scratch (adjusted $p > 0.3$). SSL linear-probing is significantly \emph{worse} than scratch (adjusted $p < 10^{-13}$). The two SSL paradigms are not significantly different: contrastive FT vs.\ masked FT $p = 0.80$, with $\Delta_{\text{abs-err}} = -0.01$. For compactness Table~\ref{tab:loso} lists adjusted $p$ versus scratch only; the full 10-pair matrix (Table~\ref{tab:pairwise-full}) exhibits the same structure --- \{scratch, contrastive-FT, masked-FT\} are mutually indistinguishable ($p_{\text{adj}} \geq 0.32$), the two linear-probe conditions are mutually indistinguishable ($p_{\text{adj}} = 0.46$), and every fine-tune-or-scratch versus linear-probe pair is significant ($p_{\text{adj}} < 10^{-10}$).
 
-The probe-sanity check is critical: linear-probe $\rho = 0.689$ (contrastive) and $0.679$ (masked) are substantially above zero, confirming the encoders learned meaningful kinematic structure. The null is therefore not attributable to undertrained encoders.
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Full 10-pair Holm-Bonferroni-corrected Wilcoxon matrix on KIMORE 77-fold LOSO absolute error ($N=380$). ``Winner'' is the lower-error condition. Scr = scratch, Con = contrastive, Msk = masked, FT = fine-tune, LP = linear-probe. The three conditions \{Scr, Con-FT, Msk-FT\} are mutually indistinguishable, as are the two linear-probe conditions; every remaining pair is significant.}
+\label{tab:pairwise-full}
+\begin{tabular}{llcc}
+\toprule
+Comparison & Winner & $p_{\text{adj}}$ & Sig. \\
+\midrule
+Scr vs.\ Con-LP    & Scr    & $3.4\times10^{-14}$ & yes \\
+Scr vs.\ Con-FT    & Scr    & $0.318$             & no  \\
+Scr vs.\ Msk-LP    & Scr    & $7.3\times10^{-18}$ & yes \\
+Scr vs.\ Msk-FT    & Scr    & $0.318$             & no  \\
+Con-LP vs.\ Con-FT & Con-FT & $1.9\times10^{-11}$ & yes \\
+Con-LP vs.\ Msk-LP & Con-LP & $0.455$             & no  \\
+Con-LP vs.\ Msk-FT & Msk-FT & $4.3\times10^{-12}$ & yes \\
+Con-FT vs.\ Msk-LP & Con-FT & $5.7\times10^{-16}$ & yes \\
+Con-FT vs.\ Msk-FT & Con-FT & $0.805$             & no  \\
+Msk-LP vs.\ Msk-FT & Msk-FT & $8.3\times10^{-17}$ & yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The probe-sanity check is critical: linear-probe $\rho = 0.689$ (contrastive) and $0.679$ (masked) are substantially above zero, confirming the encoders learned meaningful kinematic structure. The null is therefore not attributable to undertrained encoders. Our scratch LOSO $\rho = 0.836$ is not directly comparable to the $\rho = 0.744$ Karlov et al.\ \cite{karlov2024} report on KIMORE: their figure uses a different architecture and training recipe under 5-fold cross-validation (which permits subject-identity leakage), whereas ours is true 77-fold LOSO. Both index within-domain fit under different protocols and neither bears on the cross-sensor null, which is measured on entirely separate corpora.
 
 \begin{table}[t]
 \centering
@@ -392,7 +454,7 @@ First, we evaluate only a single backbone architecture (TCN). While the TCN is t
 
 Seventh, our augmentation set excludes temporal warping and bone-length preserving transforms; such skeleton-specific invariances \cite{thoker2021skeletonclr}---designed to simulate speed variation and anthropometric differences---may improve cross-sensor transfer but were not tested here. Eighth, the KIMORE continuous physician score (0--50) and binary correctness labels on target corpora are semantically mismatched; however, restricting evaluation to biomechanically overlapping exercises did not change the chance-level outcome, and AUPRC (which is robust to label mismatch and class imbalance) agrees with AUROC (0.51--0.54). We further tested the reviewer-suggested remedy directly: fitting an isotonic (monotone) calibration on KIMORE predictions and applying it to the target scores leaves both corpora at chance (REHAB246 $0.516\!\to\!0.517$; UI-PRMD $0.524\!\to\!0.504$ across the 77 folds), confirming that the source/target label-scale mismatch is not what drives the null.
 
-Ninth, beyond the canonicalization ablations and CORAL, we tested several stronger remedies --- an ST-GCN backbone, a bone-length-preserving relative-joint-vector input, AdaBN, and DANN (Section~\ref{sec:robustness-c}) --- and none overcame the compound domain shift; multi-sensor pretraining (training the encoder on multiple sensors jointly) remains the principal untested direction. Tenth, while we probe light-touch few-shot calibration (1--20 labeled target samples, Section~\ref{sec:zeroshot-results}) and find it remains at chance, we do not explore larger calibration budgets ($n > 20$) or active sample selection, which established domain adaptation literature suggests could eventually improve cross-sensor scoring. Establishing the data-efficiency boundary at which transfer becomes feasible is a necessary next step before generalizing the negative result beyond the low-shot regime.
+Ninth, beyond the canonicalization ablations and CORAL, we tested several stronger remedies --- an ST-GCN backbone, a bone-length-preserving relative-joint-vector input, AdaBN, and DANN (Section~\ref{sec:robustness-c}) --- and none overcame the compound domain shift. These three adaptation baselines are chosen as one representative per methodological family: CORAL \cite{sun2016deep} for moment-matching (second-order feature-statistic alignment), AdaBN \cite{li2018adabn} for normalization-statistic adaptation, and DANN \cite{ganin2016dann} for adversarial feature alignment; together they span the dominant families of unsupervised domain adaptation. Three complementary paradigms remain untested here and are natural next steps: invariant-risk minimization (IRM) \cite{arjovsky2019irm} and flat-minima domain generalization (SWAD) \cite{cha2021swad}, which target domain \emph{generalization} across multiple training domains rather than pairwise source$\to$target adaptation, and full test-time adaptation (e.g., TENT \cite{wang2021tent}), which updates target statistics from the unlabeled test stream at inference. We caution, however, that the perfect sensor-identity probe (Section~\ref{sec:zeroshot-results}) locates the failure in the learned representation itself, suggesting the barrier is representational rather than a matter of the specific alignment objective; multi-sensor pretraining (training the encoder on multiple sensors jointly) therefore remains the principal untested direction. Tenth, while we probe light-touch few-shot calibration (1--20 labeled target samples, Section~\ref{sec:zeroshot-results}) and find it remains at chance, we do not explore larger calibration budgets ($n > 20$) or active sample selection, which established domain adaptation literature suggests could eventually improve cross-sensor scoring. Establishing the data-efficiency boundary at which transfer becomes feasible is a necessary next step before generalizing the negative result beyond the low-shot regime. Eleventh, our subject-level cross-sensor significance tests (Section~\ref{sec:zeroshot-results}, Table~\ref{tab:auroc-sig}) bootstrap over the ten subjects available in each target corpus; ten clusters is a small sample, so the subject-level confidence intervals are correspondingly wide and the finding that the learned models are indistinguishable from chance is an absence of evidence bounded by that statistical power. Larger multi-subject target corpora would tighten these intervals, though the near-chance point estimates and the perfect sensor-identity probe make a materially different conclusion unlikely.
 
 \subsection{Future Work}
 \label{sec:future}
@@ -403,7 +465,7 @@ Beyond the directions noted in Section~\ref{sec:implications}, we identify four 
 \section{Conclusion}
 \label{sec:conclusion}
 
-We systematically evaluated whether self-supervised pretraining on unlabeled skeletons from a different sensor enables zero-shot cross-sensor rehabilitation quality assessment. Across two pretext tasks, two pool sizes (approximately 1,000 and 5,000 sequences), two independent labeled test corpora (REHAB246, OptiTrack; UI-PRMD, Kinect), and both 5-fold and 77-fold leave-one-subject-out protocols, the result is a clean negative: every SSL condition scores at chance cross-sensor (AUROC 0.51--0.53, naive kinematic baseline unbeaten at 0.55/0.54), and within-domain (KIMORE) SSL fine-tuning is statistically indistinguishable from training from scratch while SSL linear-probing is significantly worse. Quadrupling the unlabeled pool does not help. The barrier is compound domain shift: encoders learn useful but sensor-specific structure (probe-sanity passes), and that structure does not transfer across sensors. This shift is multifaceted --- encompassing sensor hardware, acquisition protocol, and exercise composition --- and SSL pretraining on unlabeled skeletons from a single sensor does not overcome it. We conclude that SSL pretraining on unlabeled skeletons is not a viable path to cross-sensor rehabilitation scoring, and recommend that the field prioritize sensor-invariant representations --- whether through adversarial domain adaptation, multi-sensor pretraining, or canonical body models --- rather than more sophisticated SSL on a single sensor modality.
+We systematically evaluated whether self-supervised pretraining on unlabeled skeletons from a different sensor enables zero-shot cross-sensor rehabilitation quality assessment. Across two pretext tasks, two pool sizes (approximately 1,000 and 5,000 sequences), two independent labeled test corpora (REHAB246, OptiTrack; UI-PRMD, Kinect), and both 5-fold and 77-fold leave-one-subject-out protocols, the result is a clean negative: every SSL condition scores at chance cross-sensor (AUROC 0.51--0.53), and within-domain (KIMORE) SSL fine-tuning is statistically indistinguishable from training from scratch while SSL linear-probing is significantly worse. A naive kinematic baseline nominally leads cross-sensor (0.55/0.54), but a bootstrap over the ten target subjects shows that neither the learned models nor the naive baseline achieve cross-sensor discrimination that is both reliably above chance and mutually distinguishable. Quadrupling the unlabeled pool does not help. The barrier is compound domain shift: encoders learn useful but sensor-specific structure (probe-sanity passes), and that structure does not transfer across sensors. This shift is multifaceted --- encompassing sensor hardware, acquisition protocol, and exercise composition --- and SSL pretraining on unlabeled skeletons from a single sensor does not overcome it. We conclude that SSL pretraining on unlabeled skeletons is not a viable path to cross-sensor rehabilitation scoring, and recommend that the field prioritize sensor-invariant representations --- whether through adversarial domain adaptation, multi-sensor pretraining, or canonical body models --- rather than more sophisticated SSL on a single sensor modality.
 
 \subsection*{Code and Data Availability}
 The KIMORE, IRDS, REHAB246, and UI-PRMD datasets are publicly available from their respective repositories. Source code for pretraining, fine-tuning, and evaluation --- including fixed LOSO splits, joint-mapping utilities, and preprocessing scripts --- will be released at \url{https://github.com/opin-novice/Rehabilitation} upon publication.
@@ -499,6 +561,16 @@ in \textit{Proc. ICML}, 2020.
 D.~Wang, E.~Shelhamer, S.~Liu, B.~Olshausen, and T.~Darrell,
 ``Tent: Fully test-time adaptation by entropy minimization,''
 in \textit{Proc. ICLR}, 2021.
+
+\bibitem{arjovsky2019irm}
+M.~Arjovsky, L.~Bottou, I.~Gulrajani, and D.~Lopez-Paz,
+``Invariant risk minimization,''
+\textit{arXiv preprint arXiv:1907.02893}, 2019.
+
+\bibitem{cha2021swad}
+J.~Cha, S.~Chun, K.~Lee, H.-C.~Cho, S.~Park, Y.~Lee, and S.~Park,
+``SWAD: Domain generalization by seeking flat minima,''
+in \textit{Proc. NeurIPS}, 2021.
 
 \bibitem{thoker2021skeletonclr}
 F.~M.~Thoker \emph{et al.},
