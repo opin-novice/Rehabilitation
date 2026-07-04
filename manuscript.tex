@@ -168,23 +168,25 @@ Table~\ref{tab:zeroshot} presents the primary result of the paper.
 
 \begin{table}[t]
 \centering
-\caption{Zero-shot cross-sensor AUROC. \emph{IRDS-only} columns: the SSL encoder is pretrained on the $\sim$1k unlabeled IRDS sequences, then evaluated over all 77 KIMORE LOSO fold models (mean $\pm$ std). \emph{All-corpora} columns: the SSL encoder is pretrained on the pooled $\sim$5k unlabeled sequences of IRDS + KIMORE + REHAB246 + UI-PRMD (target corpora enter as unlabeled pretraining data only --- never with labels), then fine-tuned on all labeled KIMORE data as a single model (hence no $\pm$std, and no 77-fold LOSO). In both settings only KIMORE supplies supervision. For the IRDS-only columns, the first $\pm$ term is the standard deviation across the 77 fold models and the parenthetical is the 95\% confidence interval on the mean ($1.96\,\text{SD}/\sqrt{77}$); every interval excludes 0.55 and lies far below the naive baseline. The naive kinematic baseline is direct AUROC of path-length and speed features (no model trained). Degeneracy status: D = degenerate ($\text{pred\_SD} < 0.10$). CORAL fits a domain-aligned logistic regression on scratch TCN features from KIMORE.}
+\caption{Zero-shot cross-sensor AUROC. \emph{IRDS-only} columns: the SSL encoder is pretrained on the $\sim$1k unlabeled IRDS sequences, then evaluated over all 77 KIMORE LOSO fold models (mean with 95\% CI in parentheses; D = degenerate). \emph{All-corpora} columns: the SSL encoder is pretrained on the pooled $\sim$5k unlabeled sequences of IRDS + KIMORE + REHAB246 + UI-PRMD (target corpora enter as unlabeled pretraining data only --- never with labels), then fine-tuned on all labeled KIMORE data as a single model. In both settings only KIMORE supplies supervision. Every CI excludes 0.55 and lies far below the naive baseline. The naive kinematic baseline is direct AUROC of path-length and speed features (no model trained). CORAL fits a domain-aligned logistic regression on scratch TCN features from KIMORE.}
 \label{tab:zeroshot}
-\begin{tabular}{lcccc}
+\small
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{@{}lcccc@{}}
 \toprule
-& \multicolumn{2}{c}{IRDS-only ($\sim$1k)} & \multicolumn{2}{c}{All-corpora ($\sim$5k)} \\
+& \multicolumn{2}{c}{IRDS-only} & \multicolumn{2}{c}{All-corpora} \\
 \cmidrule(lr){2-3} \cmidrule(lr){4-5}
 Condition & REHAB246 & UI-PRMD & REHAB246 & UI-PRMD \\
 \midrule
-A. Scratch                         & $0.516 \pm 0.012$ ($\pm0.003$)        & $0.524 \pm 0.017$ ($\pm0.004$) (D) & 0.513 & 0.527 (D) \\
-B. Contrastive LP                  & $0.516 \pm 0.011$ ($\pm0.002$)        & $0.518 \pm 0.015$ ($\pm0.003$) (D) & 0.502 & 0.524 \\
-C. Contrastive FT                  & $0.515 \pm 0.012$ ($\pm0.003$)        & $0.514 \pm 0.013$ ($\pm0.003$)     & 0.503 & 0.509 \\
-D. Masked LP                       & $0.527 \pm 0.011$ ($\pm0.002$)        & $0.512 \pm 0.009$ ($\pm0.002$) (D) & 0.507 & 0.507 \\
-E. Masked FT                       & $0.519 \pm 0.012$ ($\pm0.003$)        & $0.514 \pm 0.009$ ($\pm0.002$) (D) & 0.523 & 0.524 \\
+Scratch         & 0.516 (.003)  & 0.524 (.004) D & 0.513 & 0.527 D \\
+Contrast.~LP    & 0.516 (.002)  & 0.518 (.003) D & 0.502 & 0.524 \\
+Contrast.~FT    & 0.515 (.003)  & 0.514 (.003)   & 0.503 & 0.509 \\
+Masked~LP       & 0.527 (.002)  & 0.512 (.002) D & 0.507 & 0.507 \\
+Masked~FT       & 0.519 (.003)  & 0.514 (.002) D & 0.523 & 0.524 \\
 \midrule
-CORAL (scratch TCN features)       & $0.522 \pm 0.012$        & $0.513 \pm 0.013$     & --- & --- \\
+CORAL           & 0.522 (.003)  & 0.513 (.003)   & ---   & --- \\
 \midrule
-Naive kinematic baseline           & \textbf{0.554}           & \textbf{0.538}        & --- & --- \\
+Naive kinem.    & \textbf{0.554} & \textbf{0.538} & ---   & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -227,19 +229,21 @@ To test whether the null is specific to the TCN backbone, the coordinate input, 
 
 \begin{table}[t]
 \centering
+\small
+\setlength{\tabcolsep}{3pt}
 \caption{Robustness of the zero-shot null to backbone, input representation, and domain adaptation. AUROC (mean $\pm$ std across 77 folds where applicable). D = degenerate ($\text{pred\_SD}<0.10$). Naive kinematic baseline: 0.554 (REHAB246) / 0.538 (UI-PRMD).}
 \label{tab:robustness-c}
-\begin{tabular}{lcc}
+\begin{tabular}{@{}lcc@{}}
 \toprule
 Setting & REHAB246 & UI-PRMD \\
 \midrule
-ST-GCN backbone (Q6)               & $0.522 \pm 0.008$ & $0.514 \pm 0.010$ (D) \\
-\quad + AdaBN (Q5)                  & $0.519 \pm 0.009$ & $0.514 \pm 0.010$ \\
-Relative-joint-vector input (Q4)   & $0.534 \pm 0.017$ & $0.520 \pm 0.015$ (D) \\
-Per-sequence z-score input (Q10)   & $0.539 \pm 0.023$ & $0.534 \pm 0.027$ \\
-DANN, single model (Q5)            & $0.529$           & $0.509$ \\
+ST-GCN backbone         & $0.522{\pm}0.008$ & $0.514{\pm}0.010$ (D) \\
+\quad + AdaBN           & $0.519{\pm}0.009$ & $0.514{\pm}0.010$ \\
+Rel.-joint input        & $0.534{\pm}0.017$ & $0.520{\pm}0.015$ (D) \\
+Per-seq.\ z-score       & $0.539{\pm}0.023$ & $0.534{\pm}0.027$ \\
+DANN                    & $0.529$           & $0.509$ \\
 \midrule
-Naive kinematic baseline           & \textbf{0.554}    & \textbf{0.538} \\
+Naive kinematic         & \textbf{0.554}    & \textbf{0.538} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -253,17 +257,19 @@ Table~\ref{tab:loso} shows the within-domain KIMORE results under fully-powered 
 
 \begin{table}[t]
 \centering
+\small
+\setlength{\tabcolsep}{3pt}
 \caption{KIMORE 77-fold true LOSO. Mean Spearman $\rho$ with 95\% bootstrap CI. Holm-Bonferroni adjusted $p$ versus scratch from paired Wilcoxon on absolute error ($N=380$). MAE and RMSE are on the original 0--50 score scale.}
 \label{tab:loso}
-\begin{tabular}{lccccc}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
-Condition & MAE & RMSE & Mean Spearman $\rho$ & 95\% CI & $p_{\text{adj}}$ vs.\ scratch \\
+Cond. & MAE & RMSE & $\rho$ & 95\% CI & $p$ (adj) \\
 \midrule
-A. Scratch          & 3.73 & 5.50 & \textbf{0.836} & [0.785, 0.867] & --- \\
-E. Masked FT        & 4.02 & 5.69 & 0.823          & [0.773, 0.854] & 0.318 \\
-C. Contrastive FT   & 4.01 & 6.03 & 0.816          & [0.762, 0.851] & 0.318 \\
-B. Contrastive LP   & 5.95 & 8.28 & 0.689          & [0.617, 0.738] & $3.4\times10^{-14}$ \\
-D. Masked LP        & 6.16 & 8.27 & 0.679          & [0.612, 0.727] & $7.3\times10^{-18}$ \\
+Scratch     & 3.73 & 5.50 & \textbf{0.836} & [0.785, 0.867] & --- \\
+Masked FT   & 4.02 & 5.69 & 0.823          & [0.773, 0.854] & 0.32 \\
+Contrast.~FT & 4.01 & 6.03 & 0.816         & [0.762, 0.851] & 0.32 \\
+Contrast.~LP & 5.95 & 8.28 & 0.689         & [0.617, 0.738] & $3.4{\times}10^{-14}$ \\
+Masked~LP   & 6.16 & 8.27 & 0.679          & [0.612, 0.727] & $7.3{\times}10^{-18}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -321,7 +327,7 @@ The degeneracy gate ($\text{pred\_SD} > 0.10$) is used throughout to exclude col
 \caption{Degeneracy classification under alternative $\text{pred\_SD}$ thresholds. D = degenerate at that threshold.}
 \label{tab:deg-sensitivity}
 \small
-\begin{tabular}{lccccc}
+\begin{tabular}{@{}lccccc@{}}
 \toprule
 Threshold & $<$0.05 & $<$0.08 & $<$0.10 & $<$0.15 & $<$0.20 \\
 \midrule
