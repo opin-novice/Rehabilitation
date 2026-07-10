@@ -193,37 +193,6 @@ The DAG is designed to resume from partial completion (e.g., staggered overnight
 
 ---
 
-## Manuscript
-
-The full manuscript is written for **IEEE Transactions on Neural Systems and Rehabilitation Engineering (TNSRE)**:
-
-- [`manuscript.tex`](manuscript.tex) — LaTeX source (IEEEtran format)
-- [`manuscript.md`](manuscript.md) — Markdown version for easy review
-
-### Outline
-1. **Introduction** — motivation, gap, contributions
-2. **Related Work** — KIMORE benchmarks, SSL for skeletons, cross-sensor transfer
-3. **Methods** — datasets, SSL pretraining, 77-fold LOSO, zero-shot protocol, statistical testing
-4. **Results** — zero-shot (chance-level), LOSO (SSL FT = scratch), scale ablation, protocol invariance
-5. **Discussion** — why SSL fails, implications, rigor hooks, limitations, future work
-6. **Conclusion**
-
----
-
-## Citation
-
-If you use this code or build on this work, please cite:
-
-```bibtex
-@article{rehabilitation2026ssl,
-  title={Self-Supervised Pretraining Does Not Rescue Zero-Shot Cross-Sensor Rehabilitation Quality Assessment},
-  author={Author, A. and Author, B. and Author, C.},
-  journal={IEEE Transactions on Neural Systems and Rehabilitation Engineering},
-  year={2026}
-}
-```
-
----
 
 ## License
 
