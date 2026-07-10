@@ -560,14 +560,30 @@ _ENCODER_BUILDERS = {
         num_layers=kw.get("lstm_layers", 2),
         dropout=kw.get("dropout", 0.3),
     ),
+    "curvenet": lambda **kw: _build_curvenet_encoder(**kw),
 }
+
+
+def _build_curvenet_encoder(**kw):
+    """Build CurveNet encoder with SSL-compatible interface."""
+    from models_curvenet import PointCloudTransformerRegressor
+    return PointCloudTransformerRegressor(
+        seq_len=kw.get("seq_len", 100),
+        num_joints=kw.get("num_joints", 25),
+        num_channels=kw.get("num_channels", 3),
+        dim=kw.get("dim", 256),
+        dropout=kw.get("dropout", 0.1),
+        k=kw.get("k", 20),
+        curve_setting=kw.get("curve_setting", "default"),
+    )
 
 
 def build_encoder(model_type: str = "tcn", **kw) -> nn.Module:
     """Return a backbone exposing `forward_features(x) -> (B, out_dim)`.
 
-    Supported: "tcn", "lstm" (the plan's two SSL arms). Other backbones can be
-    added by implementing `forward_features`/`out_dim` and registering here.
+    Supported: "tcn", "lstm", "curvenet" (point-cloud transformer from
+    Rafat et al. JBHI 2026). Other backbones can be added by implementing
+    `forward_features`/`out_dim` and registering here.
     """
     key = model_type.lower()
     if key not in _ENCODER_BUILDERS:
