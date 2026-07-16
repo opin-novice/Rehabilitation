@@ -1,0 +1,15 @@
+# Live webcam demo dependencies (capstone-showcase branch).
+# Verified on Python 3.14 / Windows 11. Python >= 3.10 should work.
+#
+# NOTE ON TORCH: this pin is the CPU-or-CUDA-agnostic name. The demo runs fine on CPU
+# (~inference every 6th frame). If the demo PC has an NVIDIA GPU and you want it used,
+# install torch from the CUDA index FIRST, then run this file:
+#     pip install torch --index-url https://download.pytorch.org/whl/cu128
+#     pip install -r demo/requirements.txt
+
+torch>=2.4
+e3nn==0.6.0
+mediapipe>=0.10.30
+opencv-python>=4.8
+numpy>=1.26
+scipy>=1.11
