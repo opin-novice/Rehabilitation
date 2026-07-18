@@ -1,0 +1,379 @@
+% =====================================================================
+%  Viewpoint Invariance Is a Theorem, Not a Fit
+%  SE(3)-equivariant recurrence for rehabilitation exercise assessment
+%
+%  Main file. Compiles as:  pdflatex paper && pdflatex paper
+%  \input's the two sections that already exist and are NOT edited here:
+%     methodology.tex  -> Sec. III
+%     results.tex      -> Sec. IV
+%
+%  EVERY number quoted in the abstract/intro/conclusion is traceable to
+%    outputs/cde_block2/final_tables.json  (regenerate: python src/aggregate_final.py)
+%  or to the certificate gates E1-E8 in src/certify_egru.py.
+%  Nothing here is hand-typed that is not also in results.tex.
+% =====================================================================
+
+\documentclass[10pt,journal]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{bm}
+\usepackage{mathtools}
+\let\proof\relax
+\let\endproof\relax
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{hyperref}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\hyphenation{equi-var-i-ant in-var-i-ant re-ha-bi-li-ta-tion re-sam-pling view-point}
+
+\begin{document}
+
+\title{Viewpoint Invariance Is a Theorem, Not a Fit:\\%
+An $SE(3)$-Equivariant Recurrence for\\%
+Rehabilitation Exercise Assessment}
+
+\author{Sayed~Ashraful~Islam~Opin~\IEEEmembership{Student Member, IEEE}
+        and~Shafin~Rahman~\IEEEmembership{Member, IEEE}%
+\thanks{This work was supported by ...}
+\thanks{S.~A.~I.~Opin and S.~Rahman are with the Department of Electrical and Computer Engineering, North South University, Dhaka, Bangladesh (e-mail: ...).}}
+
+\maketitle
+
+% ===================================================================
+\begin{abstract}
+Automated rehabilitation scoring from skeleton sequences is evaluated almost exclusively on clean, frontal recordings --- a regime in which architectures are indistinguishable and deployment failures are invisible. We show both halves of that claim on KIMORE. First, clean accuracy decides nothing: a $4.91$M-parameter point-cloud transformer (PCT), a $0.66$M-parameter $SE(3)$-equivariant recurrence, and a $0.21$M-parameter GRU on hand-crafted $SO(3)$ invariants score $6.47\pm0.20$, $6.73\pm0.30$ and $6.31\pm0.16$ MAD --- every gap inside the $0.33$ MAD spread that training nondeterminism alone produces. A protocol audit shows the standard single-exercise slice of this benchmark carries \emph{no subject-level signal at all} once epoch selection is made honest, so we pool and gate every experiment on a mean-predictor floor. Second, under deployment stress the models separate completely. Our read-out is $SE(3)$-invariant \emph{by construction} --- a property of the architecture, certified numerically to $2.9\times10^{-16}$ with a flat log--log slope in rotation angle ($+0.160$) and an $8.0\times10^{8}$ fp32/fp64 ratio, and holding for arbitrary weights. Rotating the test camera therefore moves our score by $9\times10^{-6}$ MAD, while PCT decays past the mean predictor between $30^\circ$ and $45^\circ$. Azimuth augmentation does rescue the baseline's \emph{aggregate} accuracy, but at a flat $+1.0$ MAD cost and with a per-sequence score shift of $3.03$ MAD: a flat accuracy curve is a statistical fact about a population, not a guarantee about a patient. We report two negative results in full. Native consumption of irregular arrival times buys nothing here, and we derive why: a spectral census shows resampling destroys only $2.2\%$ of KIMORE's positional energy and acts as a denoiser, though the mechanism is real (grid-free tremor recovery holds at $r=1.000$ under $70\%$ drops where a resampled estimator decays to $0.785$). And restoring chirality --- closing a parity hole that made the invariant read-out silently $O(3)$-invariant and provably blind to trajectory handedness --- costs the viewpoint theorem nothing but buys no accuracy on a corpus of healthy-form exercises. What justifies the steerable encoder is measured, not argued: when a tracking node freezes, the hand-crafted invariant model collapses through the floor at a \emph{single} dead joint ($6.31\!\to\!9.78$ MAD) while the graph-structured encoder degrades gracefully. Among models with an exact viewpoint guarantee, only the equivariant one survives a broken sensor --- at $7.4\times$ fewer parameters than the baseline. Because the guarantee is architectural rather than learned, it is also co-designed for the edge: the read-out streams causally at $8.9$~ms per frame ($112$~fps, a score before the exercise ends), and under int8 quantisation weight-rounding preserves the viewpoint theorem \emph{exactly} while only activation-rounding perturbs the reported score --- by $0.05$~MAD, two orders below the clinical floor.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Equivariance, $SE(3)$, rehabilitation exercise assessment, viewpoint invariance, skeleton sequences, irregular sampling, real-time streaming inference, edge quantisation, time-to-first-score, KIMORE, NTU RGB+D, negative results.
+\end{IEEEkeywords}
+
+% ===================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Automated assessment of physical rehabilitation exercises from skeleton sequences promises objective, remote, and continuous monitoring of therapy \cite{capecci2019kimore}. The dominant evaluation regime, however, is a narrow one. Models are trained and tested on clean, frontal recordings from a single sensor, and are ranked by a single aggregate error against a physician's score \cite{karlov2024,abedi2023,kuang2026,pct2026}. That regime rewards capacity and penalises nothing that a deployed system would actually encounter: a camera placed against a different wall, a tracking node that stops updating, a dropped frame.
+
+This paper is an argument that the regime, not the architectures, is the problem --- and it begins by conceding the point the regime is supposed to settle. On clean, frontal KIMORE our proposed model \textbf{does not beat} the point-cloud transformer baseline. Neither does a GRU fed six lines of hand-crafted invariant features. The three are statistically indistinguishable, and we can say so precisely because we first measured what a difference has to exceed to be a difference: training on this corpus is not bit-reproducible (nondeterministic cuDNN and scatter-add kernels), and repeated fits of an \emph{identical} configuration differ by $\approx\!0.33$~MAD --- larger than every clean-accuracy gap between the leading models in this paper. Any single-run comparison on this benchmark is therefore reporting its own seed.
+
+The situation is worse than a tie. Auditing the reference protocol on the single-exercise slice on which KIMORE results are most often reported, we find that the published practice of selecting the reported epoch by its test-set minimum is worth $+1.111$~MAD ($16.8\%$) --- and that once it is removed, the honest number is \emph{statistically indistinguishable from a model that ignores its input entirely} (paired subject-cluster bootstrap $\Delta=-0.081$, $95\%$ CI $[-0.803,+0.625]$). It is not subject leakage: on that slice each subject contributes one recording, so a random split is already subject-disjoint. The slice simply has no subject-level signal to measure. Pooling the five exercises restores it, and every experiment below is consequently pooled, subject-disjoint, and gated on provably clearing a per-exercise mean-predictor floor --- because a model that ignores its input has \emph{zero} degradation under any corruption and would win every robustness plot ever drawn.
+
+With clean accuracy neutralised as a discriminator, the question becomes what a structural guarantee buys. We formulate assessment as an \emph{invariant read-out of an equivariant representation}: a steerable message-passing encoder on the skeleton graph produces per-joint features carrying $O(3)$ irreducible representations, an explicit projection onto a generating set of invariants discharges the symmetry, and a recurrence consumes the resulting invariant code together with the sensor's actual inter-arrival times. Invariance of the predicted score under any rigid motion of the camera is then a theorem about the architecture (Prop.~\ref{prop:invariance}), true for arbitrary weights --- trained, untrained, or adversarially chosen --- rather than a behaviour induced by augmenting the training set.
+
+The distinction is not scholastic, and the experiments are designed to make it bite. A rotation-augmented baseline has a \emph{flat aggregate accuracy curve} across camera azimuth; by the metric the field reports, it has solved viewpoint. Its per-sequence degradation is $3.03$~MAD: individual patients' scores swing by three points of fifty as the camera moves, and the errors merely cancel in the mean. Ours move by $9\times10^{-6}$. A screening instrument is required to return the same patient the same score from a different room, and that is a statement about each prediction, not about a population average. We therefore report degradation and accuracy side by side throughout, and neither alone.
+
+We also report, in full, the two places where the structural story does \emph{not} pay. Consuming irregular arrivals natively --- the standard motivation for continuous-time models --- confers no advantage on KIMORE; the fixed-grid baseline is better on both accuracy and stability at every drop level, under an identical hash-locked augmentation budget. Rather than excuse this, we derive it: a model-free spectral census shows $97.7\%$ of the corpus's positional energy lies below the baseline's resampling corner, so the resampling operator destroys $2.2\%$ of the signal and mostly discards differencing-amplified sensor noise. It is a \emph{denoiser}, and the null was predictable before the experiment was run. That the mechanism nevertheless exists we confirm by placing signal in the destroyed band: a physiologically calibrated $5$~Hz tremor is recovered from the true irregular stamps at $r=1.000$ under drop rates up to $70\%$, while a resampled estimator decays to $0.785$. The claim is a scope boundary, not a defeat. Likewise, closing the model's parity hole --- the invariant cut we and, to our knowledge, every comparable construction emit is composed entirely of parity-\emph{even} features, and is therefore silently invariant to a mirror of the entire performance, hence blind to trajectory handedness --- costs the viewpoint theorem nothing but earns no accuracy on a corpus of healthy-form prescribed exercises, which contains no chiral pathology to detect. We adopt the fix anyway, on the grounds that the architecture should not \emph{assume} handedness is irrelevant, and we say plainly that it is unrewarded here.
+
+Finally, the tie with the hand-crafted invariant model leaves an obligation that elegance cannot discharge: if a plain GRU on named geometric features is exactly as accurate \emph{and} exactly as viewpoint-invariant, the steerable machinery is unjustified. We discharge it with a measurement. When Kinect tracking nodes freeze --- the characteristic failure of a consumer depth sensor --- the hand-crafted model does not degrade, it detonates: a \emph{single} dead joint drives it from $6.31$ to $9.78$~MAD, through the mean-predictor floor, because its features \emph{name} the joints they depend on. The graph encoder pools learned messages over the skeleton and dilutes the same failure across $25$ joints. This is invisible in every clean-accuracy column in the paper, which is exactly why it had to be measured separately.
+
+Finally, we treat the viewpoint guarantee as a \emph{systems} property, not only a mathematical one: we audit its precision budget under aggressive integer quantisation and convert the read-out to true frame-by-frame causal streaming, and find that geometric exactness survives to int8 --- where only activation-rounding, not weight-rounding, perturbs it --- and runs strictly causally at $8.9$~ms per frame with no full-clip buffering, so a structural safety guarantee and low-power, real-time operation are co-designed rather than traded off. This is the third axis on which architecture, and not accuracy, is the decisive variable.
+
+Our contributions are:
+
+\begin{enumerate}
+\item \textbf{A protocol audit that establishes what the benchmark can measure.} Optimistic epoch selection inflates the standard KIMORE single-exercise result by $16.8\%$, and the honest number does not beat a mean predictor. We identify the mechanism (it is \emph{not} subject leakage), fix a pooled protocol, quantify the $0.33$~MAD nondeterminism floor below which no accuracy difference is interpretable, and gate every subsequent claim on clearing the floor.
+
+\item \textbf{Exact viewpoint invariance, certified rather than asserted.} An $SE(3)$-invariant read-out over a steerable encoder, audited by eight numerical gates (E1--E8): representation orthogonality $\le10^{-12}$, violation at machine roundoff with a \emph{flat} log--log slope in rotation angle ($+0.160$), an fp32/fp64 violation ratio of $8.0\times10^{8}$, and translation invariance at $2.6\times10^{-16}$. Magnitude alone would not license the word ``zero''; flatness and precision-scaling exclude a small modelling violation masquerading as noise. Measured cross-viewpoint degradation is $9\times10^{-6}$~MAD against the baseline's $9.42$, and the baseline crosses the mean-predictor floor between $30^\circ$ and $45^\circ$.
+
+\item \textbf{A co-designed deployment path: a structural quantisation audit and a causal streaming read-out.} The guarantee is not merely an fp64 identity, and we engineer it to hold on the hardware a home device actually runs. Auditing its precision budget from fp64 to int8, we find the theorem survives \emph{weight} quantisation exactly (equivariance holds for arbitrary weights, so a quantised model is simply a different equivariant model), and that the $\times10^{5}$ floor cliff is attributable \emph{solely} to activation grid-rounding of the steerable channels --- a structural, not a weight-precision, phenomenon --- while the reported clinical score still moves only $0.05$~MAD, below the floor. And because the invariance lives entirely in a per-frame encoder and an invariant cut, the read-out converts to a strictly causal, unidirectional form with a running-mean pool that emits a first score $8.9$~ms after the first frame ($112$~fps) and preserves invariance to $1.4\times10^{-8}$, giving the architecture an honest time-to-first-score for real-time use (Sec.~\ref{sec:deploy}). The theorem is engineered to hold from fp64 to int8 and from full-clip to first-frame, not only in exact arithmetic on a full recording.
+
+\item \textbf{The capacity tax of learned invariance, and the sense in which a flat curve is not invariance.} Azimuth augmentation does flatten the baseline's aggregate response, at a flat $+1.0$~MAD penalty that parks it \emph{at} the floor --- and it leaves a $3.03$~MAD per-sequence score shift that aggregate MAD cannot express. We grant the baseline this remedy explicitly rather than defeat a strawman.
+
+\item \textbf{A parity hole in invariant skeleton read-outs, exhibited and closed.} Gate E6 shows the parity-even cut returns \emph{bit-identical} output on a mirrored body: an unintended $O(3)$-invariance. We restore $SO(3)$ with pseudo-scalar triple products and anatomical signed volumes, re-certify read-out invariance at $2.9\times10^{-16}$ (the fix is free), and separately measure --- against the natural objection --- that reflection-blindness was never left/right-blindness (gate E7).
+
+\item \textbf{Two negative results, one of them derived.} Grid-free consumption of arrival times buys nothing on KIMORE, and a spectral census predicts exactly that ($2.2\%$ of positional energy destroyed; the mechanism verified live at $r=1.000$ tremor recovery). Chirality is restored but unrewarded. We state both as scope boundaries with the corpus properties that would reward them.
+
+\item \textbf{A measured justification for the steerable encoder: sensor-node failure.} Among models carrying an exact viewpoint guarantee, only the graph-structured one survives a broken tracking node ($+3.76$ vs.\ $+12.05$~MAD over $8$ dead joints). We also record, against ourselves, that the point-cloud transformer is the most node-robust model of the three --- robustness to node failure is not a property of equivariance and we do not claim it is. The defensible claim is the Pareto one: our model is the only arm that clears the floor under \emph{both} a $90^\circ$ camera move and two dead joints while retaining a per-prediction guarantee, at $7.4\times$ fewer parameters than the baseline.
+\end{enumerate}
+
+% ===================================================================
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Rehabilitation Exercise Assessment from Skeletons}
+KIMORE \cite{capecci2019kimore} is the standard benchmark: subjects perform five trunk and hip exercises, each scored $0$--$50$ by a clinician. Reported results span a wide range of architectures --- ST-GCN variants with supervised contrastive objectives \cite{karlov2024}, cross-modal augmentation \cite{abedi2023}, dual-stream spatio-temporal graph networks \cite{kuang2026}, and, most relevantly here, point-cloud transformers that treat the skeleton as an unordered set of $3$D points with axial self-attention \cite{pct2026}. Ismail-Fawaz et al.\ \cite{rehabpile2026} aggregate KIMORE, UI-PRMD \cite{vakanski2018uiprmd} and IRDS under cross-subject splits and report error rather than rank correlation, and their protocol discipline is the closest antecedent of our own audit.
+
+Two properties of this literature motivate the present work. First, evaluation is uniformly in-distribution: same sensor, same camera placement, no simulated hardware failure. Second, protocols differ enough that headline numbers are not comparable --- a point we make quantitative in Sec.~\ref{sec:results:protocol}, where we isolate optimistic epoch selection as a $16.8\%$ effect on the most commonly reported slice, and where we find that slice to carry no subject-level signal at all. To our knowledge no prior work on this task reports a mean-predictor floor, and without one a degradation curve cannot be interpreted.
+
+\subsection{Equivariant and Invariant Architectures}
+Group-equivariant networks impose symmetry as a constraint on the hypothesis class rather than a target of fitting \cite{cohen2016gconv}. For $3$D geometry the steerable family --- tensor-field networks \cite{thomas2018tfn}, $SE(3)$-Transformers \cite{fuchs2020se3transformer}, and the \texttt{e3nn} framework \cite{geiger2022e3nn} --- carries features in irreducible representations of $O(3)$ and constrains every layer to intertwine with the Wigner-$D$ action, guaranteeing equivariance for arbitrary weights. Lighter constructions obtain $E(n)$-equivariance without spherical harmonics \cite{satorras2021egnn}, or lift a network to $SO(3)$-equivariance by replacing scalar neurons with vector-valued ones \cite{deng2021vectorneurons}. We build the spatial encoder on \cite{geiger2022e3nn}, but the paper's claim is deliberately \emph{not} about steerable machinery: we show a GRU on hand-crafted $SO(3)$ invariants attains the same accuracy and the same exact viewpoint guarantee at a third of the parameters, and we then isolate --- by measurement, in Sec.~\ref{sec:results:nodefail} --- the one axis on which the two genuinely differ.
+
+An orthogonal line makes a non-equivariant backbone invariant by canonicalisation or frame averaging \cite{puny2022frameaveraging}, which is exact but pays a forward-pass or a learned-canonicaliser cost. Our invariant cut can be read as an explicit projection onto a generating set of invariants of the latent, and Sec.~\ref{sec:method:cut} makes the resulting group precise --- including the observation, which we have not seen stated, that the natural such cut is complete for $O(3)$ rather than $SO(3)$ and is therefore blind to trajectory handedness until pseudo-scalars are admitted.
+
+\subsection{Learned Invariance and Its Price}
+The default remedy for viewpoint variation is training-time augmentation, and it works in the sense the field measures: an augmented model's aggregate error becomes approximately flat in camera angle. We grant the baseline exactly this remedy and report what it costs --- a flat accuracy penalty, and a per-sequence score shift that survives the augmentation because augmentation makes errors \emph{cancel} rather than \emph{vanish}. The distinction between a symmetry that holds in expectation over a training distribution and one that holds identically for every input is, in a clinical instrument, the whole point; it is expressible only if degradation is reported per sequence, which is why we report it alongside accuracy everywhere.
+
+\subsection{Irregular Sampling and Continuous-Time Models}
+Depth-sensor streams are not uniformly sampled: our anchor KIMORE recording has $C_V=0.25$ in its inter-arrival times with genuine multi-frame dropouts. The standard treatment is to resample onto a uniform grid; the standard alternative is a continuous-time model that consumes arrival times natively --- Neural ODEs \cite{chen2018neuralode}, latent ODEs and ODE-RNNs for irregularly sampled series \cite{rubanova2019odernn}, Neural CDEs driven by an interpolant of the observations \cite{kidger2020neuralcde}, or recurrences with explicit decay between observations \cite{che2018grud}. We implement the Neural CDE variant, certify it to the same standard as the proposed model, and report it as a \emph{control}: it satisfies an exact equivariance certificate and \emph{fails} the mean-predictor floor, which is the cleanest demonstration we can offer that a structural guarantee is worthless without measured signal, and the reason our evaluation gates on the floor at all.
+
+Our analysis of the adaptive solver (Sec.~\ref{sec:method:cde-control}) identifies a failure mode we have not seen documented: a Dormand--Prince controller \cite{dormand1980prince} accepts or rejects steps on a scalar reduction of the embedded error, and the standard per-component scaled RMS norm is \emph{not} group-invariant even when the vector field is exactly equivariant and the representation orthogonal. The rotated and unrotated integrations then receive different step grids and silently de-align. We prove the condition under which this happens and construct a per-irrep-normalised norm that removes it, driving grid divergence to identically zero.
+
+Finally, the negative result of Sec.~\ref{sec:results:resampling} is stated as a bandwidth condition and verified in both directions, the constructive half using the classical fact that irregularly sampled data have no single Nyquist frequency and do not alias --- the basis of the Lomb--Scargle construction \cite{vanderplas2018lombscargle} --- which is precisely why a grid-free estimator recovers a $5$~Hz tremor that a uniform grid at the same average rate folds onto itself irrecoverably.
+
+\subsection{Robustness to Missing and Corrupted Joints}
+Occlusion and tracking failure are standard concerns in skeleton-based action recognition, typically addressed by masking-based pretraining or by attention that can down-weight anomalous joints \cite{yan2018stgcn}. We adopt the failure literally --- a Kinect node that stops updating and reports a stale estimate --- and use it as the discriminating experiment between two models that are otherwise indistinguishable in accuracy \emph{and} in viewpoint guarantee. The result is a mechanism, not a leaderboard entry: features that name their joints are brittle to a dead joint in a way that pooled graph messages are not.
+
+% ===================================================================
+\input{methodology}
+
+% ===================================================================
+\input{results}
+
+% ===================================================================
+\section{Edge Deployment: Precision Budget and Streaming Latency}
+\label{sec:deploy}
+
+The viewpoint guarantee is a statement about real arithmetic; a device in a patient's home runs
+reduced precision and must produce a score before the exercise is over. We close the paper by
+measuring what the theorem costs on edge hardware, on the \emph{deployed} clinical model and on a
+causal, real-time variant of the encoder. Both are deployment questions the clean-accuracy column
+cannot ask.
+
+\subsection{Equivariance Has a Precision Budget}
+\label{sec:deploy:precision}
+
+Quantisation is not an orthogonal transformation, so it does not commute with the Wigner-$D$ action:
+the exact identity $s(g\cdot x)=s(x)$ acquires a numerical floor once the representation is stored in
+fewer bits. We measure it on the trained pooled EGRU over $40$ real KIMORE sequences $\times\,64$
+camera azimuths, constructing each arithmetic \emph{natively} (the Clebsch--Gordan tables are built
+in the target format, not cast after the fact, which would report a spurious floor). We report two
+quantities: the relative violation of the $160$-dimensional invariant projection --- the true
+arithmetic floor, which does not saturate --- and the resulting movement of the reported $0$--$50$
+score, in the MAD units a clinician reads (Table~\ref{tab:precision}). The fp32 row reproduces the
+$9\times10^{-6}$~MAD residual of Table~\ref{tab:viewpoint}: that number was the fp32 point of a ladder.
+
+The floor climbs monotonically with the mantissa, spanning fourteen decades from fp64 to int8 ---
+equivariance has a measurable precision budget. Two details matter for deployment. First, fp16 is
+$3.2\times$ tighter than bf16 despite equal width: bf16 trades mantissa for exponent range, and
+equivariance pays in mantissa bits, so fp16 is the better half-precision target for this model.
+Second, int8 (simulated per-tensor symmetric fake-quantisation with an MSE-calibrated scale, since
+\texttt{e3nn} has no native int8 kernel) falls \emph{off} the float curve, and decomposing it is the
+point: quantising the \emph{weights} leaves the floor at its fp32 value ($3.1\times10^{-7}$), because
+the encoder is equivariant for arbitrary weights --- a quantised model is simply a different
+equivariant model. The cliff to $3.4\times10^{-2}$ appears only when the \emph{activations} are
+quantised, because rounding the type-$1$ (vector) channels and the rotated joints onto a fixed grid
+is basis-dependent: $\mathrm{round}(\rho(g)\,v)\neq\rho(g)\,\mathrm{round}(v)$. The structural break
+is an activation-quantisation phenomenon, not a weight-precision one.
+
+Yet the \emph{clinical} consequence stays small. Even at int8, the reported score moves by
+$0.05$~MAD --- two orders below the mean-predictor floor and $60\times$ smaller than the $3.03$~MAD
+per-sequence swing that camera rotation inflicts on the augmented baseline (Table~\ref{tab:viewpoint}).
+Int8 shatters \emph{exact} structural equivariance while leaving the deployed instrument's output
+clinically stationary: the honest arithmetic number and the honest deployment number are different
+numbers, and we report both.
+
+\begin{table}[!t]
+\centering
+\caption{Equivariance precision budget of the deployed pooled EGRU (real KIMORE motion, $64$
+azimuths, native per-format construction). ``INV floor'' is
+$\max_g\lVert\mathrm{inv}(g\cdot x)-\mathrm{inv}(x)\rVert/\lVert\mathrm{inv}(x)\rVert$ on the
+invariant projection; ``Score shift'' is the movement of the reported $0$--$50$ score. The int8 rows
+decompose the cliff into its weight- and activation-quantisation parts.}
+\label{tab:precision}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+Arithmetic & INV floor (rel.) & Score shift (MAD) & Note \\
+\midrule
+fp64 & $5.75\times10^{-16}$ & $3.3\times10^{-14}$ & exact (theorem) \\
+fp32 & $2.68\times10^{-7}$  & $8.9\times10^{-6}$  & = Table~\ref{tab:viewpoint} \\
+fp16 & $2.62\times10^{-3}$  & $0.024$             & $>$ bf16 \\
+bf16 & $8.34\times10^{-3}$  & $0.195$             & \\
+\midrule
+int8, weights only      & $3.09\times10^{-7}$ & $1.2\times10^{-5}$ & theorem holds \\
+int8, activations only  & $3.38\times10^{-2}$ & $0.056$           & cliff \\
+int8, weights+acts      & $\mathbf{3.40\times10^{-2}}$ & $\mathbf{0.051}$ & deployable \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Causal Streaming and Time-to-First-Score}
+\label{sec:deploy:streaming}
+
+A high-accuracy skeleton classifier is often bidirectional and pools over the whole clip, so it
+cannot emit a score until the last frame arrives --- it has no honest latency. Because our viewpoint
+guarantee lives entirely in a per-frame spatial encoder followed by an invariant cut, it survives
+conversion to a strictly causal read-out unchanged: replacing the bidirectional recurrence with a
+unidirectional one and the full-sequence pool with a causal running mean touches nothing left of the
+cut. We verify this on the NTU~RGB+D~$60$ Cross-View action benchmark, where high-frequency motion
+actually exercises a streaming model, using the identical equivariant encoder trained for that task;
+the causal head is retrained on the frozen encoder's features (Table~\ref{tab:streaming}).
+
+The conversion costs $3.17$ points of top-$1$ accuracy ($82.98\!\to\!79.81\%$) --- the price of
+never seeing the future --- and buys a genuine real-time budget: a full incremental step (encoder,
+invariant projection, one recurrent update, running-mean pool, head) runs in $8.9$~ms on a single
+GPU, or $112$~frames per second, comfortably inside the $33$~ms budget of a $30$~fps sensor. The
+first score therefore exists $8.9$~ms after the first frame. It is not yet \emph{trustworthy} that
+early: read out at each frame, the causal running-mean prediction rises from chance ($1.9\%$ at one
+frame) through $45\%$ at $50$ frames to $80.6\%$ at $100$, and locks onto the eventual class after a
+median of $54$ frames. We report the whole trajectory rather than a single latency, because ``time
+to a \emph{correct} score'' and ``time to \emph{a} score'' are different guarantees. Throughout, the
+viewpoint theorem is undamaged: the streaming logits are viewpoint-invariant to $1.4\times10^{-8}$
+in fp64, statistically the same floor as the bidirectional model's $5.8\times10^{-9}$ (the residual
+is the invariant-projection floor of Sec.~\ref{sec:deploy:precision} amplified through the recurrent
+head, not a symmetry violation). Real-time causal operation and the per-prediction guarantee are not
+in tension.
+
+\begin{table}[!t]
+\centering
+\caption{Bidirectional vs.\ causal-streaming EGRU on NTU~RGB+D~$60$ Cross-View. The streaming variant
+reuses the \emph{same} equivariant encoder; only the temporal read-out changes (unidirectional
+recurrence, causal running-mean pool). Latency is a genuine per-frame incremental step with the
+hidden state carried, not a whole-clip forward pass.}
+\label{tab:streaming}
+\scriptsize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lcc}
+\toprule
+ & Bidirectional & Causal streaming \\
+\midrule
+Top-1 accuracy (\%)             & $82.98$        & $79.81$ \\
+Per-frame latency               & ---            & $8.9$~ms ($112$~fps) \\
+Time-to-first-score             & full clip      & $8.9$~ms \\
+Frames to lock on (median)      & ---            & $54$ \\
+Viewpoint residual (fp64)       & $5.8\times10^{-9}$ & $1.4\times10^{-8}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ===================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+We set out to beat a point-cloud transformer on rehabilitation assessment and, on the metric the field reports, we did not: on clean frontal KIMORE our model, the baseline, and a GRU on hand-crafted invariants are statistically tied, and we quantified the nondeterminism floor ($0.33$~MAD) that makes them tied rather than merely close. We regard establishing that as a contribution rather than a concession, because it forces the real question. Clean accuracy on this benchmark cannot separate architectures; on the single-exercise slice most commonly reported, it cannot even separate a trained model from a mean predictor once epoch selection is made honest.
+
+What separates them is what happens off the clean, frontal manifold. Our read-out is $SE(3)$-invariant by construction and certified to machine roundoff --- flat in rotation angle, with an eight-order fp32/fp64 precision-scaling signature --- so moving the camera moves a patient's score by $9\times10^{-6}$~MAD, for arbitrary weights. The baseline, which must learn its invariance, degrades past the mean predictor by $45^\circ$. Augmentation genuinely rescues it in the aggregate, and we say so; what it does not rescue is the individual prediction, which still swings by $3.03$~MAD --- three points of fifty --- purely by relocating the camera. A screening instrument must return the same patient the same score from a different room. That requirement is per-prediction, and only the architecture supplies it.
+
+We reported two nulls without softening them. Native consumption of irregular arrival times bought nothing here, and we derived the operating condition that made the null predictable in advance: the resampling operator a fixed-grid model is forced to apply destroys $2.2\%$ of KIMORE's positional energy and functions as a denoiser, because a corpus of slow prescribed exercises has essentially no energy above the resampling corner. The mechanism is nonetheless real, and we verified it by putting signal where the operator is lossy: a grid-free estimator tracks a $5$~Hz tremor at $r=1.000$ through $70\%$ frame drops while a resampled one decays to $0.785$. Grid-free modelling is a claim about tremor, spasticity, clonus and fast motion under real dropout --- not about this corpus, and we decline to assert it on a corpus that cannot test it. Similarly, closing the parity hole is principled but empirically unrewarded: healthy-form prescribed exercises contain no chiral pathology, so the pseudo-scalars buy nothing here beyond the removal of an assumption the architecture had been making silently.
+
+The steerable encoder earns its place on one axis, and it is measured rather than argued. When a tracking node freezes, the hand-crafted invariant model --- equally accurate, equally viewpoint-exact, three times smaller --- collapses through the mean-predictor floor at a \emph{single} dead joint, because its features name the joints they depend on. The graph encoder dilutes the same failure across the skeleton. We are careful about what this does and does not say: the point-cloud transformer is in fact the most node-robust model of the three, and robustness to node failure is not a property of equivariance. The defensible claim is the Pareto one. Among models that carry an exact, per-prediction viewpoint guarantee, only the graph-structured equivariant one survives a broken sensor --- and it does so at $7.4\times$ fewer parameters than the transformer it is compared against.
+
+Two recommendations follow for the field. First, report a mean-predictor floor and a per-sequence degradation alongside aggregate error; without the former a robustness curve is uninterpretable, and without the latter a model whose errors merely cancel is indistinguishable from one that is invariant. Second, evaluate off the frontal manifold as a matter of course --- camera relocation and sensor-node failure are not adversarial constructions but the ordinary conditions of a device deployed in a patient's home. The corpus that would reward the two capabilities we built and could not vindicate here --- high-frequency clinical content at the sensor's native rate, and unilateral or rotational pathology --- is the one we intend to build next.
+
+\subsection*{Code and Data Availability}
+KIMORE \cite{capecci2019kimore} is publicly available from its authors. The equivariance certificate (gates E1--E8), the corruption pipeline, the spectral census, the node-failure harness, and the aggregation script that regenerates every number in this paper from banked artifacts will be released at \url{https://github.com/opin-novice/Rehabilitation} upon acceptance.
+
+% ===================================================================
+\begin{thebibliography}{00}
+
+\bibitem{capecci2019kimore}
+M.~Capecci, M.~G.~Ceravolo, F.~Ferracuti, S.~Iarlori, A.~Monteriu, L.~Romeo, and F.~Verdini,
+``The KIMORE dataset: Kinematic assessment of movement and clinical scores for remote monitoring of physical rehabilitation,''
+\textit{IEEE Trans. Neural Syst. Rehabil. Eng.}, vol.~27, no.~7, pp.~1436--1448, 2019.
+
+\bibitem{pct2026}
+``A point cloud transformer for remote monitoring and automated assessment of physical rehabilitation exercises,''
+arXiv:2606.30309, 2026.
+
+\bibitem{karlov2024}
+M.~Karlov, A.~Abedi, and S.~S.~Khan,
+``Rehabilitation exercise quality assessment through supervised contrastive learning with hard and soft negatives,''
+\textit{Med. Biol. Eng. Comput.}, 2024.
+
+\bibitem{abedi2023}
+A.~Abedi, M.~Malmirian, and S.~S.~Khan,
+``Cross-modal video to body-joints augmentation for rehabilitation exercise quality assessment,''
+arXiv:2306.09546, 2023.
+
+\bibitem{kuang2026}
+Z.~Kuang, Y.~Yin, Y.~Yang, J.~Zhao, and L.~Sun,
+``Dual-stream STGCN with motion-aware grouping for rehabilitation action quality assessment,''
+\textit{Sensors}, vol.~26, no.~1, p.~287, 2026.
+
+\bibitem{rehabpile2026}
+A.~Ismail-Fawaz et al.,
+``Rehab-Pile: A cross-subject rehabilitation benchmark aggregating KIMORE, UI-PRMD and IRDS,''
+arXiv:2507.21018, IEEE FG 2026.
+
+\bibitem{vakanski2018uiprmd}
+A.~Vakanski, H.-P.~Jun, D.~Paul, and R.~Baker,
+``A data set of human body movements for physical rehabilitation exercises (UI-PRMD),''
+\textit{Data}, vol.~3, no.~1, p.~2, 2018.
+
+\bibitem{yan2018stgcn}
+S.~Yan, Y.~Xiong, and D.~Lin,
+``Spatial temporal graph convolutional networks for skeleton-based action recognition,''
+in \textit{Proc. AAAI}, 2018.
+
+\bibitem{cohen2016gconv}
+T.~S.~Cohen and M.~Welling,
+``Group equivariant convolutional networks,''
+in \textit{Proc. ICML}, 2016.
+
+\bibitem{thomas2018tfn}
+N.~Thomas, T.~Smidt, S.~Kearnes, L.~Yang, L.~Li, K.~Kohlhoff, and P.~Riley,
+``Tensor field networks: Rotation- and translation-equivariant neural networks for 3D point clouds,''
+arXiv:1802.08219, 2018.
+
+\bibitem{fuchs2020se3transformer}
+F.~B.~Fuchs, D.~E.~Worrall, V.~Fischer, and M.~Welling,
+``SE(3)-Transformers: 3D roto-translation equivariant attention networks,''
+in \textit{Proc. NeurIPS}, 2020.
+
+\bibitem{geiger2022e3nn}
+M.~Geiger and T.~Smidt,
+``e3nn: Euclidean neural networks,''
+arXiv:2207.09453, 2022.
+
+\bibitem{satorras2021egnn}
+V.~G.~Satorras, E.~Hoogeboom, and M.~Welling,
+``E(n) equivariant graph neural networks,''
+in \textit{Proc. ICML}, 2021.
+
+\bibitem{deng2021vectorneurons}
+C.~Deng, O.~Litany, Y.~Duan, A.~Poulenard, A.~Tagliasacchi, and L.~Guibas,
+``Vector neurons: A general framework for SO(3)-equivariant networks,''
+in \textit{Proc. ICCV}, 2021.
+
+\bibitem{puny2022frameaveraging}
+O.~Puny, M.~Atzmon, H.~Ben-Hamu, I.~Misra, A.~Grover, E.~J.~Smith, and Y.~Lipman,
+``Frame averaging for invariant and equivariant network design,''
+in \textit{Proc. ICLR}, 2022.
+
+\bibitem{chen2018neuralode}
+R.~T.~Q.~Chen, Y.~Rubanova, J.~Bettencourt, and D.~Duvenaud,
+``Neural ordinary differential equations,''
+in \textit{Proc. NeurIPS}, 2018.
+
+\bibitem{rubanova2019odernn}
+Y.~Rubanova, R.~T.~Q.~Chen, and D.~Duvenaud,
+``Latent ODEs for irregularly-sampled time series,''
+in \textit{Proc. NeurIPS}, 2019.
+
+\bibitem{kidger2020neuralcde}
+P.~Kidger, J.~Morrill, J.~Foster, and T.~Lyons,
+``Neural controlled differential equations for irregular time series,''
+in \textit{Proc. NeurIPS}, 2020.
+
+\bibitem{che2018grud}
+Z.~Che, S.~Purushotham, K.~Cho, D.~Sontag, and Y.~Liu,
+``Recurrent neural networks for multivariate time series with missing values,''
+\textit{Sci. Rep.}, vol.~8, no.~1, p.~6085, 2018.
+
+\bibitem{cho2014gru}
+K.~Cho, B.~van Merri\"{e}nboer, C.~Gulcehre, D.~Bahdanau, F.~Bougares, H.~Schwenk, and Y.~Bengio,
+``Learning phrase representations using RNN encoder--decoder for statistical machine translation,''
+in \textit{Proc. EMNLP}, 2014.
+
+\bibitem{dormand1980prince}
+J.~R.~Dormand and P.~J.~Prince,
+``A family of embedded Runge--Kutta formulae,''
+\textit{J. Comput. Appl. Math.}, vol.~6, no.~1, pp.~19--26, 1980.
+
+\bibitem{vanderplas2018lombscargle}
+J.~T.~VanderPlas,
+``Understanding the Lomb--Scargle periodogram,''
+\textit{Astrophys. J. Suppl. Ser.}, vol.~236, no.~1, p.~16, 2018.
+
+\end{thebibliography}
+
+\end{document}

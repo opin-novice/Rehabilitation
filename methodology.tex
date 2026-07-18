@@ -1,0 +1,593 @@
+% =====================================================================
+%  Methodology -- SE(3)-Equivariant recurrence for rehabilitation assessment
+%
+%  Drop-in \input for the main paper. Preamble requirements:
+%    \usepackage{amsmath,amssymb,amsthm,bm,mathtools}
+%    \newtheorem{proposition}{Proposition}
+%    \newtheorem{remark}{Remark}
+%
+%  RETARGETED 2026-07-14 to match the empirical record. The proposed model is the
+%  SE(3)-EQUIVARIANT RECURRENCE (EGRU), certified by src/certify_egru.py (E1-E5:
+%  violation ~1e-16, log-log slope +0.160 in angle, fp32/fp64 ratio 8.0e8,
+%  translation 2.6e-16). The Neural CDE is retained as a CONTROL only: it carries an
+%  equally exact certificate yet fails the mean-predictor floor (8.427 vs 8.249), and
+%  is reported as such in Sec. IV.
+%
+%  I_loss is a SPECTRAL FIDELITY CALIBRATION METRIC. It is NOT claimed to predict
+%  end-task error; Sec. IV-C shows on KIMORE that it does not. Any edit that restores
+%  the old "R shears away the decisive signal" framing contradicts the results.
+% =====================================================================
+
+\section{Methodology}
+\label{sec:method}
+
+We formulate exercise assessment as an \emph{invariant read-out of an equivariant representation of
+an irregularly sampled pose sequence}. Two structural properties hold by construction rather than by
+fitting:
+
+\begin{enumerate}
+\item[(i)] \textbf{Exact viewpoint invariance.} The predicted score is provably unchanged under any
+rigid motion of the camera. This is a theorem about the architecture
+(\S\ref{sec:method:cut}--\S\ref{sec:method:cert}), certified numerically to machine roundoff, and it
+is the paper's central claim.
+\item[(ii)] \textbf{Grid-free consumption of arrival times.} The model reads the sensor's actual
+inter-arrival intervals $\Delta t_k$ and never assumes a uniform frame axis, so no resampling
+operator is applied to its input. We are careful to state what this does \emph{not} buy: on KIMORE it
+confers no accuracy or stability advantage over a fixed-grid baseline
+(\S\ref{sec:results:resampling}). It is an architectural property that we characterise, not a
+performance claim that we assert.
+\end{enumerate}
+
+Throughout, $J$ is the number of skeletal joints, $g=(R,\bm{t})\in SE(3)$ acts on joint observations
+$\bm{x}\in\mathbb{R}^{3\times J}$ by $g\cdot\bm{x}=R\bm{x}+\bm{t}\mathbf{1}^{\!\top}$, and
+$\{t_k\}_{k=0}^{L-1}$ are the sensor's own, non-uniform arrival stamps.
+
+% ---------------------------------------------------------------------
+\subsection{Irregular Arrivals Without a Frame Grid}
+\label{sec:method:irregular}
+
+A Kinect stream delivers observations at authentic, non-uniform times recorded by the sensor clock
+(the \texttt{RelativeTime} field; our anchor recording has coefficient of variation
+$C_V=\sigma_{\Delta t}/\mu_{\Delta t}=0.25$ with genuine multi-frame dropouts). We first remove global
+body placement by referring every joint to the root,
+%
+\begin{equation}
+\label{eq:root}
+\tilde{\bm{x}}_{t_k}=\bm{x}_{t_k}-\bm{x}^{\text{root}}_{t_k}\in\mathbb{R}^{3\times J},
+\end{equation}
+%
+which makes translation invariance exact and discharges it \emph{upstream of the network}. We are
+explicit that the encoder of \S\ref{sec:method:encoder} is \emph{not} itself translation-invariant --
+it reads joint radii $\|\tilde{\bm{x}}_j\|$ and seeds vector channels from $\tilde{\bm{x}}_j$ -- so
+the claim is true only with respect to the root, which is exactly where
+\eqref{eq:root} establishes it and where our certificate (E5) tests it, on raw world coordinates.
+
+The temporal geometry enters through the inter-arrival intervals themselves,
+%
+\begin{equation}
+\label{eq:dt}
+\Delta t_k = t_k - t_{k-1},\qquad \Delta t_0 \equiv 0 ,
+\end{equation}
+%
+which are supplied to the recurrence of \S\ref{sec:method:recurrence} as an input channel. There is no
+frame axis to align and no uniform grid to assume: a fixed-grid architecture must first apply a
+resampling operator $\mathcal{R}$ (\S\ref{sec:method:spectral}), whereas here
+$\mathcal{R}=\mathrm{Id}$.
+
+% ---------------------------------------------------------------------
+\subsection{The $SO(3)$-Equivariant Spatial Encoder}
+\label{sec:method:encoder}
+
+Each frame is encoded independently by a shared, steerable message-passing network on the skeleton
+graph, whose edges $\mathcal{E}$ are the anatomical bones. Per joint, the latent carries a direct sum
+of $O(3)$ irreducible representations --- $n_0$ Type-0 (even scalar, $0e$) and $n_1$ Type-1 (odd
+vector, $1o$) channels,
+%
+\begin{equation}
+\label{eq:irreps}
+\begin{gathered}
+h_j \in n_0\!\cdot\!(0e)\,\oplus\, n_1\!\cdot\!(1o),
+\qquad h_j=\big(s_j,\,v_j\big),\\[2pt]
+s_j\in\mathbb{R}^{n_0},\quad v_j\in\mathbb{R}^{n_1\times3},
+\end{gathered}
+\end{equation}
+%
+on which the group acts by the block-diagonal Wigner-$D$ representation
+%
+\begin{equation}
+\label{eq:rho}
+\rho(g)=I_{n_0}\;\oplus\;\big(I_{n_1}\otimes D_1(g)\big),\qquad D_1(g)\in SO(3),
+\end{equation}
+%
+in the real spherical-harmonic basis. Every block is \emph{orthogonal},
+$D_{\ell}(g)^{\!\top}D_{\ell}(g)=I$, which we certify to
+$\max_g\|\rho(g)^{\!\top}\rho(g)-I\|_F\le10^{-12}$ in double precision.
+
+\paragraph{Initialisation.} Scalars are seeded from invariants (joint radius and a learned joint
+embedding $\bm{e}_j$), and vectors from the joint's own position scaled by learned \emph{scalars}
+--- a scalar times a $1o$ feature is again $1o$, hence equivariant:
+%
+\begin{equation}
+\label{eq:init}
+s_j^{(0)}=\mathrm{MLP}\big(\|\tilde{\bm{x}}_j\|,\;\bm{e}_j\big),
+\qquad
+v_j^{(0)}=\bm{\gamma}\otimes\tilde{\bm{x}}_j,\quad \bm{\gamma}\in\mathbb{R}^{n_1}.
+\end{equation}
+
+\paragraph{Steerable message passing.} Geometry enters only through the relative bone vector
+$\bm{r}_{ij}=\tilde{\bm{x}}_i-\tilde{\bm{x}}_j$ (a $1o$ quantity), its length $d_{ij}=\|\bm{r}_{ij}\|$
+(an invariant), and the spherical harmonics $Y_{ij}=Y^{\ell\le\ell_{\max}}(\bm{r}_{ij}/d_{ij})$. Edge
+weights are produced by a radial network of \emph{invariants} only,
+$w_{ij}=\varphi\big(\mathrm{RBF}(d_{ij}),\,\bm{b}_{ij}\big)$ with $\bm{b}_{ij}$ a learned bone-type
+embedding, so the weights themselves are group-invariant. Messages are formed by a
+Clebsch--Gordan-constrained tensor product and aggregated:
+%
+\begin{equation}
+\label{eq:mp}
+\begin{gathered}
+\bm{m}_{ij}=\mathcal{T}_{w_{ij}}\big(h_j,\;Y_{ij}\big),\\[2pt]
+h_i \;\leftarrow\; h_i + W\!\left[\Gamma\Big(\textstyle\sum_{j\in\mathcal{N}(i)}\bm{m}_{ij}\Big)\right].
+\end{gathered}
+\end{equation}
+%
+The tensor product is supported only on admissible paths
+$|\ell_1-\ell_2|\le\ell_{\text{out}}\le\ell_1+\ell_2$ with $p_1p_2=p_{\text{out}}$, and the
+Wigner--Eckart theorem then guarantees, for \emph{every} admissible weight and \emph{every} $g$,
+%
+\begin{equation}
+\label{eq:tp-intertwine}
+\mathcal{T}_{w}\big(\rho(g)h_j,\;D(g)Y_{ij}\big)=\rho(g)\,\mathcal{T}_{w}(h_j,Y_{ij}).
+\end{equation}
+%
+The gate $\Gamma$ is an equivariant nonlinearity: $\tanh$ acts on feature scalars while
+sigmoid-activated \emph{gate} scalars multiply the $1o$ channels; since a scalar commutes with
+$D_1(g)$, $\Gamma$ preserves \eqref{eq:tp-intertwine}, as does the CG-constrained linear map $W$.
+Equivariance therefore holds for arbitrary weights --- it is a property of the construction, not of
+training.
+
+\begin{proposition}[Elimination of non-scalar biases]
+\label{prop:bias}
+A learnable additive bias $b$ on any $1o$ channel breaks equivariance unless $b=\bm{0}$; biases are
+admissible only on $0e$ channels.
+\end{proposition}
+\begin{proof}
+Under $g$ a $1o$ feature transforms as $v\mapsto D_1(g)v$, while a constant bias transforms trivially.
+Equivariance of $v\mapsto v+b$ requires $D_1(g)v+b=D_1(g)(v+b)$ for all $g$, i.e.\ $D_1(g)b=b$ for all
+$g\in SO(3)$; the only vector fixed by the full rotation group is $b=\bm{0}$. For $0e$ channels
+$D_0(g)=1$ and the constraint is vacuous.
+\end{proof}
+
+Accordingly every steerable linear layer is instantiated with \texttt{biases=False}, and we verify
+structurally that no bias parameter exists on any non-scalar output.
+
+% ---------------------------------------------------------------------
+\subsection{The Invariant Cut: Where the Theorem Is Discharged}
+\label{sec:method:cut}
+
+The encoder is \emph{equivariant}; the score must be \emph{invariant}. The transition is made by an
+explicit projection $\Pi$ onto a generating set of invariants of the latent \eqref{eq:irreps}. The
+\emph{parity-even} generators are the scalars, the norms of the vector channels, and their pairwise
+angles. We use unit-normalised inner products (cosines) and $\log(1+\cdot)$ magnitudes rather than raw
+dot products, which are quadratic in feature scale and numerically destabilise the read-out at no
+informational gain.
+
+Those generators alone, however, are complete for the \emph{full} orthogonal group $O(3)$, not for the
+$SO(3)$ we require --- every one of them is fixed by a reflection. A cut built from them is therefore
+invariant to a global mirror of the performance, and consequently blind to \emph{trajectory
+handedness}: a clockwise and an anticlockwise limb circle have identical bone lengths, identical
+pairwise distances and identical speeds at every instant, and no parity-even feature can separate
+them. Any pathology whose signature is the \emph{sense} of a rotation --- compensatory trunk torsion,
+a circumducting gait, the direction of a scapular hitch --- lies entirely in the subspace such a cut
+deletes. We therefore complete the cut with the \emph{parity-odd} generators, the pseudo-scalar triple
+products, taken over unit vectors so that they are bounded in $[-1,1]$ exactly as the cosines are:
+%
+\begin{equation}
+\label{eq:cut}
+\begin{aligned}
+\pi_j=\Big[\;
+&\underbrace{\tanh s_j \;\big\|\; \log\big(1+\|v_j^{c}\|\big)_{c} \;\big\|\;
+\big\langle \hat v_j^{\,c},\,\hat v_j^{\,c'}\big\rangle_{c<c'}}_{\text{parity-even}\;(0e)}
+\;\big\|\;\\[-2pt]
+&\underbrace{\det\big[\hat v_j^{\,a},\hat v_j^{\,b},\hat v_j^{\,c}\big]_{a<b<c}}_{\text{parity-odd}\;(0o)}
+\;\Big],
+\end{aligned}
+\end{equation}
+%
+with $\hat v = v/\|v\|$. These are pooled over joints by concatenated mean and max and concatenated
+with the invariant bone lengths $d_{ij}=\|\tilde{\bm{x}}_{i}-\tilde{\bm{x}}_{j}\|$ and with a fixed set
+$\mathcal{T}$ of \emph{anatomical} signed volumes $\chi_\tau$ --- normalised determinants over
+physically meaningful joint triads and kinematic chains (the shoulder--shoulder--head frame, the
+pelvis, the signed volume of three consecutive bones along each limb). The latter do not rely on the
+encoder learning to construct chirality for itself:
+%
+\begin{equation}
+\label{eq:pi}
+\begin{gathered}
+\Pi(h,\tilde{\bm{x}})=\Big[\;\mathrm{mean}_j\,\pi_j \;\big\|\; \max_j\,\pi_j \;\big\|\\[2pt]
+\big(d_{ij}\big)_{(i,j)\in\mathcal{E}}\;\big\|\;\big(\chi_\tau\big)_{\tau\in\mathcal{T}}\;\Big].
+\end{gathered}
+\end{equation}
+
+\begin{proposition}[$SO(3)$-invariance of the read-out]
+\label{prop:invariance}
+$\Pi\big(\rho(g)h,\;R\tilde{\bm{x}}\big)=\Pi\big(h,\tilde{\bm{x}}\big)$ for every proper rotation
+$g\in SO(3)$. Consequently every downstream computation --- and hence the predicted score --- is
+invariant, \emph{for arbitrary weights}. Under an improper $g$ the parity-odd entries change sign, so
+the read-out is \emph{not} invariant to reflections.
+\end{proposition}
+\begin{proof}
+Scalars carry $D_0(g)=1$ and are fixed. Vector channels transform as $v^c\mapsto D_1(g)v^c$ with
+$D_1(g)$ orthogonal, so $\|v^c\|$ is fixed and
+$\langle D_1 \hat v^{c}, D_1 \hat v^{c'}\rangle=\langle \hat v^{c},\hat v^{c'}\rangle$. Bone lengths
+are norms of differences of positions and are fixed by any rigid motion. For the triple products,
+$\det[D_1\hat v^{a},D_1\hat v^{b},D_1\hat v^{c}]=\det(D_1)\,\det[\hat v^{a},\hat v^{b},\hat v^{c}]$,
+and $\det D_1(g)=+1$ precisely when $g$ is proper; the same identity gives the sign flip for improper
+$g$. Mean and max are permutation-symmetric functions of invariants, hence invariant.
+\end{proof}
+
+Two consequences deserve emphasis, because both are commonly mis-stated.
+
+\begin{remark}[Restoring chirality costs the viewpoint theorem nothing]
+\label{rem:parity}
+A camera relocation induces a \emph{proper} rotation, for which $\det D_1(g)=+1$. The pseudo-scalars
+are therefore exactly invariant under every transformation the viewpoint claim quantifies over, and
+narrowing the guaranteed group from $O(3)$ to $SO(3)$ forfeits none of it. This is not an argument but
+a measurement: gate E8 of Section~\ref{sec:method:cert} certifies read-out invariance at
+$2.9\times10^{-16}$ \emph{after} the parity-odd channels are admitted, and the measured cross-viewpoint
+degradation is unchanged at machine precision (Section~\ref{sec:results:viewpoint}). The price is
+$16.7\%$ more parameters and, on KIMORE, no measurable change in accuracy --- the parity-odd subspace
+carries no score-relevant signal in a corpus of healthy-form exercises. We report that null rather than
+suppress it. The point is that the architecture no longer \emph{assumes} it.
+\end{remark}
+
+\begin{remark}[Reflection-blindness is not left/right-blindness]
+\label{rem:laterality}
+It is tempting to read $O(3)$-invariance as an inability to distinguish a movement performed with the
+left limb from the same movement performed with the right --- which, for unilateral pathology, would be
+disqualifying. It does not follow, and it is false. Joint \emph{indices} are preserved throughout the
+pipeline: the embedding of \eqref{eq:init} is keyed by joint identity, bone lengths are emitted per
+bone in a fixed order, and the speed channels of \eqref{eq:speed} are indexed per joint and never
+pooled. A left-arm raise and a right-arm raise are not related by a reflection; they are related by a
+reflection \emph{composed with} the left/right relabelling of joint indices, and no model here is
+invariant to that relabelling. Gate E7 measures it directly: swapping the left and right joint indices
+moves the score by $4.5\times10^{-2}$ (parity-even cut) and $6.2\times10^{-2}$ (full cut), while a pure
+reflection moves the parity-even score by exactly $0$. The defect the pseudo-scalars repair is
+handedness of the \emph{trajectory}, not identity of the \emph{limb}.
+\end{remark}
+
+% ---------------------------------------------------------------------
+\subsection{Temporal Recurrence on Actual Inter-Arrival Times}
+\label{sec:method:recurrence}
+
+The encoder is a purely \emph{spatial}, static map: it describes each frame's pose but never its
+motion. We therefore hand the recurrence two families of explicitly invariant motion channels,
+computed from the actual stamps. For joint $j$ at arrival $k$, the displacement and the true velocity
+magnitude are
+%
+\begin{equation}
+\label{eq:speed}
+\delta_{k,j}=\big\|\tilde{\bm{x}}_j(t_k)-\tilde{\bm{x}}_j(t_{k-1})\big\|,
+\qquad
+\sigma_{k,j}=\frac{\delta_{k,j}}{\max(\Delta t_k,\;\epsilon)} .
+\end{equation}
+%
+Both are norms of differences of positions, hence $SO(3)$-invariant by construction: they cost the
+theorem nothing, and the certificate (E2) re-verifies this rather than assuming it. Dividing by the
+\emph{actual} $\Delta t_k$ --- not by a nominal frame period --- is what makes $\sigma$ a
+velocity rather than a per-frame increment, and it is the point at which irregular sampling enters
+the model as information instead of as a defect to be interpolated away. We include these channels
+because a recurrence trained on 45 subjects does not reliably learn to difference its own inputs; the
+ablation without them is reported in Sec.~\ref{sec:results}.
+
+The per-arrival input is the concatenation of the invariant pose code, the interval, the motion
+channels, and a one-hot exercise identifier:
+%
+\begin{equation}
+\label{eq:input}
+u_k=\Big[\;\Pi_k \;\big\|\; \Delta t_k \;\big\|\; \log(1+\delta_k) \;\big\|\; \log(1+\sigma_k)
+\;\big\|\; \mathrm{onehot}(e)\;\Big],
+\end{equation}
+%
+which a bidirectional GRU consumes in arrival order. The sequence is reduced by a length-masked mean
+over the $n$ genuine arrivals (padding excluded), and an MLP head emits the score:
+%
+\begin{equation}
+\label{eq:head}
+\hat y=\psi\!\left(\frac{1}{n}\sum_{k<n}\mathrm{GRU}(u)_k\right).
+\end{equation}
+%
+Since every component of $u_k$ is invariant by Proposition~\ref{prop:invariance} and
+\eqref{eq:speed}, and $\psi$ acts on invariants, the composite map
+$\tilde{\bm{x}}\mapsto\hat y$ is exactly $SE(3)$-invariant --- for any weights, trained or not. The
+recurrence is discrete and consumes no solver; there is no integrator, no step-size controller, and
+therefore none of the adaptive-solver failure modes analysed in \S\ref{sec:method:cde-control}.
+
+% ---------------------------------------------------------------------
+\subsection{Numerical Certificate}
+\label{sec:method:cert}
+
+An architectural symmetry argument is worth only as much as its numerical audit, because a symmetry
+can be silently broken by an implementation detail --- and, as E6 shows, an \emph{unintended} symmetry
+can be silently acquired. We therefore certify the \emph{deployed} model
+(E1--E8, \texttt{src/certify\_egru.py}). Gates E1--E5 establish that the invariance we claim is
+present; E6--E8 establish that the invariance we claim is the one we actually have.
+
+\begin{itemize}
+\item[E1] \textbf{Representation orthogonality:}
+$\max_g\|\rho(g)^{\!\top}\rho(g)-I\|_F\le10^{-12}$ (fp64).
+\item[E2] \textbf{Invariance of the motion channels:} $\delta,\sigma$ verified invariant, not assumed.
+\item[E3] \textbf{Rotation sweep:} the score violation is $\sim\!10^{-16}$ across
+$\theta\in[0.05,3.0]$~rad, and --- decisively --- its log--log slope against $\theta$ is $+0.160$,
+i.e.\ \emph{flat}. A modelling violation grows with angle; roundoff does not.
+\item[E4] \textbf{Precision scaling:} repeating the identical computation in single and double
+precision gives
+$r=\bar\delta^{\,\mathrm{fp32}}/\bar\delta^{\,\mathrm{fp64}}
+=2.37\times10^{-7}/2.96\times10^{-16}=8.0\times10^{8}$,
+an eight-order drop tracking the ratio of machine epsilons. A genuine symmetry violation would be
+precision-\emph{independent} ($r\approx1$).
+\item[E5] \textbf{Translation invariance of the pipeline:} tested on raw world coordinates,
+$|s(\bm{x}+\bm{c})-s(\bm{x})|/|s(\bm{x})|=2.6\times10^{-16}$.
+\item[E6] \textbf{Parity (the group is $SO(3)$, not $O(3)$):} under a reflection $M$, the
+parity-even cut gives $|s(M\bm{x})-s(\bm{x})|/|s(\bm{x})|=\mathbf{0}$ \emph{exactly} --- bit-identical
+output on a mirrored body, an unintended $O(3)$-invariance --- whereas the completed cut of
+\eqref{eq:cut} gives $3.1\times10^{-2}$. Because the model is $SO(3)$-invariant, all improper
+transformations are equivalent up to a rotation, so a single reflection certifies the entire coset.
+\item[E7] \textbf{Laterality:} permuting the left and right joint \emph{indices} (a relabelling, not a
+reflection) moves the score by $4.5\times10^{-2}$ and $6.2\times10^{-2}$ for the two cuts
+respectively. Both models separate a left-limb from a right-limb movement
+(Remark~\ref{rem:laterality}).
+\item[E8] \textbf{The fix is free:} read-out invariance under Haar-random \emph{proper} rotations,
+re-measured with the parity-odd channels active, is $2.9\times10^{-16}$ --- unchanged. Restoring
+chirality costs the viewpoint theorem nothing.
+\end{itemize}
+%
+The three conditions of E3--E4 together --- violation at roundoff, \emph{flat} in $\theta$, and
+$r\gg1$ --- are what upgrade ``small'' to ``zero''. Magnitude alone would not: only the flatness and
+the precision scaling exclude a small modelling violation masquerading as noise. E6 is included as a
+matter of method: an architecture should be audited for the symmetries it possesses, not only for the
+ones it advertises, and a gate that merely confirmed our intended invariance would have passed a model
+that was invariant to twice the group we wanted.
+
+% ---------------------------------------------------------------------
+\subsection{Control: The Continuous-Flow (Neural CDE) Variant}
+\label{sec:method:cde-control}
+
+The natural continuous-time generalisation of \S\ref{sec:method:recurrence} replaces the discrete
+recurrence with a controlled differential equation driven by a spline through the arrivals. We
+implement it, certify it, and report it as a \textbf{control} --- not as the proposed method --- for a
+reason given empirically in Sec.~\ref{sec:results:limits}: it satisfies an equally exact equivariance
+certificate yet \emph{fails} the mean-predictor floor, and is therefore the cleanest available
+demonstration that a structural guarantee is worthless without measured signal. Its role here is to
+delimit the optimisation boundary of rigidly constrained continuous flows, not to carry a claim.
+
+\paragraph{Control path.} The root-relative observations are interpolated by a natural cubic spline
+$X:[t_0,t_{L-1}]\to\mathbb{R}^{3J}$, whose second-derivative moments $M_i=X''(t_i)$ solve, with
+$h_i=t_{i+1}-t_i$,
+%
+\begin{equation}
+\label{eq:spline-moments}
+\begin{gathered}
+h_{i-1}M_{i-1}+2(h_{i-1}+h_i)M_i+h_iM_{i+1}\\
+=6\!\left(\frac{\tilde{\bm{x}}_{t_{i+1}}-\tilde{\bm{x}}_{t_i}}{h_i}
+-\frac{\tilde{\bm{x}}_{t_i}-\tilde{\bm{x}}_{t_{i-1}}}{h_{i-1}}\right),
+\quad M_0=M_{L-1}=\bm{0}.
+\end{gathered}
+\end{equation}
+%
+The spline is \emph{linear} in its control points and \emph{reproduces constants}, so it commutes with
+the group action, $\mathcal{S}[g\cdot\tilde{\bm{x}}]=g\cdot\mathcal{S}[\tilde{\bm{x}}]$, and is defined
+for arbitrary spacing $h_i$. The latent then evolves as
+%
+\begin{equation}
+\label{eq:cde}
+\begin{gathered}
+Z(s)=Z(t_0)+\int_{t_0}^{s}f_\theta\big(Z(\tau),U(\tau)\big)\,d\tau,\\[2pt]
+U(s)=\frac1J\sum_{j=1}^{J}\frac{d}{ds}X_j(s)\in\mathbb{R}^3,
+\end{gathered}
+\end{equation}
+%
+with $f_\theta$ a steerable field built from the same CG-constrained tensor products and gates as
+\eqref{eq:mp}, and an invariant terminal read-out $\hat y=h_\psi(Z(t_{L-1}))$. For a fixed-step
+explicit integrator, $Z_{g\cdot X}(s)=\rho(g)Z_X(s)$ holds stage-by-stage to roundoff, independent of
+step size; we measure $\delta_{\text{eq}}\le10^{-13}$ on the real steerable architecture.
+
+\paragraph{The adaptive-solver failure mode, and the invariant norm.} Fixed-step exactness is
+necessary but not sufficient, because a production integrator is \emph{adaptive}. A Dormand--Prince
+step accepts or rejects on a scalar reduction of the embedded local error, and the accepted step
+sequence --- hence the trajectory --- is a deterministic function of that scalar. If the scalar is not
+group-invariant, the rotated and unrotated integrations receive \emph{different} step grids and
+silently de-align. This survives an orthogonal representation, which is what makes it subtle.
+
+\begin{proposition}[Non-invariance of the per-component norm]
+\label{prop:fail}
+Let $\rho(g)$ be orthogonal and the field intertwining, so $e\mapsto\rho(g)e$. The standard
+component-weighted RMS norm $\mathcal{N}_W(e)=n^{-1/2}\|We\|_2$, $W=\mathrm{diag}(w_i)$ with
+$w_i=(\mathrm{atol}+\mathrm{rtol}\cdot\max(|y^0_i|,|y^1_i|))^{-1}$, is invariant for all $e$ if and
+only if $[\rho(g),W^2]=0$. For $\mathrm{rtol}>0$ this fails.
+\end{proposition}
+\begin{proof}
+$\mathcal{N}_W(\rho(g)e)^2=n^{-1}e^{\!\top}\rho(g)^{\!\top}W^2\rho(g)e$, so equality for all $e$ is
+$\rho(g)^{\!\top}W^2\rho(g)=W^2$, i.e.\ $[\rho(g),W^2]=0$ by orthogonality. Within a $1o$ block,
+$D_1(g)$ genuinely rotates the three components while their weights $w_a,w_b,w_c$ are generically
+distinct; $[D_1(g),\mathrm{diag}(w_a,w_b,w_c)]=0$ for all $g$ forces $w_a=w_b=w_c$, which
+per-component weighting violates whenever the components differ in scale.
+\end{proof}
+%
+Empirically this is exactly what we observe under the default norm: the accepted grids diverge
+($D_{\text{grid}}\approx40\text{--}90$ knots) and the drift degrades to $\mathcal{O}(10^{-5})$
+\emph{despite an exactly equivariant field}. We restore invariance by making both the tolerance and
+the reduction respect the irrep block structure. With $F$ irrep features of dimension
+$d_f=2\ell_f+1$, set a block-constant tolerance from the \emph{invariant} block norm and reduce
+isotropically:
+%
+\begin{equation}
+\label{eq:neq}
+\begin{gathered}
+\mathrm{denom}_f=\mathrm{atol}+\mathrm{rtol}\cdot\max\big(\|y^0_f\|_2,\|y^1_f\|_2\big),\\[2pt]
+\boxed{\;\mathcal{N}_{\text{eq}}(\hat e)=\sqrt{\frac1F\sum_{f=1}^{F}\frac{1}{d_f}\|\hat e_f\|_2^2}\;}
+\end{gathered}
+\end{equation}
+%
+with $\hat e_f=e_f/\mathrm{denom}_f$.
+
+\begin{proposition}[Exact invariance and vanishing grid divergence]
+\label{prop:neq}
+$\mathcal{N}_{\text{eq}}$ is invariant; consequently the adaptive controller makes identical
+accept/reject decisions for $X$ and $g\cdot X$, and $D_{\text{grid}}\equiv0$.
+\end{proposition}
+\begin{proof}
+Each block transforms as $e_f\mapsto D_{\ell_f}(g)e_f$ with $D_{\ell_f}(g)$ orthogonal, so
+$\|y^k_f\|_2$ --- and hence $\mathrm{denom}_f$ --- is invariant, and
+$\|D_{\ell_f}(g)\hat e_f\|_2=\|\hat e_f\|_2$. Thus \eqref{eq:neq} is a $g$-independent weighted sum of
+invariants. Equivalently the block-constant tolerance makes $W_f\propto I_{d_f}$, so
+$[D_{\ell_f}(g),W_f^2]=0$ and the condition of Proposition~\ref{prop:fail} holds exactly. The reduced
+error scalar therefore coincides for $X$ and $g\cdot X$, the step-size updates coincide, and the
+accepted grids satisfy $\mathcal{T}(g\cdot X)=\mathcal{T}(X)$.
+\end{proof}
+%
+Under $\mathcal{N}_{\text{eq}}$ the measured grid divergence is identically zero, the residual drift
+collapses to $\approx1.2\times10^{-15}$ (flat in rotation magnitude), and the precision-scaling ratio
+is $r\approx5\times10^{8}$. The continuous-flow control is thus \emph{certified to the same standard
+as the proposed model} --- which is precisely what makes its failure against the floor
+(Sec.~\ref{sec:results:limits}) methodologically instructive rather than merely disappointing.
+
+% ---------------------------------------------------------------------
+\subsection{Spectral Fidelity Calibration: The Metric $\mathcal{I}_{\text{loss}}$}
+\label{sec:method:spectral}
+
+A fixed-grid architecture cannot consume $(t_k,\tilde{\bm{x}}_{t_k})$ directly; it must first apply a
+resampling operator $\mathcal{R}$ onto a uniform grid. $\mathcal{R}$ is a low-pass operation, and we
+quantify the high-frequency energy it removes with a \emph{spectral fidelity calibration metric},
+%
+\begin{equation}
+\label{eq:iloss}
+\mathcal{I}_{\text{loss}}(\mathcal{R})
+=\big\|\widehat{\mathcal{R}\tilde{\bm{x}}}(\omega)-\widehat{\tilde{\bm{x}}}(\omega)\big\|^2_{L^2(\omega>\omega_c)} ,
+\end{equation}
+%
+evaluated above a cutoff $\omega_c$ in the tremor/jerk band. Calibrated on the real anchor with a
+physiologically grounded $5\,\mathrm{Hz}$, $6\,\mathrm{mm}$ tremor injected at the distal joints, a
+$30\%$ burst-drop regime already forces $\mathcal{I}_{\text{loss}}=39\%$ under linear interpolation
+and $53\%$ under cubic, rising monotonically to $81\%$ at a $70\%$ drop rate. Our formulation sets
+$\mathcal{R}=\mathrm{Id}$ and hence $\mathcal{I}_{\text{loss}}\equiv0$ by construction.
+
+\paragraph{What this metric does and does not license.} $\mathcal{I}_{\text{loss}}$ is a statement
+about \emph{signal}, not about \emph{prediction}. It certifies that resampling provably removes a
+specific band of spectral energy; it does \emph{not} certify that the removed band is
+\emph{predictive} of the clinical score. We introduce it as a calibration instrument precisely so that
+this distinction can be tested rather than assumed --- and in Sec.~\ref{sec:results:resampling} the
+test comes back negative: on KIMORE, where rehabilitation motion is slow and smooth relative to the
+sampling rate, a fixed-grid baseline suffers a large $\mathcal{I}_{\text{loss}}$ and yet loses
+essentially no accuracy, because the discarded band carries little task-relevant information. Indeed
+$\mathcal{R}$ acts there as an effective \emph{denoiser}. We therefore state plainly what the metric
+establishes --- the operational envelope within which grid-free modelling could matter --- and we
+decline to infer a downstream penalty from a spectral one, as an earlier version of this work did.
+
+% ---------------------------------------------------------------------
+\subsection{Experimental Protocol}
+\label{sec:method:protocol}
+
+\paragraph{Corruption model anchored to real kinematics.}
+The base signal is a real Kinect-v2 recording (KIMORE, healthy control \texttt{NE\_ID17/Es1}; $783$
+frames at $30.3\,\mathrm{fps}$), not a synthetic waveform. Its sensor-clock stamps are authentically
+irregular ($C_V=0.25$, two real multi-frame dropouts), and we \emph{calibrate} the corruption
+operators to reproduce them:
+%
+\begin{center}\small
+\begin{tabular}{lll}
+\hline
+quantity & symbol & calibrated value \\ \hline
+frame period      & $\mu_{\Delta t}$ & $33.0\,\mathrm{ms}$ ($30.3\,\mathrm{fps}$)\\
+thermal jitter    & $\sigma_j$       & $0.53\,\mathrm{ms}$ \\
+drop rate         & $\pi_B$          & $1.3\%$ \\
+mean burst length & $1/p_{BG}$       & $5$ frames \\
+reference $C_V$   & $C_V^{\mathrm{ref}}$ & $0.250$ \\ \hline
+\end{tabular}
+\end{center}
+%
+Three published, physically motivated operators act on the \emph{timestamps} (never fabricating
+positions): bursty drops via a two-state Gilbert--Elliott chain; jitter
+$\tilde t_k=t_k+\eta_k+d_k$ with Gaussian thermal noise and an AR(1) drift ($\alpha=0.9$),
+monotonicity enforced by projection; and a Gamma inter-arrival model with an
+Ornstein--Uhlenbeck-modulated mean. At the calibrated operating point the synthetic stream reproduces
+the anchor to within $10.5\%$ in $C_V$ ($0.276$ vs.\ $0.250$).
+
+\paragraph{Hash-locked fairness.}
+For each corruption level and seed the pipeline emits a single set of corrupted samples
+$\{(\tilde t_k,\bm{x}_k)\}$, and \emph{both} architectures consume those very bytes. Ours reads the
+actual stamps ($\mathcal{R}=\mathrm{Id}$); the fixed-grid baseline first applies a \emph{best-case}
+operator $\mathcal{R}\in\{\text{linear},\text{cubic},\text{forward-fill}\}$ and we report whichever is
+strongest for it at every level. We compute a SHA-256 digest at each pathway's input gate and assert
+byte-identity across the sweep, so no objection that the loader fed the two pathways subtly different
+data is available.
+
+\paragraph{Equal augmentation budget.}
+Where a training-time robustness intervention is used (Sec.~\ref{sec:results:resampling}), it is drawn
+from a \emph{single shared} corrupted stream that is byte-identical across arms (per-fold digests
+asserted equal). Augmenting only the proposed model would be the sabotaged-baseline objection with
+its sign reversed. Models train on drops $\sim\mathcal{U}[0,0.3]$ and are \emph{tested} to $0.7$, so
+the hardest levels are genuine extrapolation rather than a memorised attack. Rotations, by contrast,
+are \emph{never} applied at training time: a flat cross-viewpoint curve obtained under rotation
+augmentation would prove only that we had augmented.
+
+\paragraph{Two metrics, and why both are mandatory.}
+For each method $m$ and corruption level $\pi$ we report degradation against the method's \emph{own}
+clean score, and accuracy against the clinical label,
+%
+\begin{equation}
+\label{eq:metrics}
+\begin{gathered}
+\mathrm{Degr}(m,\pi)=\big|s_m(\pi)-s_m(0)\big|,\\[2pt]
+\mathrm{MAD}(m,\pi)=\big|s_m(\pi)-y\big| ,
+\end{gathered}
+\end{equation}
+%
+so no cross-method scaling can bias the comparison. Degradation alone is \emph{not} sufficient and we
+refuse to report it alone: \textbf{a model that ignores its input has degradation identically zero and
+would ``win'' every robustness plot ever drawn.} Accuracy-versus-level is what makes the claim mean
+anything, and it is interpretable only because the pooled models provably clear the mean-predictor
+floor. We therefore gate every experiment on that condition --- the gate is an assertion in the
+evaluation code, not an appeal to the reader's trust --- and we draw the floor on every figure. The
+continuous-flow control of \S\ref{sec:method:cde-control} is the reason this gate exists: it is exactly
+a model with a perfect certificate, a perfectly flat curve, and no signal.
+
+The converse failure is equally real and is why degradation is reported \emph{alongside} accuracy
+rather than in place of it. A rotation-augmented baseline has a flat cross-viewpoint \emph{accuracy}
+curve (Sec.~\ref{sec:results:viewpoint}) yet a per-sequence degradation of $3.03$ MAD: an individual
+patient's score moves by three points of fifty when the camera is moved, and the errors merely cancel
+in the aggregate. Aggregate accuracy cannot see this; a clinical instrument is required to give the
+same patient the same score from a different room. Neither metric is sufficient alone, in either
+direction.
+
+\paragraph{Training is nondeterministic; every number is a mean over three seeds.}
+Our training is not bit-reproducible even at a fixed seed. The cuDNN GRU backward pass and the
+$e3nn$ encoder's scatter-add (\texttt{index\_add\_}) both accumulate with non-deterministic atomics, so
+identical configurations diverge run to run. We measured the resulting spread rather than assuming it
+away: repeated fits of the same (seed, fold) differ by $\approx\!0.33$~MAD --- \textbf{larger than
+every clean-accuracy gap between the leading models in this paper}. Reporting a single run would
+therefore have manufactured a result. Every accuracy figure below is consequently a mean $\pm$ standard
+deviation over \emph{three} independent training seeds ($\times$ five subject-disjoint folds), and no
+accuracy difference smaller than this floor is interpreted as a difference. Checkpoints are keyed by
+(variant, seed, fold); an earlier scheme omitted the variant and an ablation silently overwrote the
+headline model. We note that the structural claims are \emph{exempt} from this caution by
+construction: Proposition~\ref{prop:invariance} and gates E1--E8 hold for arbitrary weights, so the
+degradation columns are weight-independent and no amount of seed noise can move them.
+
+\paragraph{Efficiency.}
+Parameter counts are measured, not quoted: the fixed-grid transformer baseline carries
+$4{,}914{,}609$ parameters ($21.0$~MB), the proposed model $565{,}881$ ($2.3$~MB) --- $\mathbf{8.7\times}$
+fewer parameters and a $\mathbf{9.2\times}$ smaller memory footprint --- rising to $660{,}345$
+($7.4\times$ fewer) once the parity-odd channels of \eqref{eq:cut} are admitted. The hand-crafted
+invariant control is smaller still ($\sim\!0.21$M). The efficiency claim is thus retained without
+argument: the structural guarantees are obtained at a fraction of the baseline's capacity, not by
+spending more of it.
+
+\paragraph{Two disclosures about the input.}
+First, the loader caps every recording at $150$ frames by \emph{uniform index subsample} while
+preserving its true duration. A median $22.8$~s KIMORE recording therefore reaches every model at
+$\approx\!6.6$~Hz (Nyquist $\approx\!3.3$~Hz), \emph{not} the sensor's $30$~Hz. This is a deliberate
+cost control, it is applied identically to every arm, and it is load-bearing for the interpretation of
+Sec.~\ref{sec:results:resampling}: the input is already band-limited well below any frequency at which
+the resampling operator $\mathcal{R}$ is lossy. Second, all frequency-domain analyses in
+Sec.~\ref{sec:results:resampling} are therefore run on the \emph{unsubsampled} $30$~Hz signal, since at
+$6.6$~Hz the band under test does not exist.
