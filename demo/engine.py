@@ -44,7 +44,7 @@ class DemoEngine:
     """Load once, predict many. Thread-agnostic; call predict() from the capture loop."""
 
     def __init__(self, ckpt_dir="outputs/cde_block2", device=None, model_seed=0,
-                 folds=(0, 1, 2, 3, 4), n_frames=100, pct_operator="linear"):
+                 folds=(0, 1, 2, 3, 4), n_frames=100, pct_operator="linear", load_pct=True):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.ckpt_dir = ckpt_dir
         self.n_frames = n_frames
@@ -71,7 +71,12 @@ class DemoEngine:
             self.egru.append(m)
 
         # --- PCT ensemble (baseline) ---
+        # The session demo (app_session.py) scores with EGRU only, so it passes load_pct=False to
+        # skip this loop entirely -> faster startup, less memory. Default True keeps app.py /
+        # app_camo.py (the comparison demos) byte-for-byte unchanged.
         self.pct = []
+        if not load_pct:
+            return
         for f in folds:
             m = PointCloudTransformerRegressor(
                 seq_len=n_frames, num_joints=N_JOINTS, num_channels=3,

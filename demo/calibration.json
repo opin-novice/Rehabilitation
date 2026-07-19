@@ -1,0 +1,9 @@
+{
+  "_comment": "Per-exercise affine (a,b) mapping raw EGRU /50 -> displayed AI badge: display = clip(a*raw + b, 0, 50). Defaults are identity (a=1,b=0) so the demo runs honestly out of the box. Refine on the demo webcam with `python demo/calibrate.py` (see demo/SESSION_DEMO.md). Keys are exercise ids 1-5; 'default' is the fallback.",
+  "default": [1.0, 0.0],
+  "1": [1.0, 0.0],
+  "2": [1.0, 0.0],
+  "3": [1.0, 0.0],
+  "4": [1.0, 0.0],
+  "5": [1.0, 0.0]
+}
