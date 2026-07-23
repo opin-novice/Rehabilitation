@@ -32,7 +32,7 @@ from selfsup.zeroshot_eval import _rebuild_model, _predict  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 from selfsup.naive_baseline import compute_naive_features  # noqa: E402
 
-RESULTS_DIR = "results/kimore_loso_78fold"
+RESULTS_DIR = "archive/legacy_results/kimore_loso_78fold"
 OUT_DIR = "outputs/reviewer_round4"
 CONDITIONS = {
     "A_scratch": "Scratch", "B_contrastive_lp": "Contrastive LP",

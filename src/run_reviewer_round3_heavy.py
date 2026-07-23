@@ -16,8 +16,8 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PY = sys.executable
-STGCN_DIR = "results/kimore_loso_78fold_stgcn"
-BONEVEC_DIR = "results/kimore_loso_78fold_bonevec"
+STGCN_DIR = "archive/legacy_results/kimore_loso_78fold_stgcn"
+BONEVEC_DIR = "archive/legacy_results/kimore_loso_78fold_bonevec"
 OUT = "outputs/reviewer_round3"
 
 

@@ -1,0 +1,455 @@
+% =====================================================================
+%  Literature Review  --  standalone working document
+%  "Viewpoint Invariance Is a Theorem, Not a Fit:
+%   An SE(3)-Equivariant Recurrence for Rehabilitation Exercise Assessment"
+%
+%  Self-contained. Compiles with:  pdflatex literature_review && pdflatex literature_review
+%  Deliberately uses the plain `article` class (NOT IEEEtran/wacv) so it builds
+%  fast and independently of the main manuscript's template.
+%
+%  Every \cite key below is grounded in a real reference in the bibliography at
+%  the end of this file; nothing is invented.
+% =====================================================================
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[table]{xcolor}
+\usepackage[colorlinks,allcolors=blue!60!black]{hyperref}
+
+\title{\textbf{Literature Review}\\[4pt]
+\large Viewpoint Invariance as a Structural Guarantee for\\
+Rehabilitation Exercise Assessment from Skeleton Sequences}
+\author{}
+\date{}
+
+\newcommand{\gap}[1]{\textbf{\textcolor{red!60!black}{Gap:} } #1}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent This document surveys the work our paper builds on and departs from. We
+organise it along the six axes the paper touches --- (i) rehabilitation exercise
+assessment from skeletons, (ii) skeleton-based action recognition, (iii)
+group-equivariant and invariant architectures, (iv) learned versus structural
+viewpoint invariance, (v) continuous-time models for irregular sampling, and
+(vi) edge deployment of structured models --- and after each we state the
+specific gap that motivates a contribution. A synthesis table (\S\ref{sec:synth})
+maps every gap to the contribution that closes it. The through-line is a single
+distinction the existing literature does not make operational: a symmetry that
+holds \emph{in expectation over a training distribution} (augmentation) versus one
+that holds \emph{identically for every input} (architecture). Our thesis is that
+for a clinical screening instrument only the latter is admissible, and that it is
+provable, certifiable, and deployable.
+\end{abstract}
+
+% =====================================================================
+\section{Scope and Problem Statement}
+\label{sec:scope}
+
+Automated assessment of physical rehabilitation exercises from skeleton sequences
+promises objective, remote, continuous monitoring of therapy~\cite{capecci2019kimore}.
+A model receives a $3$D skeleton trajectory --- typically from a consumer depth
+sensor --- and regresses a clinical quality score. The dominant evaluation regime
+ranks architectures by a single aggregate error against a physician's score on
+clean, frontal, single-sensor recordings~\cite{karlov2024,abedi2023,kuang2026,pct2026}.
+
+Our paper argues that this regime, not the architectures, is the limiting factor:
+it rewards capacity and penalises nothing a deployed home device actually
+encounters --- a camera against a different wall, a tracking node that freezes, a
+dropped frame. The review below is therefore structured to expose two recurring
+blind spots in the prior art: (a) evaluation is uniformly \emph{in-distribution},
+and (b) no prior work on this task reports a \emph{mean-predictor floor}, without
+which a robustness curve cannot be interpreted (a model that ignores its input has
+zero degradation and would ``win'' every robustness plot).
+
+% =====================================================================
+\section{Rehabilitation Exercise Assessment from Skeletons}
+\label{sec:rehab}
+
+\paragraph{Benchmarks.} KIMORE~\cite{capecci2019kimore} is the standard corpus:
+subjects perform five trunk and hip exercises, each scored $0$--$50$ by a
+clinician, with paired healthy and clinical populations. UI-PRMD~\cite{vakanski2018uiprmd}
+provides ten movements with marker-based ground truth; IRDS (the
+IntelliRehab dataset) contributes gesture-level rehabilitation recordings.
+Ismail-Fawaz et al.'s Rehab-Pile~\cite{rehabpile2026} aggregates KIMORE, UI-PRMD and
+IRDS under cross-subject splits and reports error rather than rank correlation ---
+its protocol discipline is the closest antecedent of our own protocol audit.
+
+\paragraph{Methods.} Reported approaches span a wide architectural range:
+ST-GCN variants trained with supervised contrastive objectives using hard and soft
+negatives~\cite{karlov2024}; cross-modal video-to-joints augmentation to enlarge
+scarce training data~\cite{abedi2023}; dual-stream spatio-temporal graph networks
+with motion-aware grouping~\cite{kuang2026}; and, most relevant to us, point-cloud
+transformers that treat the skeleton as an unordered set of $3$D points with axial
+self-attention~\cite{pct2026}. The last is the baseline we position against
+directly.
+
+\paragraph{What the field measures, and what it does not.} Two properties recur.
+First, evaluation is uniformly in-distribution: same sensor, same camera placement,
+no simulated hardware failure. Second, protocols differ enough that headline
+numbers are not comparable --- reported MADs on the most common single-exercise
+slice mix optimistic epoch-selection rules with subject-disjointness assumptions
+that do not hold uniformly.
+
+\gap{No prior rehab-assessment work (a)~stress-tests off the frontal, clean,
+single-sensor manifold, or (b)~reports a mean-predictor floor against which a
+degradation curve is interpretable. Protocol incomparability is acknowledged
+anecdotally but never isolated quantitatively.}
+
+% =====================================================================
+\section{Skeleton-Based Action Recognition}
+\label{sec:action}
+
+The methodological backbone of skeleton scoring is the action-recognition
+literature. Spatial-temporal graph convolutional networks (ST-GCN)~\cite{yan2018stgcn}
+established the graph-over-joints, convolution-over-time paradigm that most
+rehabilitation models inherit, and remain the standard baseline for cross-view and
+cross-subject generalisation on NTU~RGB+D~\cite{shahroudy2016ntu}. NTU~RGB+D's
+\emph{Cross-View} protocol --- train on two physical camera setups, test on a third
+displaced by $45^\circ$ --- is the field's canonical \emph{real} (non-synthetic)
+viewpoint-generalisation benchmark, and we use it precisely to show our viewpoint
+guarantee is not an artifact of synthetic test-time rotation.
+
+\gap{Cross-view robustness in action recognition is pursued almost exclusively by
+augmentation or view canonicalisation, i.e.\ as a statistical property of a trained
+model over a view distribution --- never as an exact, per-prediction architectural
+identity. Occlusion/tracking failure is treated as a nuisance to be masked away,
+not as a discriminating experiment between otherwise-equivalent architectures.}
+
+% =====================================================================
+\section{Equivariant and Invariant Neural Architectures}
+\label{sec:equiv}
+
+Group-equivariant networks impose symmetry as a \emph{constraint on the hypothesis
+class} rather than a target of fitting~\cite{cohen2016gconv}. For $3$D geometry the
+steerable family --- tensor-field networks~\cite{thomas2018tfn},
+$SE(3)$-Transformers~\cite{fuchs2020se3transformer}, and the \texttt{e3nn}
+framework~\cite{geiger2022e3nn} --- carries features in irreducible representations
+of $O(3)$ and constrains every layer to intertwine with the Wigner-$D$ action,
+guaranteeing equivariance \emph{for arbitrary weights} (trained, untrained, or
+adversarial). Lighter constructions obtain $E(n)$-equivariance without spherical
+harmonics~\cite{satorras2021egnn}, or lift a network to $SO(3)$-equivariance by
+replacing scalar neurons with vector-valued ones~\cite{deng2021vectorneurons}. An
+orthogonal line makes a non-equivariant backbone invariant by canonicalisation or
+frame averaging~\cite{puny2022frameaveraging} --- exact, but at a forward-pass or
+learned-canonicaliser cost.
+
+These architectures are mature in molecular modelling and point-cloud vision but
+have not been brought to bear on rehabilitation scoring as an \emph{exact viewpoint
+guarantee}. Two further points are, to our knowledge, unstated in this literature:
+(a) the natural invariant read-out one forms from such an encoder --- built from
+norms, inner products, and bone lengths --- is composed entirely of parity-\emph{even}
+features and is therefore silently invariant to a \emph{mirror} of the whole body,
+i.e.\ complete for $O(3)$ rather than $SO(3)$, and thus blind to trajectory
+handedness until pseudo-scalars are admitted; and (b) whether the steerable
+machinery is \emph{necessary} for accuracy is rarely tested against a hand-crafted
+invariant baseline of equal guarantee.
+
+\gap{Equivariant architectures give an exact viewpoint guarantee ``for free'' but
+(i)~this has not been certified numerically for a rehabilitation read-out, (ii)~its
+parity/chirality completeness is unexamined, and (iii)~its necessity over a simple
+hand-crafted invariant model has not been isolated by a discriminating experiment.}
+
+% =====================================================================
+\section{Learned versus Structural Viewpoint Invariance}
+\label{sec:learned}
+
+The default remedy for viewpoint variation is training-time augmentation, and it
+``works'' in the sense the field measures: an augmented model's \emph{aggregate}
+error becomes approximately flat in camera angle. But augmentation makes prediction
+errors \emph{cancel} in the population mean rather than \emph{vanish} per input.
+The distinction between a symmetry that holds in expectation over a training
+distribution and one that holds identically for every input is, for a clinical
+instrument, the whole point --- a screening tool must return the \emph{same patient
+the same score from a different room} --- yet it is expressible only if degradation
+is reported \emph{per sequence}, not as an aggregate.
+
+\gap{The field reports aggregate accuracy versus camera angle, which a
+rotation-augmented model can flatten. It does not report per-sequence score shift,
+so a model whose errors merely cancel is indistinguishable from one that is
+genuinely invariant.}
+
+% =====================================================================
+\section{Continuous-Time Models and Irregular Sampling}
+\label{sec:cde}
+
+Depth-sensor streams are not uniformly sampled --- genuine multi-frame dropouts and
+jittered inter-arrival times are the norm. The standard treatment resamples onto a
+uniform grid; the standard alternative is a continuous-time model consuming arrival
+times natively: Neural ODEs~\cite{chen2018neuralode}, latent ODEs and ODE-RNNs for
+irregular series~\cite{rubanova2019odernn}, Neural CDEs driven by an interpolant of
+the observations~\cite{kidger2020neuralcde}, and recurrences with explicit decay
+between observations (GRU-D)~\cite{che2018grud}, all built on gated recurrent
+units~\cite{cho2014gru}. The widely assumed benefit is that native consumption of
+irregular timestamps must beat resampling.
+
+Two subtleties in this literature are load-bearing for us. First, adaptive
+solvers such as Dormand--Prince~\cite{dormand1980prince} accept or reject steps on a
+\emph{scalar} reduction of the embedded local error; if that scalar is not
+group-invariant, a rotated and an unrotated integration receive \emph{different
+step grids} and silently de-align --- even when the vector field is exactly
+equivariant and the representation orthogonal. Second, irregularly sampled data have
+no single Nyquist frequency and do not alias, which is the basis of the
+Lomb--Scargle construction~\cite{vanderplas2018lombscargle}: a grid-free estimator
+can recover a high-frequency tone that a uniform grid at the same \emph{average}
+rate folds onto itself irrecoverably.
+
+\gap{The advantage of native irregular-time consumption is assumed, not conditioned
+on the signal's spectral content; and the interaction between adaptive-solver error
+control and group equivariance is undocumented, so a ``certified equivariant''
+continuous-time model can still silently break invariance through step-grid
+divergence.}
+
+% =====================================================================
+\section{Edge Deployment of Structured Models}
+\label{sec:edge}
+
+A guarantee proved in exact ($64$-bit) arithmetic on a full recording is not the
+same as a guarantee that survives on the hardware a home device runs: reduced
+precision (fp16/bf16/int8) and a real-time latency budget. Quantisation is not an
+orthogonal transformation, so it does not commute with the group action, and a
+high-accuracy skeleton classifier that is bidirectional and pools over the whole
+clip cannot emit a score until the last frame --- it has no honest latency.
+
+\gap{The precision budget of an equivariance guarantee (where, exactly, the theorem
+degrades from fp64 to int8, and whether it is weight- or activation-quantisation
+that breaks it) is unmeasured; and viewpoint-robust skeleton scorers are not
+co-designed for strictly causal, frame-by-frame real-time operation.}
+
+% =====================================================================
+\section{Synthesis: Gaps and How This Work Closes Them}
+\label{sec:synth}
+
+Table~\ref{tab:synth} collects the gaps above and maps each to the contribution
+that addresses it. The unifying claim is that clean-accuracy leaderboards cannot
+separate architectures on this task, and that the decisive variable is
+\emph{structural behaviour off the clean, frontal manifold}.
+
+\begin{table}[h]
+\centering
+\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{p{0.30\linewidth} p{0.62\linewidth}}
+\toprule
+\textbf{Gap in prior work} & \textbf{How this work closes it} \\
+\midrule
+No mean-predictor floor; protocol incomparability unquantified
+  & Protocol audit isolates optimistic epoch selection as a $16.8\%$ effect on the
+    standard KIMORE slice, shows that slice carries no subject-level signal, fixes a
+    pooled subject-disjoint protocol, and gates every claim on clearing the floor. \\
+Exact viewpoint invariance never certified for a rehab read-out
+  & An $SE(3)$-invariant read-out over a steerable encoder~\cite{geiger2022e3nn},
+    audited by eight numerical gates (E1--E8): orthogonality $\le10^{-12}$, violation
+    at machine roundoff with a \emph{flat} slope in rotation angle, an $8\times10^{8}$
+    fp32/fp64 ratio; cross-viewpoint degradation $9\times10^{-6}$~MAD vs.\ the
+    baseline's $9.42$. \\
+Viewpoint robustness only shown on synthetic rotation
+  & Confirmed on NTU~RGB+D~$60$ Cross-View~\cite{shahroudy2016ntu,yan2018stgcn}, a
+    \emph{real} $45^\circ$ cross-camera benchmark, at exact ($5.8\times10^{-9}$, fp64)
+    cross-view logit invariance without rotation augmentation. \\
+Augmentation's cost reported only in aggregate
+  & The rotation-augmented baseline is granted its remedy and its price measured: a
+    flat $+1.0$~MAD penalty \emph{and} a $3.03$~MAD per-sequence score shift that the
+    aggregate hides --- a flat accuracy curve is shown to \emph{not} be invariance. \\
+Parity/chirality completeness of invariant cuts unexamined
+  & The natural invariant cut is exhibited (gate E6) to be silently $O(3)$-invariant
+    and blind to trajectory handedness; pseudo-scalars restore $SO(3)$ at no cost to
+    the viewpoint theorem (E8). \\
+Necessity of steerable machinery not isolated
+  & A GRU on hand-crafted $SO(3)$ invariants matches accuracy \emph{and} the exact
+    guarantee at a third of the parameters; the steerable encoder is then justified by
+    a \emph{measured} sensor-node-failure experiment, not rhetoric. \\
+Irregular-sampling advantage assumed, not conditioned
+  & Stated as a bandwidth condition and verified in both directions: a spectral census
+    shows resampling destroys only $2.2\%$ of KIMORE's positional energy (a denoiser),
+    predicting the null; a $5$~Hz tremor placed in the destroyed band is recovered at
+    $r=1.000$ under $70\%$ drops via a Lomb--Scargle-style estimator~\cite{vanderplas2018lombscargle}. \\
+Solver error control vs.\ equivariance undocumented
+  & The per-component RMS norm of a Dormand--Prince controller~\cite{dormand1980prince}
+    is proved non-invariant; a per-irrep-normalised norm drives step-grid divergence to
+    identically zero. The Neural CDE~\cite{kidger2020neuralcde} is certified to the same
+    standard yet \emph{fails} the floor --- a clean demonstration that a structural
+    guarantee is worthless without measured signal. \\
+Precision budget and real-time latency of the guarantee unmeasured
+  & The equivariance floor is measured fp64$\to$int8; weight-quantisation preserves the
+    theorem exactly while only activation-rounding breaks it; the read-out streams
+    causally at $8.9$~ms/frame ($112$~fps) with an honest time-to-first-score. \\
+\bottomrule
+\end{tabular}
+\caption{Gap-to-contribution map. Each row is a shortfall identified in
+\S\ref{sec:rehab}--\S\ref{sec:edge} and the measured result that addresses it.}
+\label{tab:synth}
+\end{table}
+
+% =====================================================================
+\section{Positioning of Our Novelty}
+\label{sec:novelty}
+
+Relative to the literature above, the paper's novelty is not a new equivariant
+layer or a new benchmark score. It is a \emph{reframing of what should be measured}
+on this task, plus the structural machinery and certification to act on it:
+
+\begin{enumerate}[leftmargin=1.4em]
+\item \textbf{Assessment as an invariant read-out of an equivariant representation.}
+We formulate rehabilitation scoring so that invariance of the predicted score under
+any rigid motion of the camera is a \emph{theorem about the architecture}, true for
+arbitrary weights, rather than a behaviour induced by augmentation --- and we
+\emph{certify} it numerically (E1--E8) rather than assert it.
+
+\item \textbf{The measurement discipline the task was missing.} A mean-predictor
+floor, a quantified nondeterminism floor ($\approx0.33$~MAD) below which no accuracy
+gap is real, and per-sequence degradation reported alongside aggregate accuracy
+everywhere. This turns ``robustness'' from an uninterpretable plot into a gated
+claim.
+
+\item \textbf{Two negative results, one of them derived.} We report --- rather than
+hide --- that native irregular-time consumption buys nothing on KIMORE, and we
+\emph{predict} the null from a spectral census before running the experiment; and
+that restoring chirality is principled but unrewarded on a corpus of healthy-form
+exercises. Honest scope boundaries, with the corpus properties that would reward
+each capability named explicitly.
+
+\item \textbf{A discriminating experiment, not an appeal to elegance.} Because a
+hand-crafted invariant GRU matches the steerable encoder on both accuracy and the
+viewpoint guarantee, we justify the steerable machinery by the one axis on which
+they measurably differ --- graceful degradation under a frozen tracking node ---
+and we record, against ourselves, that the point-cloud transformer is in fact the
+most node-robust arm, so the defensible claim is a Pareto one.
+
+\item \textbf{The guarantee as a deployable systems property.} A structural
+quantisation audit (weight- vs.\ activation-rounding) and a strictly causal
+streaming read-out show the theorem is co-designed for the edge, not merely an
+fp64 identity.
+\end{enumerate}
+
+\noindent In one sentence: prior work optimises clean, frontal, aggregate accuracy;
+we show that on this task that quantity cannot separate architectures, and that the
+decisive, clinically relevant variable --- a per-prediction viewpoint guarantee that
+survives real cameras, a broken sensor, reduced precision, and real-time latency ---
+is \emph{structural}, provable, and measurable.
+
+% =====================================================================
+\begin{thebibliography}{00}
+
+\bibitem{capecci2019kimore}
+M.~Capecci, M.~G.~Ceravolo, F.~Ferracuti, S.~Iarlori, A.~Monteriu, L.~Romeo, and F.~Verdini,
+``The KIMORE dataset: Kinematic assessment of movement and clinical scores for remote monitoring of physical rehabilitation,''
+\textit{IEEE Trans. Neural Syst. Rehabil. Eng.}, vol.~27, no.~7, pp.~1436--1448, 2019.
+
+\bibitem{pct2026}
+``A point cloud transformer for remote monitoring and automated assessment of physical rehabilitation exercises,''
+arXiv:2606.30309, 2026.
+
+\bibitem{karlov2024}
+M.~Karlov, A.~Abedi, and S.~S.~Khan,
+``Rehabilitation exercise quality assessment through supervised contrastive learning with hard and soft negatives,''
+\textit{Med. Biol. Eng. Comput.}, 2024.
+
+\bibitem{abedi2023}
+A.~Abedi, M.~Malmirian, and S.~S.~Khan,
+``Cross-modal video to body-joints augmentation for rehabilitation exercise quality assessment,''
+arXiv:2306.09546, 2023.
+
+\bibitem{kuang2026}
+Z.~Kuang, Y.~Yin, Y.~Yang, J.~Zhao, and L.~Sun,
+``Dual-stream STGCN with motion-aware grouping for rehabilitation action quality assessment,''
+\textit{Sensors}, vol.~26, no.~1, p.~287, 2026.
+
+\bibitem{rehabpile2026}
+A.~Ismail-Fawaz et al.,
+``Rehab-Pile: A cross-subject rehabilitation benchmark aggregating KIMORE, UI-PRMD and IRDS,''
+arXiv:2507.21018, IEEE FG 2026.
+
+\bibitem{vakanski2018uiprmd}
+A.~Vakanski, H.-P.~Jun, D.~Paul, and R.~Baker,
+``A data set of human body movements for physical rehabilitation exercises (UI-PRMD),''
+\textit{Data}, vol.~3, no.~1, p.~2, 2018.
+
+\bibitem{yan2018stgcn}
+S.~Yan, Y.~Xiong, and D.~Lin,
+``Spatial temporal graph convolutional networks for skeleton-based action recognition,''
+in \textit{Proc. AAAI}, 2018.
+
+\bibitem{shahroudy2016ntu}
+A.~Shahroudy, J.~Liu, T.-T.~Ng, and G.~Wang,
+``NTU RGB+D: A large scale dataset for 3D human activity analysis,''
+in \textit{Proc. IEEE CVPR}, 2016.
+
+\bibitem{cohen2016gconv}
+T.~S.~Cohen and M.~Welling,
+``Group equivariant convolutional networks,''
+in \textit{Proc. ICML}, 2016.
+
+\bibitem{thomas2018tfn}
+N.~Thomas, T.~Smidt, S.~Kearnes, L.~Yang, L.~Li, K.~Kohlhoff, and P.~Riley,
+``Tensor field networks: Rotation- and translation-equivariant neural networks for 3D point clouds,''
+arXiv:1802.08219, 2018.
+
+\bibitem{fuchs2020se3transformer}
+F.~B.~Fuchs, D.~E.~Worrall, V.~Fischer, and M.~Welling,
+``SE(3)-Transformers: 3D roto-translation equivariant attention networks,''
+in \textit{Proc. NeurIPS}, 2020.
+
+\bibitem{geiger2022e3nn}
+M.~Geiger and T.~Smidt,
+``e3nn: Euclidean neural networks,''
+arXiv:2207.09453, 2022.
+
+\bibitem{satorras2021egnn}
+V.~G.~Satorras, E.~Hoogeboom, and M.~Welling,
+``E(n) equivariant graph neural networks,''
+in \textit{Proc. ICML}, 2021.
+
+\bibitem{deng2021vectorneurons}
+C.~Deng, O.~Litany, Y.~Duan, A.~Poulenard, A.~Tagliasacchi, and L.~Guibas,
+``Vector neurons: A general framework for SO(3)-equivariant networks,''
+in \textit{Proc. ICCV}, 2021.
+
+\bibitem{puny2022frameaveraging}
+O.~Puny, M.~Atzmon, H.~Ben-Hamu, I.~Misra, A.~Grover, E.~J.~Smith, and Y.~Lipman,
+``Frame averaging for invariant and equivariant network design,''
+in \textit{Proc. ICLR}, 2022.
+
+\bibitem{chen2018neuralode}
+R.~T.~Q.~Chen, Y.~Rubanova, J.~Bettencourt, and D.~Duvenaud,
+``Neural ordinary differential equations,''
+in \textit{Proc. NeurIPS}, 2018.
+
+\bibitem{rubanova2019odernn}
+Y.~Rubanova, R.~T.~Q.~Chen, and D.~Duvenaud,
+``Latent ODEs for irregularly-sampled time series,''
+in \textit{Proc. NeurIPS}, 2019.
+
+\bibitem{kidger2020neuralcde}
+P.~Kidger, J.~Morrill, J.~Foster, and T.~Lyons,
+``Neural controlled differential equations for irregular time series,''
+in \textit{Proc. NeurIPS}, 2020.
+
+\bibitem{che2018grud}
+Z.~Che, S.~Purushotham, K.~Cho, D.~Sontag, and Y.~Liu,
+``Recurrent neural networks for multivariate time series with missing values,''
+\textit{Sci. Rep.}, vol.~8, no.~1, p.~6085, 2018.
+
+\bibitem{cho2014gru}
+K.~Cho, B.~van Merri\"{e}nboer, C.~Gulcehre, D.~Bahdanau, F.~Bougares, H.~Schwenk, and Y.~Bengio,
+``Learning phrase representations using RNN encoder--decoder for statistical machine translation,''
+in \textit{Proc. EMNLP}, 2014.
+
+\bibitem{dormand1980prince}
+J.~R.~Dormand and P.~J.~Prince,
+``A family of embedded Runge--Kutta formulae,''
+\textit{J. Comput. Appl. Math.}, vol.~6, no.~1, pp.~19--26, 1980.
+
+\bibitem{vanderplas2018lombscargle}
+J.~T.~VanderPlas,
+``Understanding the Lomb--Scargle periodogram,''
+\textit{Astrophys. J. Suppl. Ser.}, vol.~236, no.~1, p.~16, 2018.
+
+\end{thebibliography}
+
+\end{document}

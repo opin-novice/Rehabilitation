@@ -1,0 +1,45 @@
+{
+  "_comment": "F1b flagship candidate. IDENTICAL to the Phase-0 seed-42 baseline ('real' arm of phase0_dt_ablation_train_s42.json) in EVERY hyperparameter, differing ONLY in the two bandpower switches. That is what makes the A/B a clean single-variable test: any MAD delta is attributable to the [2,8] Hz native-rate band-power channel and nothing else.",
+
+  "variant": "egru_f1b",
+  "seed": 42,
+  "folds": 5,
+  "deterministic": true,
+
+  "data": {
+    "max_len": 150,
+    "compute_bandpower": true,
+    "_bandpower_params": "native-rate speed-norm RMS in [2,8] Hz, Lomb-Scargle on real irregular stamps, >=1 s sliding window; see native_bandpower.py (F_LO/F_HI/WINDOW_S/N_FREQ)"
+  },
+
+  "model": {
+    "n_scalar": 32,
+    "n_vec": 8,
+    "n_layers": 2,
+    "lmax": 2,
+    "gru_hidden": 128,
+    "dropout": 0.2,
+    "n_exercises": 5,
+    "use_speed": true,
+    "use_chiral": false,
+    "use_mask": false,
+    "dt_mode": "real",
+    "use_bandpower": true
+  },
+
+  "train": {
+    "epochs": 80,
+    "batch_size": 8,
+    "lr": 1e-3,
+    "wd": 1e-3,
+    "clip": 1.0,
+    "huber_delta": 0.1,
+    "eval_every": 4
+  },
+
+  "baseline_ref": {
+    "_comment": "The matched no-bandpower baseline is the 'real' arm of this file; same seed, same folds, same determinism.",
+    "results_json": "outputs/cde_block2/phase0_dt_ablation_train_s42.json",
+    "arm": "real"
+  }
+}

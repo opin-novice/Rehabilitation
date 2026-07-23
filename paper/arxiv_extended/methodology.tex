@@ -208,6 +208,73 @@ encoder learning to construct chirality for itself:
 \end{gathered}
 \end{equation}
 
+\paragraph{Structural specification of the invariant sets.} Table~\ref{tab:invsets} states the two
+sets explicitly --- their generators, $O(3)$ irrep types, dimensions, and pooling --- for the
+deployed channel widths ($n_0=32$ type-$0$, $n_1=8$ type-$1$). One point is worth making precise
+because it is easy to mis-specify: the parity-even and parity-odd per-joint generators are pooled by
+the \emph{same} permutation-invariant $\mathrm{mean}\oplus\max$ over joints; there is no separate
+``signed'' pooling operator for the chiral channels, and none is needed, because a mean or max of
+bounded signed pseudo-scalars is itself a valid invariant. The per-bone lengths and the per-frame
+anatomical volumes are appended \emph{unpooled}, in fixed index order (this index-preservation is what
+Remark~\ref{rem:laterality} relies on). Under the masked variant, a liveness gate zeroes any generator
+--- pooled feature, bone length, or signed volume --- that touches a failed joint, which is what makes
+the dead-node invariance of Sec.~\ref{sec:results:nodefail} exact rather than approximate. The
+parity-even subtotal is exactly the $160$-dimensional projection whose precision budget is audited in
+Sec.~\ref{sec:deploy:precision}; the parity-odd completion adds $123$ dimensions and narrows the
+guaranteed group from $O(3)$ to $SO(3)$ at no cost to the viewpoint theorem
+(Remark~\ref{rem:parity}).
+
+\begin{table}[!t]
+\centering
+\caption{Structural specification of the invariant cut $\Pi$ (\eqref{eq:cut}--\eqref{eq:pi}) at the
+deployed widths $n_0=32$, $n_1=8$; $J=25$ joints, $24$ bones, $|\mathcal{T}|=11$ anatomical frames.
+Both parity classes share one $\mathrm{mean}\oplus\max$ joint pool; bone lengths and signed volumes
+are concatenated index-preserved (unpooled).}
+\label{tab:invsets}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llcc}
+\toprule
+Generator & Irrep & Count & Dim \\
+\midrule
+\multicolumn{4}{l}{\emph{Parity-even} --- generating set complete for $O(3)$}\\
+\quad scalars $\tanh s$                      & $0e$ & $n_0$            & $32$ \\
+\quad vector norms $\log(1{+}\|v\|)$         & $0e$ & $n_1$            & $8$ \\
+\quad cosines $\langle\hat v,\hat v'\rangle$ & $0e$ & $\binom{n_1}{2}$ & $28$ \\
+\quad\emph{pooled} $\mathrm{mean}\oplus\max$ &      & $2\times68$      & $136$ \\
+\quad bone lengths $d_{ij}$                  & $0e$ & per bone         & $24$ \\
+\cmidrule(lr){1-4}
+\quad\textbf{even subtotal}                  &      &                  & $\mathbf{160}$ \\
+\midrule
+\multicolumn{4}{l}{\emph{Parity-odd} --- $SO(3)$ chiral completion}\\
+\quad triple products $\det[\hat v,\hat v',\hat v'']$ & $0o$ & $\binom{n_1}{3}$ & $56$ \\
+\quad\emph{pooled} $\mathrm{mean}\oplus\max$ &      & $2\times56$      & $112$ \\
+\quad anatomical volumes $\chi_\tau$         & $0o$ & per frame        & $11$ \\
+\cmidrule(lr){1-4}
+\quad\textbf{odd subtotal}                   &      &                  & $\mathbf{123}$ \\
+\midrule
+\quad\textbf{full $SO(3)$ cut}               &      &                  & $\mathbf{283}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Numerical stability of the pseudo-scalars.} The parity-odd entries divide by a vector
+norm, and a determinant is discontinuous in the sign of a vanishing argument, so the unit
+normalisation $\hat v=v/\|v\|$ is regularised by a fixed floor,
+$\hat v=v/(\|v\|+\varepsilon)$ with $\varepsilon=10^{-8}$, applied identically to the learned $1o$
+channels and to the anatomical difference vectors. We do not clamp or skip terms; the floor is the
+only intervention. It is inert except when $\|v\|\lesssim\varepsilon$ --- a numerically null channel
+or a collapsed anatomical triad --- because the determinant is taken over \emph{unit} vectors and is
+therefore bounded in $[-1,1]$ regardless of $\varepsilon$, so the read-out cannot be inflated by a
+small denominator. The one regime that genuinely produces a near-zero norm is a failed tracking node
+that freezes two joints onto each other; there the anatomical volume is not merely small but
+sign-meaningless, and we zero it explicitly with a per-frame liveness mask (a chiral frame spanning a
+dead joint contributes exactly $0$ rather than an ill-conditioned $\pm1$) rather than let the floor
+decide its sign. Because the pseudo-scalars are bounded and the floor only regularises a vanishing
+denominator, the deployed read-out is insensitive to $\varepsilon$ over many decades: the invariance
+gate E8 below ($2.9\times10^{-16}$) and every accuracy number in Section~\ref{sec:results} are computed
+with this floor active.
+
 \begin{proposition}[$SO(3)$-invariance of the read-out]
 \label{prop:invariance}
 $\Pi\big(\rho(g)h,\;R\tilde{\bm{x}}\big)=\Pi\big(h,\tilde{\bm{x}}\big)$ for every proper rotation
@@ -336,9 +403,12 @@ transformations are equivalent up to a rotation, so a single reflection certifie
 reflection) moves the score by $4.5\times10^{-2}$ and $6.2\times10^{-2}$ for the two cuts
 respectively. Both models separate a left-limb from a right-limb movement
 (Remark~\ref{rem:laterality}).
-\item[E8] \textbf{The fix is free:} read-out invariance under Haar-random \emph{proper} rotations,
-re-measured with the parity-odd channels active, is $2.9\times10^{-16}$ --- unchanged. Restoring
-chirality costs the viewpoint theorem nothing.
+\item[E8] \textbf{The fix is free:} read-out invariance under Haar-random \emph{proper} rotations
+--- arbitrary $g\in SO(3)$ drawn uniformly with rotation angle up to $\pi$, not a gravity-axis
+azimuth sweep --- re-measured with the parity-odd channels active, is $2.9\times10^{-16}$ ---
+unchanged. Restoring chirality costs the viewpoint theorem nothing. Gates E1--E5 are likewise
+evaluated over Haar-random $SO(3)$, so the certified invariance is to the \emph{full} rotation group,
+of which a camera azimuth or a cross-view camera displacement is one instance.
 \end{itemize}
 %
 The three conditions of E3--E4 together --- violation at roundoff, \emph{flat} in $\theta$, and

@@ -275,7 +275,7 @@ class InvariantProjection(nn.Module):
             n_odd = ch.N_CHIRAL                          # ANATOMIC pseudo-scalars (not pooled)
         self.dim = 2 * per_joint + self.n_bones + n_odd  # mean+max over joints, + bones, + chi
 
-    def forward(self, h, x, mask=None):
+    def forward(self, h, x, mask=None, ablate=None):
         """h: (N,J,hd) equivariant; x: (N,J,3) positions -> (N, dim) invariant.
 
         THE MASK MUST REACH THE READOUT, not merely the message passing. Every reduction below is
@@ -287,7 +287,15 @@ class InvariantProjection(nn.Module):
                                 SIGN, i.e. corrupt the single bit the parity construction exists
                                 to carry (see chirality.frame_liveness).
         Gating all four is what makes the dead-node invariance EXACT rather than approximate.
+
+        ablate: optional set of invariant-FAMILY names to zero out WITHOUT changing self.dim, so the
+        marginal contribution of each family can be measured on an EXISTING checkpoint (no retrain).
+        Names: {'scalars','norms','cosines','triples','volumes','bones'}. A zeroed family still
+        occupies its slice (fed as zeros to the learned input weights); zeroing a per-joint family
+        before the mean+max pool yields 0 mean AND 0 max, i.e. information removed, dimension kept.
+        Default None == no ablation, bit-identical to the original forward. (Reviewer Q2.)
         """
+        ablate = ablate or set()
         N, J, _ = h.shape
         s = h[..., : self.n_scalar]
         v = h[..., self.n_scalar:].reshape(N, J, self.n_vec, 3)
@@ -295,16 +303,28 @@ class InvariantProjection(nn.Module):
         vhat = v / (norms.unsqueeze(-1) + 1e-6)
         cos = torch.einsum("njic,njkc->njik", vhat, vhat)[..., self.iu_r, self.iu_c]
         feats = [torch.tanh(s), torch.log1p(norms), cos]
+        # Zero the FEATURE, not the underlying norms/vhat, so ablating one family never corrupts the
+        # computation of another (vhat feeds cosines and triple products, computed above).
+        if "scalars" in ablate:
+            feats[0] = torch.zeros_like(feats[0])
+        if "norms" in ablate:
+            feats[1] = torch.zeros_like(feats[1])
+        if "cosines" in ablate:
+            feats[2] = torch.zeros_like(feats[2])
         if self.use_chiral:
             # det[vhat_a, vhat_b, vhat_c] over UNIT vectors => bounded in [-1,1], exactly as the
             # cosines are. A raw triple product is CUBIC in feature scale; the same unboundedness
             # that broke an earlier model through quadratic dots would break it worse here.
             chi = (torch.cross(vhat[..., self.t_a, :], vhat[..., self.t_b, :], dim=-1)
                    * vhat[..., self.t_c, :]).sum(-1)                   # (N,J,n_triples)  parity-ODD
+            if "triples" in ablate:
+                chi = torch.zeros_like(chi)
             feats.append(chi)
         pj = torch.cat(feats, dim=-1)                                  # (N,J,P)
 
         bone = (x[:, self.bdst] - x[:, self.bsrc]).norm(dim=-1)        # invariant bone lengths
+        if "bones" in ablate:
+            bone = torch.zeros_like(bone)
         if mask is None:
             pooled = torch.cat([pj.mean(1), pj.amax(1)], dim=-1)
         else:
@@ -323,6 +343,8 @@ class InvariantProjection(nn.Module):
             psi = ch.anatomic_pseudoscalars(x)                         # (N, N_CHIRAL) parity-ODD
             if mask is not None:
                 psi = psi * ch.frame_liveness(mask)                    # a dead frame contributes 0
+            if "volumes" in ablate:
+                psi = torch.zeros_like(psi)
             out.append(psi)
         return torch.cat(out, dim=-1)
 
@@ -383,7 +405,7 @@ class SE3EquivariantGRU(nn.Module):
             nn.Linear(2 * gru_hidden, head_hidden), nn.SiLU(), nn.Dropout(dropout),
             nn.Linear(head_hidden, 1))
 
-    def forward(self, t, x, ex_id=None, n_real=None, mask=None, hf=None):
+    def forward(self, t, x, ex_id=None, n_real=None, mask=None, hf=None, ablate=None):
         """t: (B,T) ACTUAL stamps; x: (B,T,J,3) root-relative; n_real: (B,) true lengths.
 
         mask: (B,T,J) joint liveness in {0,1}. Only consulted when use_mask=True; defaults to
@@ -392,6 +414,10 @@ class SE3EquivariantGRU(nn.Module):
         failed sensor, not a robustness slope, and certify_egru measures it to machine precision.
 
         hf: (B,T,J) F1b native-rate band-power, only consulted when use_bandpower=True.
+
+        ablate: optional set of invariant-family names zeroed in the cut without changing the model
+        (reviewer Q2 per-family ablation); passed through to InvariantProjection. Default None ==
+        no ablation. It touches ONLY the invariant projection, not the GRU-level speed/dt channels.
         """
         B, T, J, _ = x.shape
         if self.use_mask:
@@ -402,7 +428,7 @@ class SE3EquivariantGRU(nn.Module):
             mask, mflat = None, None
 
         h = self.encoder(x.reshape(B * T, J, 3), mflat)
-        inv = self.proj(h, x.reshape(B * T, J, 3), mflat).reshape(B, T, -1)
+        inv = self.proj(h, x.reshape(B * T, J, 3), mflat, ablate=ablate).reshape(B, T, -1)
 
         dt = torch.zeros_like(t)
         dt[:, 1:] = t[:, 1:] - t[:, :-1]                   # the sensor's real inter-arrival gaps

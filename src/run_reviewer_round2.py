@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from models_stgcn import TCNRegressor
 from selfsup.data import load_corpus_with_labels
 
-RESULTS_DIR = "results/kimore_loso_78fold"
+RESULTS_DIR = "archive/legacy_results/kimore_loso_78fold"
 PRETRAIN_DIR = "outputs/ssl_pretrain"
 OUT_PATH = "results/reviewer_analyses.json"
 

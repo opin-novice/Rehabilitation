@@ -10,7 +10,7 @@ target corpora and evaluating zero-shot.
 Usage:
   python src/reviewer_round3_q10_norm.py build
   #   python src/train_loso.py --model_type tcn --loso --resume \
-  #       --pooled_dir KIMORE_pooled_perseq --out_dir results/kimore_loso_78fold_perseq \
+  #       --pooled_dir KIMORE_pooled_perseq --out_dir archive/legacy_results/kimore_loso_78fold_perseq \
   #       --epochs 100 --batch_size 16 --patience 100 --d_model 128
   python src/reviewer_round3_q10_norm.py eval
 """
@@ -38,7 +38,7 @@ from selfsup.naive_baseline import naive_auroc  # noqa: E402
 
 SRC_POOLED = "KIMORE_pooled"
 DST_POOLED = "KIMORE_pooled_perseq"
-PERSEQ_DIR = "results/kimore_loso_78fold_perseq"
+PERSEQ_DIR = "archive/legacy_results/kimore_loso_78fold_perseq"
 OUT_DIR = "outputs/reviewer_round3"
 
 

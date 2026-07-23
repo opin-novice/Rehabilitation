@@ -22,7 +22,7 @@ from selfsup.data import load_corpus_with_labels
 from selfsup.naive_baseline import naive_auroc, compute_naive_features
 from selfsup.zeroshot_eval import DEGENERACY_PRED_SD
 
-RESULTS_DIR = "results/kimore_loso_78fold"
+RESULTS_DIR = "archive/legacy_results/kimore_loso_78fold"
 OUT_PATH = "results/reviewer_analyses.json"
 DEVICE = torch.device("cpu")
 

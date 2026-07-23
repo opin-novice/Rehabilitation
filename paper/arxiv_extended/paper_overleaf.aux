@@ -1,0 +1,175 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{capecci2019kimore}
+\citation{karlov2024,abedi2023,kuang2026,pct2026}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{I}{1}{Introduction}{section.1}{}}
+\citation{capecci2019kimore}
+\citation{karlov2024}
+\citation{abedi2023}
+\citation{kuang2026}
+\citation{pct2026}
+\citation{rehabpile2026}
+\citation{vakanski2018uiprmd}
+\citation{cohen2016gconv}
+\citation{thomas2018tfn}
+\citation{fuchs2020se3transformer}
+\citation{geiger2022e3nn}
+\citation{satorras2021egnn}
+\citation{deng2021vectorneurons}
+\citation{geiger2022e3nn}
+\citation{puny2022frameaveraging}
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{3}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{II}{3}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Rehabilitation Exercise Assessment from Skeletons}{3}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Equivariant and Invariant Architectures}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Learned Invariance and Its Price}{3}{subsection.2.3}\protected@file@percent }
+\citation{chen2018neuralode}
+\citation{rubanova2019odernn}
+\citation{kidger2020neuralcde}
+\citation{che2018grud}
+\citation{dormand1980prince}
+\citation{vanderplas2018lombscargle}
+\citation{yan2018stgcn}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Irregular Sampling and Continuous-Time Models}{4}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-E}}Robustness to Missing and Corrupted Joints}{4}{subsection.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Methodology}{4}{section.3}\protected@file@percent }
+\newlabel{sec:method}{{III}{4}{Methodology}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Irregular Arrivals Without a Frame Grid}{4}{subsection.3.1}\protected@file@percent }
+\newlabel{sec:method:irregular}{{\mbox  {III-A}}{4}{Irregular Arrivals Without a Frame Grid}{subsection.3.1}{}}
+\newlabel{eq:root}{{1}{4}{Irregular Arrivals Without a Frame Grid}{equation.1}{}}
+\newlabel{eq:dt}{{2}{4}{Irregular Arrivals Without a Frame Grid}{equation.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}The $SO(3)$-Equivariant Spatial Encoder}{4}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:method:encoder}{{\mbox  {III-B}}{4}{The $SO(3)$-Equivariant Spatial Encoder}{subsection.3.2}{}}
+\newlabel{eq:irreps}{{3}{4}{The $SO(3)$-Equivariant Spatial Encoder}{equation.3}{}}
+\newlabel{eq:rho}{{4}{4}{The $SO(3)$-Equivariant Spatial Encoder}{equation.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-B}0a}Initialisation.}{5}{paragraph.3.2.0.1}\protected@file@percent }
+\newlabel{eq:init}{{5}{5}{Initialisation}{equation.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-B}0b}Steerable message passing.}{5}{paragraph.3.2.0.2}\protected@file@percent }
+\newlabel{eq:mp}{{6}{5}{Steerable message passing}{equation.6}{}}
+\newlabel{eq:tp-intertwine}{{7}{5}{Steerable message passing}{equation.7}{}}
+\newlabel{prop:bias}{{1}{5}{Elimination of non-scalar biases}{proposition.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}The Invariant Cut: Where the Theorem Is Discharged}{5}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:method:cut}{{\mbox  {III-C}}{5}{The Invariant Cut: Where the Theorem Is Discharged}{subsection.3.3}{}}
+\newlabel{eq:cut}{{8}{5}{The Invariant Cut: Where the Theorem Is Discharged}{equation.8}{}}
+\newlabel{eq:pi}{{9}{5}{The Invariant Cut: Where the Theorem Is Discharged}{equation.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-C}0a}Structural specification of the invariant sets.}{5}{paragraph.3.3.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-C}0b}Numerical stability of the pseudo-scalars.}{5}{paragraph.3.3.0.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Structural specification of the invariant cut $\Pi $ (\eqref  {eq:cut}--\eqref  {eq:pi}) at the deployed widths $n_0=32$, $n_1=8$; $J=25$ joints, $24$ bones, $|\mathcal  {T}|=11$ anatomical frames. Both parity classes share one $\mathrm  {mean}\oplus \max $ joint pool; bone lengths and signed volumes are concatenated index-preserved (unpooled).}}{6}{table.1}\protected@file@percent }
+\newlabel{tab:invsets}{{I}{6}{Structural specification of the invariant cut $\Pi $ (\eqref {eq:cut}--\eqref {eq:pi}) at the deployed widths $n_0=32$, $n_1=8$; $J=25$ joints, $24$ bones, $|\mathcal {T}|=11$ anatomical frames. Both parity classes share one $\mathrm {mean}\oplus \max $ joint pool; bone lengths and signed volumes are concatenated index-preserved (unpooled)}{table.1}{}}
+\newlabel{prop:invariance}{{2}{6}{$SO(3)$-invariance of the read-out}{proposition.2}{}}
+\newlabel{rem:parity}{{1}{6}{Restoring chirality costs the viewpoint theorem nothing}{remark.1}{}}
+\newlabel{rem:laterality}{{2}{6}{Reflection-blindness is not left/right-blindness}{remark.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Temporal Recurrence on Actual Inter-Arrival Times}{6}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:method:recurrence}{{\mbox  {III-D}}{6}{Temporal Recurrence on Actual Inter-Arrival Times}{subsection.3.4}{}}
+\newlabel{eq:speed}{{10}{6}{Temporal Recurrence on Actual Inter-Arrival Times}{equation.10}{}}
+\newlabel{eq:input}{{11}{7}{Temporal Recurrence on Actual Inter-Arrival Times}{equation.11}{}}
+\newlabel{eq:head}{{12}{7}{Temporal Recurrence on Actual Inter-Arrival Times}{equation.12}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Numerical Certificate}{7}{subsection.3.5}\protected@file@percent }
+\newlabel{sec:method:cert}{{\mbox  {III-E}}{7}{Numerical Certificate}{subsection.3.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Control: The Continuous-Flow (Neural CDE) Variant}{7}{subsection.3.6}\protected@file@percent }
+\newlabel{sec:method:cde-control}{{\mbox  {III-F}}{7}{Control: The Continuous-Flow (Neural CDE) Variant}{subsection.3.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-F}0a}Control path.}{7}{paragraph.3.6.0.1}\protected@file@percent }
+\newlabel{eq:spline-moments}{{13}{7}{Control path}{equation.13}{}}
+\newlabel{eq:cde}{{14}{7}{Control path}{equation.14}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-F}0b}The adaptive-solver failure mode, and the invariant norm.}{8}{paragraph.3.6.0.2}\protected@file@percent }
+\newlabel{prop:fail}{{3}{8}{Non-invariance of the per-component norm}{proposition.3}{}}
+\newlabel{eq:neq}{{15}{8}{The adaptive-solver failure mode, and the invariant norm}{equation.15}{}}
+\newlabel{prop:neq}{{4}{8}{Exact invariance and vanishing grid divergence}{proposition.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-G}}Spectral Fidelity Calibration: The Metric $\mathcal  {I}_{\text  {loss}}$}{8}{subsection.3.7}\protected@file@percent }
+\newlabel{sec:method:spectral}{{\mbox  {III-G}}{8}{Spectral Fidelity Calibration: The Metric $\mathcal {I}_{\text {loss}}$}{subsection.3.7}{}}
+\newlabel{eq:iloss}{{16}{8}{Spectral Fidelity Calibration: The Metric $\mathcal {I}_{\text {loss}}$}{equation.16}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-G}0a}What this metric does and does not license.}{8}{paragraph.3.7.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-H}}Experimental Protocol}{8}{subsection.3.8}\protected@file@percent }
+\newlabel{sec:method:protocol}{{\mbox  {III-H}}{8}{Experimental Protocol}{subsection.3.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-H}0a}Corruption model anchored to real kinematics.}{8}{paragraph.3.8.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-H}0b}Hash-locked fairness.}{9}{paragraph.3.8.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-H}0c}Equal augmentation budget.}{9}{paragraph.3.8.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-H}0d}Two metrics, and why both are mandatory.}{9}{paragraph.3.8.0.4}\protected@file@percent }
+\newlabel{eq:metrics}{{17}{9}{Two metrics, and why both are mandatory}{equation.17}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-H}0e}Training is nondeterministic; every number is a mean over three seeds.}{9}{paragraph.3.8.0.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-H}0f}Efficiency.}{9}{paragraph.3.8.0.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-H}0g}Two disclosures about the input.}{9}{paragraph.3.8.0.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Results and Discussion}{9}{section.4}\protected@file@percent }
+\newlabel{sec:results}{{IV}{9}{Results and Discussion}{section.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Protocol audit. Identical model, data and split; only the epoch-selection rule changes. \emph  {Honest} selects on a held-out validation fold, \emph  {inflated} takes the minimum over epochs on the test set. $\Delta $ is the paired subject-cluster bootstrap of MAD(model)$-$MAD(floor).}}{10}{table.2}\protected@file@percent }
+\newlabel{tab:protocol}{{II}{10}{Protocol audit. Identical model, data and split; only the epoch-selection rule changes. \emph {Honest} selects on a held-out validation fold, \emph {inflated} takes the minimum over epochs on the test set. $\Delta $ is the paired subject-cluster bootstrap of MAD(model)$-$MAD(floor)}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}What the Benchmark Measures: A Protocol Audit}{10}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:results:protocol}{{\mbox  {IV-A}}{10}{What the Benchmark Measures: A Protocol Audit}{subsection.4.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Clean-Data Accuracy Is a Tie --- and That Is the Point}{10}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:results:accuracy}{{\mbox  {IV-B}}{10}{Clean-Data Accuracy Is a Tie --- and That Is the Point}{subsection.4.2}{}}
+\citation{yan2018stgcn}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Clean-data accuracy (pooled, subject-disjoint, mean\,$\pm $\,std over 3 seeds) and model size. The four leading models are statistically tied --- every pairwise gap is inside the $0.33$~MAD seed floor. $O(3)$ rows use the parity-even cut; $SO(3)$ rows admit the pseudo-scalars of \eqref  {eq:cut}. The mean-predictor floor and the continuous-flow control (CDE, single seed) are shown for reference.}}{11}{table.3}\protected@file@percent }
+\newlabel{tab:accuracy}{{III}{11}{Clean-data accuracy (pooled, subject-disjoint, mean\,$\pm $\,std over 3 seeds) and model size. The four leading models are statistically tied --- every pairwise gap is inside the $0.33$~MAD seed floor. $O(3)$ rows use the parity-even cut; $SO(3)$ rows admit the pseudo-scalars of \eqref {eq:cut}. The mean-predictor floor and the continuous-flow control (CDE, single seed) are shown for reference}{table.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Viewpoint Invariance Is a Theorem, Not a Fit}{11}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:results:viewpoint}{{\mbox  {IV-C}}{11}{Viewpoint Invariance Is a Theorem, Not a Fit}{subsection.4.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-C}0a}The capacity tax of learned invariance.}{11}{paragraph.4.3.0.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Cross-viewpoint transfer (mean over 3 seeds; test-time camera azimuth). Both invariant models are trained \emph  {without} rotation augmentation; PCT is shown clean and with azimuth augmentation (PCT\,+\,rot). Baselines use their \emph  {best} resampling operator over $\{$linear, cubic, forward-fill$\}$. The final row is the worst \emph  {degradation} --- each method against its own clean score --- over the whole sweep, and it is the row that separates a guarantee from a fit.}}{11}{table.4}\protected@file@percent }
+\newlabel{tab:viewpoint}{{IV}{11}{Cross-viewpoint transfer (mean over 3 seeds; test-time camera azimuth). Both invariant models are trained \emph {without} rotation augmentation; PCT is shown clean and with azimuth augmentation (PCT\,+\,rot). Baselines use their \emph {best} resampling operator over $\{$linear, cubic, forward-fill$\}$. The final row is the worst \emph {degradation} --- each method against its own clean score --- over the whole sweep, and it is the row that separates a guarantee from a fit}{table.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-C}0b}A flat accuracy curve is not invariance.}{11}{paragraph.4.3.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-C}0c}The guarantee is not an artifact of synthetic rotation.}{11}{paragraph.4.3.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}The Operational Envelope of Resampling: A Negative Result}{12}{subsection.4.4}\protected@file@percent }
+\newlabel{sec:results:resampling}{{\mbox  {IV-D}}{12}{The Operational Envelope of Resampling: A Negative Result}{subsection.4.4}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Irregular-sampling stress test under an \emph  {identical, hash-locked} augmentation budget for both arms (train $\mathcal  {U}[0,0.3]$; test to $0.7$, i.e.\ the last two rows extrapolate). Mean\,$\pm $\,std over 3 seeds; lower is better on both axes.}}{12}{table.5}\protected@file@percent }
+\newlabel{tab:resampling}{{V}{12}{Irregular-sampling stress test under an \emph {identical, hash-locked} augmentation budget for both arms (train $\mathcal {U}[0,0.3]$; test to $0.7$, i.e.\ the last two rows extrapolate). Mean\,$\pm $\,std over 3 seeds; lower is better on both axes}{table.5}{}}
+\newlabel{sec:results:bandwidth}{{\mbox  {IV-D}1}{12}{The Null Is Predicted, Not Merely Observed}{subsubsection.4.4.1}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-D}1}The Null Is Predicted, Not Merely Observed}{12}{subsubsection.4.4.1}\protected@file@percent }
+\citation{satorras2021egnn}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}What the Steerable Encoder Buys: Sensor-Node Failure}{13}{subsection.4.5}\protected@file@percent }
+\newlabel{sec:results:nodefail}{{\mbox  {IV-E}}{13}{What the Steerable Encoder Buys: Sensor-Node Failure}{subsection.4.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Sensor-node failure: $k$ tracking nodes freeze at their first-frame position. MAD, mean over 3 seeds $\times $ 5 folds; identical hash-locked inputs to all arms; no retraining. \underline  {Underline}: worse than the mean-predictor floor ($8.31$).}}{13}{table.6}\protected@file@percent }
+\newlabel{tab:nodefail}{{VI}{13}{Sensor-node failure: $k$ tracking nodes freeze at their first-frame position. MAD, mean over 3 seeds $\times $ 5 folds; identical hash-locked inputs to all arms; no retraining. \underline {Underline}: worse than the mean-predictor floor ($8.31$)}{table.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-E}0a}The mechanism is not an artifact of the freeze model.}{13}{paragraph.4.5.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-E}0b}Steerable vs.\ lighter $E(n)$ equivariance.}{13}{paragraph.4.5.0.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Node failure under five operators (chiral models, pooled, mean over 3 seeds $\times $ 5 folds; hash-locked inputs, no retraining). Each cell is MAD at $k\!=\!1$ / $k\!=\!8$ dead joints and the total MAD lost over that range. The freeze/random row reproduces Table~\ref {tab:nodefail}; every operator preserves the ordering.}}{14}{table.7}\protected@file@percent }
+\newlabel{tab:nodefail_modes}{{VII}{14}{Node failure under five operators (chiral models, pooled, mean over 3 seeds $\times $ 5 folds; hash-locked inputs, no retraining). Each cell is MAD at $k\!=\!1$ / $k\!=\!8$ dead joints and the total MAD lost over that range. The freeze/random row reproduces Table~\ref {tab:nodefail}; every operator preserves the ordering}{table.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Encoder equivariance class behind the \emph  {identical} invariant cut and pooling (isolating the steerable machinery): a lighter $E(n)$ (EGNN) encoder against the steerable $e3nn$ encoder and the hand-crafted invariants. Mean over $3$ seeds $\times $ $5$ folds; hash-locked inputs; no retraining. All three are exactly viewpoint-invariant --- a theorem for EGRU/InvariantGRU, and an fp32 certificate of $1.4\times 10^{-5}$ for EGNN\,$+$\,cut. ``Node-fail'' is MAD lost over $8$ dead joints. Damping the EGNN coordinate updates (clamp $0.1/0.5/1.0$) gives $+6.42/+6.06/+5.69$ --- the gap does not close.}}{14}{table.8}\protected@file@percent }
+\newlabel{tab:egnn}{{VIII}{14}{Encoder equivariance class behind the \emph {identical} invariant cut and pooling (isolating the steerable machinery): a lighter $E(n)$ (EGNN) encoder against the steerable $e3nn$ encoder and the hand-crafted invariants. Mean over $3$ seeds $\times $ $5$ folds; hash-locked inputs; no retraining. All three are exactly viewpoint-invariant --- a theorem for EGRU/InvariantGRU, and an fp32 certificate of $1.4\times 10^{-5}$ for EGNN\,$+$\,cut. ``Node-fail'' is MAD lost over $8$ dead joints. Damping the EGNN coordinate updates (clamp $0.1/0.5/1.0$) gives $+6.42/+6.06/+5.69$ --- the gap does not close}{table.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-E}0c}The whole thesis in one grid.}{14}{paragraph.4.5.0.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces Does each model stay below the mean-predictor floor ($8.31$~MAD) under each stress? The last column is the worst per-sequence score shift under \emph  {any} camera rotation --- the difference between a guarantee and a fit.}}{14}{table.9}\protected@file@percent }
+\newlabel{tab:pareto}{{IX}{14}{Does each model stay below the mean-predictor floor ($8.31$~MAD) under each stress? The last column is the worst per-sequence score shift under \emph {any} camera rotation --- the difference between a guarantee and a fit}{table.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Per-Family Contribution of the Invariant Cut}{14}{subsection.4.6}\protected@file@percent }
+\newlabel{sec:results:ablation}{{\mbox  {IV-F}}{14}{Per-Family Contribution of the Invariant Cut}{subsection.4.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {X}{\ignorespaces Per-family ablation of the invariant cut \eqref  {eq:cut}: each family zeroed at inference on the deployed chiral EGRU (projection dimension preserved, \emph  {no retraining}; mean over $3$ seeds $\times 5$ folds). $\Delta $Acc is the clean-MAD cost of removing the family; ``node-fail lost'' is the worst MAD lost over $8$ dead joints (full-cut baseline $+3.76$). $\Delta $Acc below the $0.33$ seed floor is a tie.}}{15}{table.10}\protected@file@percent }
+\newlabel{tab:ablation}{{X}{15}{Per-family ablation of the invariant cut \eqref {eq:cut}: each family zeroed at inference on the deployed chiral EGRU (projection dimension preserved, \emph {no retraining}; mean over $3$ seeds $\times 5$ folds). $\Delta $Acc is the clean-MAD cost of removing the family; ``node-fail lost'' is the worst MAD lost over $8$ dead joints (full-cut baseline $+3.76$). $\Delta $Acc below the $0.33$ seed floor is a tie}{table.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Limitations}{15}{subsection.4.7}\protected@file@percent }
+\newlabel{sec:results:limits}{{\mbox  {IV-G}}{15}{Limitations}{subsection.4.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Edge Deployment: Precision Budget and Streaming Latency}{15}{section.5}\protected@file@percent }
+\newlabel{sec:deploy}{{V}{15}{Edge Deployment: Precision Budget and Streaming Latency}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Equivariance Has a Precision Budget}{15}{subsection.5.1}\protected@file@percent }
+\newlabel{sec:deploy:precision}{{\mbox  {V-A}}{15}{Equivariance Has a Precision Budget}{subsection.5.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XI}{\ignorespaces Equivariance precision budget of the deployed pooled EGRU (real KIMORE motion, $64$ azimuths, native per-format construction). ``INV floor'' is $\max _g\lVert \mathrm  {inv}(g\cdot x)-\mathrm  {inv}(x)\rVert /\lVert \mathrm  {inv}(x)\rVert $ on the invariant projection; ``Score shift'' is the movement of the reported $0$--$50$ score. The int8 rows decompose the cliff into its weight- and activation-quantisation parts.}}{16}{table.11}\protected@file@percent }
+\newlabel{tab:precision}{{XI}{16}{Equivariance precision budget of the deployed pooled EGRU (real KIMORE motion, $64$ azimuths, native per-format construction). ``INV floor'' is $\max _g\lVert \mathrm {inv}(g\cdot x)-\mathrm {inv}(x)\rVert /\lVert \mathrm {inv}(x)\rVert $ on the invariant projection; ``Score shift'' is the movement of the reported $0$--$50$ score. The int8 rows decompose the cliff into its weight- and activation-quantisation parts}{table.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Causal Streaming and Time-to-First-Score}{16}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:deploy:streaming}{{\mbox  {V-B}}{16}{Causal Streaming and Time-to-First-Score}{subsection.5.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {XII}{\ignorespaces Bidirectional vs.\ causal-streaming EGRU on NTU~RGB+D~$60$ Cross-View. The streaming variant reuses the \emph  {same} equivariant encoder; only the temporal read-out changes (unidirectional recurrence, causal running-mean pool). Latency is a genuine per-frame incremental step with the hidden state carried, not a whole-clip forward pass.}}{16}{table.12}\protected@file@percent }
+\newlabel{tab:streaming}{{XII}{16}{Bidirectional vs.\ causal-streaming EGRU on NTU~RGB+D~$60$ Cross-View. The streaming variant reuses the \emph {same} equivariant encoder; only the temporal read-out changes (unidirectional recurrence, causal running-mean pool). Latency is a genuine per-frame incremental step with the hidden state carried, not a whole-clip forward pass}{table.12}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusion}{16}{section.6}\protected@file@percent }
+\newlabel{sec:conclusion}{{VI}{16}{Conclusion}{section.6}{}}
+\citation{capecci2019kimore}
+\bibcite{capecci2019kimore}{1}
+\bibcite{pct2026}{2}
+\bibcite{karlov2024}{3}
+\bibcite{abedi2023}{4}
+\bibcite{kuang2026}{5}
+\bibcite{rehabpile2026}{6}
+\bibcite{vakanski2018uiprmd}{7}
+\bibcite{yan2018stgcn}{8}
+\bibcite{cohen2016gconv}{9}
+\bibcite{thomas2018tfn}{10}
+\bibcite{fuchs2020se3transformer}{11}
+\bibcite{geiger2022e3nn}{12}
+\bibcite{satorras2021egnn}{13}
+\bibcite{deng2021vectorneurons}{14}
+\bibcite{puny2022frameaveraging}{15}
+\bibcite{chen2018neuralode}{16}
+\bibcite{rubanova2019odernn}{17}
+\bibcite{kidger2020neuralcde}{18}
+\bibcite{che2018grud}{19}
+\bibcite{cho2014gru}{20}
+\bibcite{dormand1980prince}{21}
+\bibcite{vanderplas2018lombscargle}{22}
+\@writefile{toc}{\contentsline {section}{References}{17}{section*.2}\protected@file@percent }
+\gdef \@abspage@last{17}

@@ -1,0 +1,91 @@
+========================================================================
+  WEEK-ONE EQUIVARIANCE VERIFICATION SUITE
+  SE(3)-Equivariant Neural CDE  |  self-contained dopri5 + natural cubic spline
+========================================================================
+  state layout: 4 scalars + 6 vectors = 22 dims, F=10 irrep blocks
+
+[Task 1] Orthogonality audit  max||R^T R - I||_F = 1.146e-15 (<= 1e-12? True)
+  irregular timestamps: CV(dt) = 0.320 (>= 0.2? True) over L=40
+
+[Gate A] Fixed-step algebraic-exactness  (euler / rk4)
+  --------------------------------------------------------------------
+    euler  h=T/50    max delta_eq = 5.700e-16
+    euler  h=T/100   max delta_eq = 7.008e-16
+    euler  h=T/500   max delta_eq = 1.498e-15
+    -> euler: max=1.50e-15 (<= 1e-13? True) | flat ratio=2.63 (<= 10? True)
+    rk4    h=T/50    max delta_eq = 5.455e-16
+    rk4    h=T/100   max delta_eq = 7.704e-16
+    rk4    h=T/500   max delta_eq = 1.872e-15
+    -> rk4: max=1.87e-15 (<= 1e-13? True) | flat ratio=3.43 (<= 10? True)
+  [Gate A] PASS
+
+[Gate B] Adaptive step-grid divergence  (dopri5: default vs N_eq)
+  --------------------------------------------------------------------
+    default   max drift = 1.958e-05 | mean D_grid = 90.00 | max D_grid = 91 | ~46 steps
+    neq       max drift = 1.156e-15 | mean D_grid = 0.00 | max D_grid = 0 | ~38 steps
+    drift-vs-angle sweep (N_eq):
+      theta_max=0.100  max drift = 1.217e-15
+      theta_max=0.500  max drift = 1.272e-15
+      theta_max=1.000  max drift = 1.365e-15
+      theta_max=3.142  max drift = 1.416e-15
+    -> N_eq: drift=1.16e-15 (<= 1e-11? True) & D_grid_max=0 (==0? True)
+    -> default norm diverges (D_grid_max=91 > 0? True, drift=1.96e-05)
+  [Gate B] PASS
+
+[Gate C] Precision-scaling diagnostic  (fp32 vs fp64, N_eq)
+  --------------------------------------------------------------------
+    mean drift fp32 = 5.358e-07
+    mean drift fp64 = 9.875e-16
+    ratio r = 5.426e+08   (>= 1e+05? True)
+  [Gate C] PASS
+
+[Sanity] Broken (non-equivariant) field must FAIL the gates
+  --------------------------------------------------------------------
+    broken fixed-step drift = 1.184e-02  (equivariant model was ~1e-14)
+    broken precision ratio r = 1.000e+00  (equivariant model was >= 1e5)
+  [Sanity] PASS -- diagnostics correctly reject the broken field.
+
+========================================================================
+  TASK 7 -- STRUCTURAL INTEGRATION GATE  (real e3nn steerable field)
+========================================================================
+  field: TensorProduct('4x0e+6x1o',) -> Gate -> Linear(biases=False)
+  irreps_Z = 4x0e+6x1o  (matches IrrepLayout 4s+6v)
+  [bias check] no bias params; e3nn refuses 1o bias (probe bias numel=0)
+  [Task 1] e3nn rep orthogonality max||D^T D - I||_F = 1.672e-14 (<= 1e-12? True)
+
+  [Gate A] fixed-step (rk4) on real e3nn field
+      h=T/50    max delta_eq = 5.058e-16
+      h=T/100   max delta_eq = 6.584e-16
+      h=T/500   max delta_eq = 1.385e-15
+    -> max=1.38e-15 (<= 1e-13? True) | flat ratio=2.74
+
+  [Gate B] adaptive dopri5 (default vs N_eq) on real e3nn field
+      default  max drift = 2.768e-05 | max D_grid = 39 | ~21 steps
+      neq      max drift = 1.311e-15 | max D_grid = 0 | ~17 steps
+    -> N_eq: drift=1.31e-15 & D_grid=0 | default D_grid=39
+
+  [Gate C] precision scaling (fp32 vs fp64) on real e3nn field
+      fp32=4.956e-07  fp64=1.022e-15  ratio r=4.847e+08 (>= 1e+05? True)
+
+  [TASK 7] PASS -- real e3nn steerable layers preserve the equivariance certificate.
+
+========================================================================
+  EQUIVARIANCE CERTIFICATE  (all gates green)
+========================================================================
+  Task 1  orthogonality      : 1.15e-15  <= 1e-12
+  --- MOCK equivariant field ---
+  Gate A  fixed-step drift    : 1.87e-15  <= 1e-13   (flat across h)
+  Gate B  N_eq D_grid         : 0            (default norm diverges)
+  Gate B  N_eq drift          : 1.16e-15  <= 1e-11
+  Gate C  fp32/fp64 ratio     : 5.43e+08  >= 1e+05   (residual = roundoff)
+  --- REAL e3nn steerable field (Task 7) ---
+  Task 1  e3nn rep ortho      : 1.67e-14  <= 1e-12
+  Gate A  fixed-step drift    : 1.38e-15  <= 1e-13   (flat across h)
+  Gate B  N_eq D_grid         : 39 default -> 0 N_eq
+  Gate B  N_eq drift          : 1.31e-15  <= 1e-11
+  Gate C  fp32/fp64 ratio     : 4.85e+08  >= 1e+05   (residual = roundoff)
+========================================================================
+  RESULT: EQUIVARIANCE CERTIFIED. Architecture is exactly SE(3)-equivariant;
+          residual drift is floating-point roundoff, not a symmetry violation.
+          Certificate SURVIVES the real e3nn architecture (Task 7 green).
+========================================================================

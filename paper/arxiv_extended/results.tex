@@ -143,7 +143,7 @@ single-exercise slice it measures nothing anyway. The case rests on the structur
 
 \textbf{Chirality is free.} Table~\ref{tab:accuracy} also reports both arms with the parity-odd
 channels of \eqref{eq:cut} admitted, i.e.\ with the guaranteed invariance group narrowed from $O(3)$
-to $SO(3)$. The change is invisible in accuracy --- $+0.12$~MAD for EGRU, $-0.20$ for InvariantGRU,
+to $SO(3)$. The change is invisible in accuracy --- $+0.11$~MAD for EGRU, $-0.20$ for InvariantGRU,
 both inside the $0.33$ seed floor and of opposite sign --- which is the honest finding: on a corpus of
 healthy-form exercises, the parity-odd subspace carries no score-relevant signal. It costs $16.7\%$
 more parameters and nothing else, and in exchange the architecture no longer \emph{assumes} that
@@ -270,6 +270,32 @@ resampling operators, we report whichever is strongest. The gap is therefore not
 sabotaged control, and the fairness matches the augmentation-budget discipline we impose in
 Section~\ref{sec:results:resampling}: rotation augmentation is offered to the baseline here exactly
 as drop augmentation is offered to both arms there.
+
+\paragraph{The guarantee is not an artifact of synthetic rotation.} A skeptical reader may object
+that rotating test skeletons about the gravity axis is an \emph{engineered} stressor. The
+identical encoder answers the same objection on a \emph{real} cross-camera benchmark, and we wire it
+in here rather than defer it. On NTU~RGB+D~$60$ Cross-View the train and test recordings originate
+from physically distinct cameras --- setups $2$ and $3$ record the training split, and the
+$45^\circ$-displaced setup~$1$ records a test split the model never sees at any angle during
+training (the test stream is never rotation-augmented). Trained \textbf{without any rotation
+augmentation}, our equivariant encoder transfers to the held-out camera at $82.98\%$ top-$1$, and its
+cross-view logit invariance is exact --- $5.8\times10^{-9}$ in fp64, the same E1--E8 theorem carried
+onto a $60$-class action head rather than a KIMORE regression head. The guarantee is not specific to
+the $45^\circ$ camera displacement that defines this split, nor to azimuthal motion: the certificate
+(E1--E8) quantifies over Haar-random proper rotations spanning the \emph{full} $SO(3)$ up to angle
+$\pi$, and the cross-view displacement is one instance of that group. Logit invariance is therefore
+exact under \emph{arbitrary} proper rotations of the input, of which the benchmark's inter-camera
+geometry is a special case. We state plainly what this is and
+is not. It is \textbf{not} an accuracy win: $82.98\%$ sits some five points below a well-tuned ST-GCN
+on this split (published $\approx\!88\%$~\cite{yan2018stgcn}), and under a recipe (causal sampling,
+root-relative coordinates, AdamW) that we did not tune to the published leaderboard --- entirely
+consistent with the clean-data tie of Section~\ref{sec:results:accuracy}, where accuracy was never
+the axis. What it \emph{is} is the KIMORE result reproduced on real hardware: a model whose viewpoint
+invariance must be \emph{learned} either sees the test camera's pose in its training distribution or
+degrades, whereas ours carries the held-out $45^\circ$ camera \emph{for free and per prediction},
+because the invariance is a property of the architecture and not of the training views. The
+cross-view generalisation others buy with augmentation, we hold by construction --- and here on a
+benchmark with genuinely different cameras, not a synthetic sweep.
 
 % ---------------------------------------------------------------------
 \subsection{The Operational Envelope of Resampling: A Negative Result}
@@ -400,7 +426,7 @@ $3.8$~MAD over the same range and stays below the floor to $k=4$. The mechanism 
 is the one thing the two invariant models genuinely do not share: InvariantGRU's features
 \emph{name} the joints they depend on --- specific bone lengths, specific inter-joint distances,
 per-joint speeds, all concatenated in index order --- so killing a joint does not attenuate a feature,
-it detonates a coordinate the recurrence has learned to trust. The EGRU pools \emph{learned messages
+it corrupts a coordinate the recurrence has learned to trust. The EGRU pools \emph{learned messages
 over the skeleton graph} by mean and max, so a dead node is diluted across $25$ joints and its
 neighbours partially reconstruct it. This is invisible in every clean-accuracy column in this paper,
 which is exactly why it had to be measured separately.
@@ -434,6 +460,90 @@ MAD lost & $+3.76$ & $+12.05$ & $\mathbf{+2.27}$ \\
 \end{tabular}
 \end{table}
 
+\paragraph{The mechanism is not an artifact of the freeze model.} The freeze-to-first-frame fault
+is one failure among many, so we re-run the experiment under four further operators --- a
+\emph{stuck-at-lag} node that reports the pose it held ten arrivals ago, \emph{sporadic bursts}
+(Gaussian spikes on $15\%$ of frames), single-axis \emph{depth-channel noise}, and a
+\emph{unilateral} variant that fails only left-limb joints --- each at the same $k$ levels, three
+model seeds, and hash-locked inputs (Table~\ref{tab:nodefail_modes}). The qualitative conclusion is
+invariant to the failure model: under every operator the hand-crafted arm degrades most and the
+graph-pooled encoder least among the two exact-invariance models, exactly as the naming-vs-pooling
+mechanism predicts. Two honest refinements emerge. First, \textbf{persistent} faults (freeze,
+lag) are far more destructive to the naming features ($+12.05$, $+8.88$~MAD) than \textbf{transient}
+ones (burst $+2.83$, axis $+1.93$), because a length-masked temporal mean dilutes an intermittent
+spike but not a permanently corrupted coordinate. Second, on the reviewer's specific question of
+\textbf{laterality}: failing only left-side joints does not break the story or the parity-odd
+channels --- the hand-crafted arm still collapses through the floor ($+8.73$) and the EGRU stays
+graceful ($+3.43$). If anything, concentrated unilateral loss is marginally gentler on the invariant
+models (the intact contralateral side aids the graph's reconstruction) and marginally \emph{harder}
+for the point-cloud transformer ($+3.15$ vs.\ $+2.27$ random), whose attention down-weights scattered
+anomalies more easily than a coherent one-sided dropout.
+
+\begin{table}[!t]
+\centering
+\caption{Node failure under five operators (chiral models, pooled, mean over 3 seeds $\times$ 5 folds;
+hash-locked inputs, no retraining). Each cell is MAD at $k\!=\!1$ / $k\!=\!8$ dead joints and the
+total MAD lost over that range. The freeze/random row reproduces Table~\ref{tab:nodefail}; every
+operator preserves the ordering.}
+\label{tab:nodefail_modes}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccc}
+\toprule
+Failure operator & EGRU (ours) & InvariantGRU & PCT \\
+ & \scriptsize $k1/k8$ ($\Delta$) & \scriptsize $k1/k8$ ($\Delta$) & \scriptsize $k1/k8$ ($\Delta$) \\
+\midrule
+freeze (random)      & $7.10/10.50$ ($+3.76$) & $9.78/18.37$ ($+12.05$) & $6.76/8.73$ ($+2.27$) \\
+freeze (left-only)   & $7.11/10.16$ ($+3.43$) & $10.81/15.04$ ($+8.73$) & $6.83/9.62$ ($+3.15$) \\
+stuck-at-lag         & $6.82/7.76$ ($+1.03$)  & $9.02/15.19$ ($+8.88$)  & $6.60/7.11$ ($+0.64$) \\
+sporadic burst       & $6.74/6.78$ ($+0.05$)  & $6.69/9.14$ ($+2.83$)   & $6.47/6.45$ ($-0.02$) \\
+axis/depth noise     & $6.77/7.20$ ($+0.47$)  & $6.70/8.24$ ($+1.93$)   & $6.48/6.50$ ($+0.03$) \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize Floor $=8.25$; $k\!=\!0$ MAD is $6.80/6.41/6.21$ for EGRU/Inv/PCT.} \\
+\end{tabular}
+\end{table}
+
+\paragraph{Steerable vs.\ lighter $E(n)$ equivariance.} This section admits a second control the
+reviewer rightly asked for: is it the \emph{steerable} tensor-field machinery that buys node-failure
+survival, or would any equivariant encoder do? We swap the $e3nn$ encoder for a from-scratch Satorras
+$E(n)$-equivariant graph network~\cite{satorras2021egnn} behind the \emph{identical} invariant cut and
+pooling, so viewpoint invariance is a tie \emph{by construction} --- the cut makes EGNN\,$+$\,cut
+exactly $SE(3)$-invariant, certified to $1.4\times10^{-5}$ in fp32 --- and the only free variable is
+the encoder's equivariance class (Table~\ref{tab:egnn}). On clean data the two tie (EGNN $6.88\pm0.16$
+vs.\ EGRU $6.73$, inside the $0.33$ seed floor), so the lighter encoder is not crippled. Under node
+failure it is: EGNN loses $+6.39\pm1.27$~MAD over $8$ dead joints against the steerable encoder's
+$+3.76$ --- a gap of $\approx\!2.6$~MAD $\approx\!3.6$~SEM across three seeds --- landing \emph{between}
+the steerable encoder and the hand-crafted InvariantGRU ($+12.05$). Damping the EGNN coordinate updates
+does not close it (clamp $0.1/0.5/1.0 \to +6.42/+6.06/+5.69$; the best arm is still $\approx\!2$~MAD
+worse than EGRU), so the brittleness is intrinsic to the lighter equivariance, not an artifact of
+coordinate-update magnitude. We state the caveat plainly: this EGNN is a from-scratch encoder at fixed
+width ($4$ layers, hidden $64$) without a hyperparameter search, so we do \emph{not} claim ``steerable
+spherical harmonics beat $E(n)$'' in general. What the clean-accuracy tie and the seed and clamp
+controls \emph{do} license is the scoped claim that, behind this identical cut and on this corpus, the
+steerable encoder is measurably the more node-fail-robust of the two --- the outcome that justifies its
+cost.
+
+\begin{table}[!t]
+\centering
+\caption{Encoder equivariance class behind the \emph{identical} invariant cut and pooling (isolating
+the steerable machinery): a lighter $E(n)$ (EGNN) encoder against the steerable $e3nn$ encoder and the
+hand-crafted invariants. Mean over $3$ seeds $\times$ $5$ folds; hash-locked inputs; no retraining. All
+three are exactly viewpoint-invariant --- a theorem for EGRU/InvariantGRU, and an fp32 certificate of
+$1.4\times10^{-5}$ for EGNN\,$+$\,cut. ``Node-fail'' is MAD lost over $8$ dead joints. Damping the EGNN
+coordinate updates (clamp $0.1/0.5/1.0$) gives $+6.42/+6.06/+5.69$ --- the gap does not close.}
+\label{tab:egnn}
+\small
+\begin{tabular}{lcc}
+\toprule
+Encoder (identical cut) & Clean MAD & Node-fail lost \\
+\midrule
+Steerable $e3nn$ (EGRU, ours) & $6.73$          & $\mathbf{+3.76}$ \\
+Lighter $E(n)$ (EGNN)         & $6.88 \pm 0.16$ & $+6.39 \pm 1.27$ \\
+Hand-crafted (InvariantGRU)   & $6.31$          & $+12.05$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \paragraph{The whole thesis in one grid.} Table~\ref{tab:pareto} places every arm against both
 stressors at once, and it is deliberately unflattering. \textbf{We do not claim to be the only
 survivor}: rotation-augmented PCT also clears the floor under both a $90^\circ$ camera move and two
@@ -462,6 +572,71 @@ Model & Params & Clean & $90^\circ$ view & $2$ dead & Worst degr. \\
 InvariantGRU   & $0.21$M & $6.31$ & $6.31$~$\checkmark$ & $11.64$~$\times$ & $\mathbf{0}$ \\
 PCT (baseline) & $4.91$M & $6.47$ & $10.13$~$\times$ & $7.10$~$\checkmark$ & $9.42$ \\
 PCT\,+\,rot    & $4.91$M & $7.47$ & $7.68$~$\checkmark$ & $7.76$~$\checkmark$ & $3.03$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------------
+\subsection{Per-Family Contribution of the Invariant Cut}
+\label{sec:results:ablation}
+
+To quantify what each family of the cut \eqref{eq:cut} contributes, we zero one family at a time at
+\emph{inference} on the deployed chiral checkpoints, preserving the projection dimension so the
+ablation runs without retraining (Table~\ref{tab:ablation}). This isolates the trained model's
+\emph{dependence} on each family; it is not the marginal value of \emph{adding} a family at training,
+which for the parity-odd subspace is already the $O(3)$-vs-$SO(3)$ retrain comparison of
+Table~\ref{tab:accuracy}, and the two readings are reconciled below.
+
+\textbf{Accuracy.} Three families carry it. Removing the pairwise \emph{cosines} costs $1.83$~MAD and
+the learned \emph{triple products} $2.75$, with bone lengths a distant third ($0.67$); the scalar,
+vector-norm and anatomical-volume families are each inside the $0.33$ seed floor ($+0.25$, $+0.16$,
+$+0.19$) and are inert. The pairwise angular structure of the encoder's vector channels is where the
+score lives.
+
+\textbf{The parity-odd families split, and that reconciles the chirality null.} The two parity-odd
+families behave oppositely: the \emph{learned} triple products are heavily relied upon ($+2.75$),
+while the \emph{fixed anatomical} volumes are inert ($+0.19$). This is consistent with --- not
+contrary to --- the finding of Section~\ref{sec:results:accuracy} that \emph{adding} chirality is
+free ($+0.11$~MAD, Table~\ref{tab:accuracy}). That null is a \emph{retrain} comparison: a model
+trained without the parity-odd subspace matches it, because the parity-even families substitute for it
+during optimisation. The present ablation is an \emph{inference} comparison on a model trained
+\emph{with} it: given learnable triple-product channels the optimiser routes signal through them, so
+zeroing them at test time starves weights that expect them. The fixed anatomical volumes, carrying
+only a handedness that healthy-form exercises never reward, are never co-opted --- the chirality null,
+now localised to the family that embodies it. Both statements hold: the parity-odd subspace is free to
+add and, once added, used.
+
+\textbf{Robustness.} The node-failure column (worst MAD lost over $8$ dead joints, against the full
+cut's $+3.76$) resolves the mechanism of Section~\ref{sec:results:nodefail} to family granularity.
+Removing the cosines is doubly harmful --- it inflates node-failure degradation the most ($+7.29$), so
+the angular structure carries graceful degradation as well as accuracy. Conversely, the families that
+most \emph{name} their joints are the brittleness locus: zeroing bone lengths ($+2.36$) or the learned
+triple products ($-0.16$) \emph{flattens} the node-failure response, but at an accuracy cost that puts
+the model through the floor, which is why the cut keeps them. This is the within-model echo of the
+between-model result of Section~\ref{sec:results:nodefail}: features that name joints trade robustness
+for the accuracy they carry.
+
+\begin{table}[!t]
+\centering
+\caption{Per-family ablation of the invariant cut \eqref{eq:cut}: each family zeroed at inference on
+the deployed chiral EGRU (projection dimension preserved, \emph{no retraining}; mean over $3$ seeds
+$\times5$ folds). $\Delta$Acc is the clean-MAD cost of removing the family; ``node-fail lost'' is the
+worst MAD lost over $8$ dead joints (full-cut baseline $+3.76$). $\Delta$Acc below the $0.33$ seed
+floor is a tie.}
+\label{tab:ablation}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+Family removed & Parity & Clean MAD & $\Delta$Acc & Node-fail lost \\
+\midrule
+--- (full cut)   & ---   & $6.73$ & ---            & $+3.76$ \\
+scalars          & even  & $6.98$ & $+0.25$        & $+3.46$ \\
+vector norms     & even  & $6.89$ & $+0.16$        & $+3.51$ \\
+cosines          & even  & $8.56$ & $\mathbf{+1.83}$ & $\mathbf{+7.29}$ \\
+triple products  & odd   & $9.48$ & $\mathbf{+2.75}$ & $-0.16$ \\
+anat.\ volumes   & odd   & $6.93$ & $+0.19$        & $+3.43$ \\
+bone lengths     & even  & $7.40$ & $+0.67$        & $+2.36$ \\
 \bottomrule
 \end{tabular}
 \end{table}

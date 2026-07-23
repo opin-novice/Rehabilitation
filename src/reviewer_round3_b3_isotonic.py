@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
 from models_stgcn import TCNRegressor  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 
-RESULTS_DIR = "results/kimore_loso_78fold/A_scratch"
+RESULTS_DIR = "archive/legacy_results/kimore_loso_78fold/A_scratch"
 OUT_DIR = "outputs/reviewer_round3"
 
 

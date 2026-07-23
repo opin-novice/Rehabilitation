@@ -1,0 +1,203 @@
+% =====================================================================
+%  Literature Review (standalone) --- prepared for supervisory review
+%  Project: SE(3)-equivariant recurrence for viewpoint-invariant,
+%           edge-deployable rehabilitation assessment
+%  Compile:  pdflatex literature_review_egru && pdflatex literature_review_egru
+%  NOTE: standalone document, NOT the paper's condensed Related Work section.
+% =====================================================================
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+\setlength{\parskip}{0.35em}
+
+\title{\vspace{-2em}Literature Review: Geometric Guarantees, Node Robustness, and\\
+Protocol Rigor in Skeleton-Based Rehabilitation Assessment}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-3em}
+
+\begin{abstract}
+\noindent Automated scoring of rehabilitation exercises from skeleton data is maturing as a
+benchmark task, but the conditions under which it is evaluated diverge sharply from the conditions
+under which a home monitoring device operates. This review surveys three bodies of work that bear on
+that gap: (i) clinical movement-analysis models and the evaluation protocols that rank them; (ii)
+equivariant architectures and their behaviour under sensor-node failure; and (iii) frame
+canonicalization as an alternative route to viewpoint invariance, contrasted with architectural
+guarantees under causal streaming. In each case we characterise what prior work establishes, where it
+leaves a measurable gap, and how a certified-invariant, edge-deployable formulation addresses it. The
+recurring theme is a distinction between properties that hold \emph{in aggregate on a fixed corpus} and
+properties that are \emph{guaranteed per prediction and off distribution} --- a distinction that is
+decisive for a clinical instrument and largely absent from the current literature.
+\end{abstract}
+
+% =====================================================================
+\section{Clinical Movement Analysis and Protocol Rigor}
+Skeleton-based assessment of physical rehabilitation has consolidated around a small number of public
+corpora, chief among them KIMORE~\cite{capecci2019kimore}, which pairs Kinect-tracked exercise
+recordings with clinician-assigned scores and has become the de facto ranking ground for the task.
+Progress on it is reported almost exclusively through supervised backbones of increasing capacity:
+spatial--temporal graph convolutional networks (ST-GCN)~\cite{yan2018stgcn} and their clinical
+descendants trained with supervised-contrastive objectives~\cite{karlov2024}, cross-modal video-to-joint
+augmentation to enlarge scarce training data~\cite{abedi2023}, dual-stream graph networks with
+motion-aware grouping~\cite{kuang2026}, and, most recently, point-cloud transformers that treat the
+skeleton as an unordered set and attend over it~\cite{pct2026}. These models differ in inductive bias
+and parameter count, but they share an evaluation contract: train and test on clean, frontal recordings
+from a single sensor, and rank by a single aggregate error against the clinician's score.
+
+Two properties of this contract limit what its leaderboard can be taken to mean, and both are
+under-examined in the literature. \textbf{First}, none of these architectures carries an explicit
+geometric guarantee under a change of camera. Viewpoint robustness, where it is claimed at all, is an
+emergent, aggregate property obtained by training-time rotation augmentation; it says nothing about
+whether the score assigned to a \emph{particular} patient is stable when the same performance is filmed
+from a different wall. Aggregate invariance and per-prediction invariance are not the same property, and
+the field's metrics cannot distinguish them. \textbf{Second}, the reporting protocol on the most
+commonly used single-exercise slice is vulnerable to optimistic selection: when the reported epoch is
+chosen by its minimum on the test set, and the input scaler is fit over the full dataset, the headline
+number is inflated relative to an honest, validation-selected estimate. Rehab-Pile~\cite{rehabpile2026},
+which aggregates KIMORE, UI-PRMD~\cite{vakanski2018uiprmd} and IRDS into a cross-subject benchmark, is
+the closest antecedent of a more disciplined protocol, but even it does not report the one reference a
+degradation curve requires for interpretation: a mean-predictor floor. Absent that floor, a model that
+ignores its input entirely --- and therefore has zero degradation under any corruption --- would win
+every robustness plot ever drawn.
+
+The gap, then, is methodological before it is architectural. A rigorous treatment must (a) establish a
+noise floor below which no accuracy difference is interpretable, since training on this task is not
+bit-reproducible and repeated fits of an identical configuration vary by a non-trivial margin; (b)
+quantify protocol inflation directly rather than assume it away; and (c) attach uncertainty to
+``beats the floor'' claims with a resampling scheme whose unit is the \emph{subject}, not the sequence,
+so that within-subject correlation is not mistaken for signal. Our work adopts this stance: we measure
+the run-to-run nondeterminism floor ($\approx\!0.33$~MAD), show that optimistic epoch selection is worth
+an $18.6\%$ MAD reduction on the single-exercise slice, and demonstrate with a paired subject-cluster
+bootstrap that the honest number on that slice does not reliably separate from a mean predictor. Every
+subsequent claim is pooled, subject-disjoint, and gated on clearing the floor --- so that benchmark
+noise is never reported as clinical signal.
+
+% =====================================================================
+\section{Equivariant Architectures and Node Robustness}
+The alternative to inducing invariance through augmentation is to build it into the hypothesis class.
+Group-equivariant networks constrain a model to commute with a symmetry group by
+construction~\cite{cohen2016gconv}, so that the guarantee holds for arbitrary weights rather than being
+learned. For the Euclidean group in three dimensions, two design philosophies dominate. The
+\emph{steerable} family --- tensor-field networks~\cite{thomas2018tfn}, $SE(3)$-Transformers with
+equivariant attention~\cite{fuchs2020se3transformer}, and the \texttt{e3nn} framework that systematises
+them~\cite{geiger2022e3nn} --- represents features in irreducible representations of $O(3)$ and couples
+them through spherical-harmonic tensor products, yielding exact equivariance at the cost of additional
+machinery. The \emph{lightweight} family instead reaches $E(n)$-equivariance without spherical harmonics:
+EGNN~\cite{satorras2021egnn} updates node states from relative displacements $x_i-x_j$ and their norms,
+and vector-neuron constructions~\cite{deng2021vectorneurons} lift standard operators to $SO(3)$-equivariant
+ones on vector-valued features. The lightweight route is attractive precisely because it dispenses with
+the steerable overhead while retaining a rotation guarantee.
+
+The gap this review highlights concerns \emph{robustness to sensor failure}, which is not addressed by
+the equivariance property itself and separates these families in practice. Relative-coordinate updates
+couple every node's representation to its neighbours' coordinates; when a joint is corrupted --- a frozen
+or occluded Kinect node, the characteristic failure mode of consumer depth cameras --- the corruption
+enters the message graph and propagates. This is orthogonal to whether the network is equivariant: a
+model can be exactly rotation-invariant and still fragile to a single dead joint. The prevailing
+responses in the skeleton literature --- masking or attention over occluded joints~\cite{yan2018stgcn}
+--- treat failure as noise to be suppressed rather than as a discriminating test between architectures
+that are otherwise indistinguishable on clean data.
+
+Our position is that node robustness, not viewpoint invariance, is what justifies the heavier steerable
+encoder, and that the justification must be \emph{measured} rather than asserted. We are explicit that
+steerable machinery is not necessary for viewpoint invariance --- a recurrence over six hand-crafted
+$SO(3)$-invariant features attains the same accuracy and the same guarantee at a fraction of the
+parameters. What separates the models is a single axis: behind an \emph{identical} invariant read-out,
+the lighter $E(n)$ update is empirically the more brittle of the two, crossing the mean-predictor floor
+at two dead joints where the steerable, graph-pooled encoder still degrades gracefully; and the
+named-feature baseline, whose features explicitly name the joints they depend on, collapses through the
+floor at a \emph{single} dead joint. The steerable representation earns its place not by a stronger
+theorem but by diluting a local failure across the learned message set --- a claim we support with
+controlled dead-joint experiments rather than a robustness proof, in keeping with the distinction between
+what is guaranteed and what is merely observed.
+
+% =====================================================================
+\section{Frame Canonicalization versus Architectural Guarantees in Causal Streaming}
+A third route to viewpoint invariance sidesteps equivariant architectures entirely: align each input to
+a canonical reference frame, then apply an ordinary non-equivariant backbone. Principal-axis (PCA)
+alignment is the classical instance, and frame averaging~\cite{puny2022frameaveraging} generalises it by
+symmetrising a network's output over a set of frames rather than committing to one. These heuristics are
+genuinely competitive: on our benchmark a PCA-canonicalized transformer matches the equivariant model on
+every clean, offline axis, and we report this concession directly rather than obscure it. Any honest
+comparison must begin by conceding that canonicalization is a strong baseline, not a straw man.
+
+The gap is in the \emph{kind} of invariance a canonical frame provides. A PCA frame is a point estimate
+of an orientation, obtained from the spatial covariance of the joints; it is exact only where that
+covariance is well-conditioned. On clinical poses it frequently is not --- limb extensions and other
+planar configurations drive the pose covariance toward degeneracy, at which point the eigenvector
+ordering and sign convention that define the frame become discontinuous. We measure this on KIMORE:
+$18\%$ of frames sit within an eigen-gap of $0.05$ of degeneracy, and the estimated frame rotates by more
+than $45^\circ$ across $21\%$ of frame transitions, up to full sign flips. A downstream network can learn
+to absorb this jitter \emph{on a given corpus}, but no theorem bounds the behaviour off distribution ---
+which is exactly the regime a deployed instrument enters when it meets a camera placement it never saw in
+training. We note, against a common misconception, that the per-frame spatial PCA frame is itself
+\emph{causal} and requires no temporal lookahead; the difficulty is not latency but the absence of a
+guarantee and the presence of covariance-driven discontinuities.
+
+The distinction our work draws is therefore between a heuristic that is strong on the corpus it was tuned
+on and an architectural guarantee that transfers. Our read-out estimates no frame at all: it is an
+explicit projection onto a generating set of $O(3)$ invariants, exact for arbitrary weights and certified
+numerically to the fp64 roundoff floor ($\sim\!10^{-16}$). Because the guarantee is a property of the
+architecture rather than of the data, it transfers zero-shot to a genuinely novel camera --- the real
+$45^\circ$ NTU~RGB+D Cross-View displacement --- without retraining and without a per-frame covariance
+estimate that can degenerate. It also composes cleanly with the deployment path: the read-out converts to
+a strictly causal streaming form that emits a first score roughly $8.9$~ms after the first frame, and the
+guarantee survives int8 quantization, so viewpoint invariance is retained on the edge rather than
+purchased offline. Where the field has treated irregular sampling and continuous time as an additional
+frontier~\cite{chen2018neuralode,rubanova2019odernn,kidger2020neuralcde,che2018grud}, we find --- and
+report as a negative result, quantified with a spectral analysis of the signal
+band~\cite{vanderplas2018lombscargle} and implemented through an adaptive Dormand--Prince
+solver~\cite{dormand1980prince} --- that native continuous-time consumption buys nothing on this corpus,
+reinforcing that the payoff lies in the geometric guarantee, not in the temporal machinery.
+
+% =====================================================================
+\section{Synthesis: The Gap and Our Position}
+Read together, these three literatures leave a coherent gap. Clinical assessment models compete on
+aggregate error under a protocol that can inflate the headline number and reports no floor against which
+degradation is interpretable. Equivariant architectures supply a rotation guarantee but say nothing about
+sensor failure, and the lightweight variants that are cheapest to deploy are also the most fragile to it.
+Canonicalization offers strong offline invariance but only as an uncertified point estimate that turns
+discontinuous on exactly the degenerate poses clinical exercises produce. In every case the missing
+ingredient is the same: a property that is \emph{guaranteed per prediction and holds off the training
+distribution}, rather than one that holds in aggregate on a fixed corpus.
+
+The work this review supports occupies that gap directly. It treats viewpoint invariance as a certified
+theorem of the architecture rather than an emergent effect of augmentation; it justifies the steerable
+encoder on the one measured axis --- sensor-node robustness --- where it demonstrably differs from lighter
+alternatives; it confronts canonicalization on its own terms, conceding the offline tie and locating the
+difference in the guarantee; and it carries all of this onto the edge under a protocol disciplined enough
+that benchmark noise cannot be mistaken for clinical signal. The contribution is less a new backbone than
+a reframing of what the benchmark should be asked to measure, backed by guarantees and controls the
+current literature does not provide.
+
+% =====================================================================
+\begin{thebibliography}{00}
+\bibitem{capecci2019kimore} M.~Capecci et al., ``The KIMORE dataset: Kinematic assessment of movement and clinical scores for remote monitoring of physical rehabilitation,'' \textit{IEEE TNSRE}, vol.~27, no.~7, pp.~1436--1448, 2019.
+\bibitem{pct2026} ``A point cloud transformer for remote monitoring and automated assessment of physical rehabilitation exercises,'' arXiv:2606.30309, 2026.
+\bibitem{karlov2024} M.~Karlov, A.~Abedi, and S.~S.~Khan, ``Rehabilitation exercise quality assessment through supervised contrastive learning with hard and soft negatives,'' \textit{Med. Biol. Eng. Comput.}, 2024.
+\bibitem{abedi2023} A.~Abedi, M.~Malmirian, and S.~S.~Khan, ``Cross-modal video to body-joints augmentation for rehabilitation exercise quality assessment,'' arXiv:2306.09546, 2023.
+\bibitem{kuang2026} Z.~Kuang et al., ``Dual-stream STGCN with motion-aware grouping for rehabilitation action quality assessment,'' \textit{Sensors}, vol.~26, no.~1, p.~287, 2026.
+\bibitem{rehabpile2026} A.~Ismail-Fawaz et al., ``Rehab-Pile: A cross-subject rehabilitation benchmark aggregating KIMORE, UI-PRMD and IRDS,'' arXiv:2507.21018, IEEE FG 2026.
+\bibitem{vakanski2018uiprmd} A.~Vakanski et al., ``A data set of human body movements for physical rehabilitation exercises (UI-PRMD),'' \textit{Data}, vol.~3, no.~1, p.~2, 2018.
+\bibitem{yan2018stgcn} S.~Yan, Y.~Xiong, and D.~Lin, ``Spatial temporal graph convolutional networks for skeleton-based action recognition,'' in \textit{Proc. AAAI}, 2018.
+\bibitem{cohen2016gconv} T.~S.~Cohen and M.~Welling, ``Group equivariant convolutional networks,'' in \textit{Proc. ICML}, 2016.
+\bibitem{thomas2018tfn} N.~Thomas et al., ``Tensor field networks: Rotation- and translation-equivariant neural networks for 3D point clouds,'' arXiv:1802.08219, 2018.
+\bibitem{fuchs2020se3transformer} F.~B.~Fuchs et al., ``SE(3)-Transformers: 3D roto-translation equivariant attention networks,'' in \textit{Proc. NeurIPS}, 2020.
+\bibitem{geiger2022e3nn} M.~Geiger and T.~Smidt, ``e3nn: Euclidean neural networks,'' arXiv:2207.09453, 2022.
+\bibitem{satorras2021egnn} V.~G.~Satorras, E.~Hoogeboom, and M.~Welling, ``E(n) equivariant graph neural networks,'' in \textit{Proc. ICML}, 2021.
+\bibitem{deng2021vectorneurons} C.~Deng et al., ``Vector neurons: A general framework for SO(3)-equivariant networks,'' in \textit{Proc. ICCV}, 2021.
+\bibitem{puny2022frameaveraging} O.~Puny et al., ``Frame averaging for invariant and equivariant network design,'' in \textit{Proc. ICLR}, 2022.
+\bibitem{chen2018neuralode} R.~T.~Q.~Chen et al., ``Neural ordinary differential equations,'' in \textit{Proc. NeurIPS}, 2018.
+\bibitem{rubanova2019odernn} Y.~Rubanova, R.~T.~Q.~Chen, and D.~Duvenaud, ``Latent ODEs for irregularly-sampled time series,'' in \textit{Proc. NeurIPS}, 2019.
+\bibitem{kidger2020neuralcde} P.~Kidger et al., ``Neural controlled differential equations for irregular time series,'' in \textit{Proc. NeurIPS}, 2020.
+\bibitem{che2018grud} Z.~Che et al., ``Recurrent neural networks for multivariate time series with missing values,'' \textit{Sci. Rep.}, vol.~8, p.~6085, 2018.
+\bibitem{dormand1980prince} J.~R.~Dormand and P.~J.~Prince, ``A family of embedded Runge--Kutta formulae,'' \textit{J. Comput. Appl. Math.}, vol.~6, no.~1, pp.~19--26, 1980.
+\bibitem{vanderplas2018lombscargle} J.~T.~VanderPlas, ``Understanding the Lomb--Scargle periodogram,'' \textit{ApJS}, vol.~236, no.~1, p.~16, 2018.
+\end{thebibliography}
+
+\end{document}

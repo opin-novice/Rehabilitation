@@ -1,0 +1,201 @@
+% =====================================================================
+%  WACV 2026 — Applications Track — SUPPLEMENTARY MATERIAL
+%  Depth carried out of the 8pp main paper (paper_wacv.tex). Numbers are
+%  ported verbatim from the frozen journal source (methodology.tex / results.tex).
+%  Compile:  pdflatex supp_wacv && pdflatex supp_wacv
+% =====================================================================
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage[review,applications]{wacv}
+\def\confName{WACV}
+\def\confYear{2026}
+\def\wacvPaperID{0000}
+
+\usepackage{amsmath,amssymb,amsfonts,bm,mathtools}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage[breaklinks,colorlinks]{hyperref}
+\usepackage[capitalize]{cleveref}
+
+\newtheorem{proposition}{Proposition}
+
+% Supplementary numbering: S-prefixed
+\renewcommand{\thesection}{S\arabic{section}}
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+
+\begin{document}
+
+\title{Supplementary Material\\
+\emph{Viewpoint Invariance Is a Theorem, Not a Fit}}
+\author{}
+\maketitle
+
+This supplement carries the depth condensed out of the main paper: the proof of the invariance theorem
+(\cref{sec:supp:proof}), the full invariant-set specification (\cref{sec:supp:cut}), the eight-gate
+numerical certificate (\cref{sec:supp:cert}), the complete precision budget (\cref{sec:supp:prec}), the
+nondeterminism seed distribution (\cref{sec:supp:seed}), and the protocol audit and continuous-time
+control (\cref{sec:supp:control}). All numbers are reproduced from the same banked artifacts as the main
+paper; equation and proposition references (e.g.\ Prop.~1) point to the main text.
+
+% =====================================================================
+\section{Proof of the Invariance Theorem}\label{sec:supp:proof}
+\begin{proposition}[$SO(3)$-invariance of the read-out; = Prop.~1]
+Let the encoder intertwine with the Wigner-$D$ action, so under $g\in SO(3)$ each latent transforms as
+$s_j\!\mapsto\! s_j$ (type-$0$) and $v_j\!\mapsto\! D_1(g)\,v_j$ (type-$1$), with $D_1(g)\in SO(3)$
+orthogonal and $\det D_1(g)=+1$. Then the projection $\Pi$ (main Eq.~1--2) is invariant under $SO(3)$
+for arbitrary encoder weights, and the predicted score is invariant to any rigid camera motion.
+\end{proposition}
+\begin{proof}
+Feeding root-relative coordinates makes every input a difference $\tilde{\bm x}_i-\tilde{\bm x}_j$, so a
+camera translation cancels; it remains to treat rotations. Consider each generator of Eq.~1 under
+$v\mapsto D_1(g)v$ with $R:=D_1(g)$ orthogonal:
+(i) $\tanh s_j$ is a function of a type-$0$ scalar, hence unchanged.
+(ii) $\|v_j^c\|=\|Rv_j^c\|$ since $R^{\!\top}R=I$; so $\log(1+\|v\|)$ is invariant.
+(iii) $\langle\widehat{Rv},\widehat{Rv'}\rangle=\langle Rv/\|v\|,\,Rv'/\|v'\|\rangle=\langle\hat v,\hat v'\rangle$,
+again because $R$ preserves inner products.
+(iv) $\det[\widehat{Rv^a},\widehat{Rv^b},\widehat{Rv^c}]=\det(R)\det[\hat v^a,\hat v^b,\hat v^c]=\det[\hat v^a,\hat v^b,\hat v^c]$,
+using $\det(R)=+1$; the triple products are invariant under \emph{proper} rotations (and flip sign
+under a reflection, $\det=-1$, which is exactly why they narrow the guaranteed group from $O(3)$ to
+$SO(3)$). The bone lengths $d_{ij}=\|\tilde{\bm x}_i-\tilde{\bm x}_j\|$ and the anatomical signed volumes
+$\chi_\tau$ (normalised determinants of joint triads) are invariant by the same orthogonality and
+$\det(R)=+1$ arguments. Finally $\mathrm{mean}_j$ and $\max_j$ are applied identically to invariant
+per-joint quantities, hence themselves invariant. Every entry of $\Pi$ is therefore fixed by $g$, for
+any weights; the head is a deterministic function of $\Pi$, so the score is invariant. \qed
+\end{proof}
+
+% =====================================================================
+\section{Full Invariant-Set Specification}\label{sec:supp:cut}
+\Cref{tab:invsets} states both generating sets explicitly at the deployed widths ($n_0{=}32$,
+$n_1{=}8$; $J{=}25$ joints, $24$ bones, $|\mathcal T|{=}11$ anatomical frames). Both parity classes share
+one $\mathrm{mean}\oplus\max$ joint pool; bone lengths and signed volumes are concatenated
+index-preserved (unpooled). The parity-even subtotal ($160$) is exactly the projection whose precision
+budget is audited in \cref{sec:supp:prec}; the parity-odd completion adds $123$ dimensions.
+
+\begin{table}[t]\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Structural specification of the invariant cut $\Pi$.}
+\label{tab:invsets}
+\begin{tabular}{llcc}
+\toprule
+Generator & Irrep & Count & Dim \\
+\midrule
+\multicolumn{4}{l}{\emph{Parity-even} --- generating set complete for $O(3)$}\\
+\quad scalars $\tanh s$                      & $0e$ & $n_0$            & $32$ \\
+\quad vector norms $\log(1{+}\|v\|)$         & $0e$ & $n_1$            & $8$ \\
+\quad cosines $\langle\hat v,\hat v'\rangle$ & $0e$ & $\binom{n_1}{2}$ & $28$ \\
+\quad\emph{pooled} $\mathrm{mean}\oplus\max$ &      & $2\times68$      & $136$ \\
+\quad bone lengths $d_{ij}$                  & $0e$ & per bone         & $24$ \\
+\cmidrule(lr){1-4}
+\quad\textbf{even subtotal}                  &      &                  & $\mathbf{160}$ \\
+\midrule
+\multicolumn{4}{l}{\emph{Parity-odd} --- $SO(3)$ chiral completion}\\
+\quad triple products $\det[\hat v,\hat v',\hat v'']$ & $0o$ & $\binom{n_1}{3}$ & $56$ \\
+\quad\emph{pooled} $\mathrm{mean}\oplus\max$ &      & $2\times56$      & $112$ \\
+\quad anatomical volumes $\chi_\tau$         & $0o$ & per frame        & $11$ \\
+\cmidrule(lr){1-4}
+\quad\textbf{odd subtotal}                   &      &                  & $\mathbf{123}$ \\
+\midrule
+\quad\textbf{full $SO(3)$ cut}               &      &                  & $\mathbf{283}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Numerical Certificate (E1--E8)}\label{sec:supp:cert}
+We certify the \emph{deployed} model. E1--E5 establish that the claimed invariance is present; E6--E8
+establish that it is the one we actually have. The three conditions of E3--E4 --- violation at roundoff,
+\emph{flat} in angle, and $r\gg1$ --- are what upgrade ``small'' to ``zero'': magnitude alone would not.
+Reported figures are from a representative fp64 run; being roundoff-floor quantities they are
+\emph{regime}-stable (order of magnitude, sign of slope, $r\!\gg\!10^{5}$) but not bit-reproducible.
+\begin{itemize}\itemsep2pt
+\item[E1] \textbf{Representation orthogonality:} $\max_g\|\rho(g)^{\!\top}\rho(g)-I\|_F\le10^{-12}$ (fp64).
+\item[E2] \textbf{Invariance of the motion channels:} $\delta,\sigma$ verified invariant, not assumed.
+\item[E3] \textbf{Rotation sweep:} score violation $\sim\!10^{-16}$ across $\theta\in[0.05,3.0]$~rad, with
+log--log slope $|\text{slope}|<0.5$ (flat). A modelling violation grows with angle; roundoff does not.
+\item[E4] \textbf{Precision scaling:} $r=\bar\delta^{\mathrm{fp32}}/\bar\delta^{\mathrm{fp64}}
+=5.44\times10^{-8}/4.43\times10^{-16}=1.23\times10^{8}$, tracking the machine-epsilon ratio; a genuine
+violation would be precision-independent ($r\approx1$).
+\item[E5] \textbf{Translation invariance:} on raw world coordinates,
+$|s(\bm x{+}\bm c)-s(\bm x)|/|s(\bm x)|=2.6\times10^{-16}$.
+\item[E6] \textbf{Parity:} under a reflection the parity-even cut gives \emph{exactly} $0$ (bit-identical
+on a mirrored body --- an unintended $O(3)$-invariance), whereas the completed cut gives
+$4.4\times10^{-2}$ (seed~0, \texttt{certify\_egru.json}). A single reflection certifies the entire improper coset.
+\item[E7] \textbf{Laterality:} permuting left/right joint \emph{indices} (a relabelling, not a
+reflection) moves the score by $6.9\times10^{-2}$ / $5.6\times10^{-2}$ for the two cuts (seed~0); both
+separate a left- from a right-limb movement. E6--E7 are model-dependent modelling quantities, not
+roundoff-floor ones, and vary across seeds.
+\item[E8] \textbf{The fix is free:} read-out invariance under Haar-random \emph{proper} rotations (up to
+$\theta{=}\pi$), with the parity-odd channels active, is $2.9\times10^{-16}$ --- unchanged. E1--E5 are
+likewise over Haar-random $SO(3)$, so the certified invariance is to the full rotation group, of which a
+camera azimuth or the NTU cross-view displacement is one instance ($5.8\times10^{-9}$, fp64).
+\end{itemize}
+
+% =====================================================================
+\section{Complete Precision Budget}\label{sec:supp:prec}
+The full fp64$\to$int8 budget --- including the bf16 and int8-activations-only rows --- is reported in
+the main paper's deployment table. The int8 cliff is attributable \emph{solely} to activation
+grid-rounding: weight-only quantization preserves the theorem (a quantized model is a different
+equivariant model), and fp16 is $3.2\times$ tighter than bf16 because equivariance pays in mantissa
+bits, which bf16 trades for exponent range.
+
+% =====================================================================
+\section{Nondeterminism: Seed Distribution}\label{sec:supp:seed}
+The $0.33$~MAD floor quoted in the main paper is the tighter \emph{fixed-configuration} run-to-run
+component (init held constant, atomic nondeterminism only). \Cref{tab:seed} gives the wider
+\emph{seed-to-seed} distribution (SO(3) EGRU clean MAD per fold across three initializations): mean
+across-seed std $0.48$, worst pairwise gap $1.30$. Both exceed every model-vs-model clean gap in the
+main accuracy table, so those gaps are ties. cuDNN-deterministic modes remove the cuDNN-GRU atomic
+component but not the initialization variance; the structural degradation columns are weight-independent
+(Prop.~1 holds for arbitrary weights), so the flat viewpoint curve stayed exactly flat across every seed
+while absolute MAD moved.
+
+\begin{table}[t]\centering\small
+\caption{Per-(seed,fold) clean MAD, SO(3) EGRU. No retraining beyond the three seeds.}
+\label{tab:seed}
+\begin{tabular}{cccccc}
+\toprule
+fold & seed 0 & seed 1 & seed 2 & std & gap \\
+\midrule
+0 & $7.120$ & $6.778$ & $6.737$ & $0.210$ & $0.383$ \\
+1 & $6.680$ & $6.124$ & $5.804$ & $0.443$ & $0.876$ \\
+2 & $6.976$ & $7.345$ & $6.623$ & $0.361$ & $0.722$ \\
+3 & $6.762$ & $7.363$ & $6.093$ & $0.635$ & $1.270$ \\
+4 & $6.469$ & $7.714$ & $6.415$ & $0.735$ & $1.299$ \\
+\midrule
+\multicolumn{4}{l}{mean across-seed std} & $\mathbf{0.48}$ & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Protocol Audit and Continuous-Time Control}\label{sec:supp:control}
+\textbf{Protocol audit.} The single-exercise audit --- selection bias $+1.2\pm0.4$~MAD ($18.6\%$ over
+three seeds), paired subject-cluster bootstrap $\Delta=-0.44$ (per-seed $[-1.07,+0.20]$, clearing zero
+in only one of three seeds) --- is reported per-seed in the main paper. It is \emph{not} subject leakage
+(each subject contributes one recording on that slice, so a random split is already subject-disjoint);
+the slice simply carries no robust subject-level signal, so we pool the five exercises and gate every
+experiment on a per-exercise mean-predictor floor.
+
+\textbf{Continuous-time control.} We implement the Neural CDE variant and certify it to the same E1--E8
+standard; it satisfies an exact equivariance certificate and \emph{fails} its own measured floor
+($8.43$ vs.\ $8.25$ MAD), the cleanest demonstration that a structural guarantee is worthless without
+measured signal.
+Analysing the adaptive solver, a Dormand--Prince controller accepts/rejects steps on a per-component
+scaled-RMS norm that is \emph{not} group-invariant even when the vector field is exactly equivariant, so
+rotated and unrotated integrations receive different step grids and de-align; a per-irrep-normalised norm
+removes this, driving grid divergence to identically zero.
+
+\textbf{Irregular-sampling null (derived).} A model-free spectral census finds $97.7\%$ of KIMORE's
+\emph{positional} energy below the fixed-grid resampling corner (though $70\%$ of \emph{velocity}
+energy lies above it), so resampling preserves pose geometry while low-passing the derivative band and
+acts as a denoiser on healthy-form exercises, where the discriminative signal is positional --- the null
+was predictable before the experiment, though the boundary would move for tremor-dominated tasks. The
+mechanism is nonetheless
+real: a physiologically calibrated $5$~Hz tremor is recovered from the true irregular stamps at
+$r{=}1.000$ under drop rates up to $70\%$, while a resampled estimator decays to $0.785$.
+
+\end{document}

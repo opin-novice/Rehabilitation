@@ -3,7 +3,7 @@
 The plan calls it '78-fold Stratified-LOSO'; KIMORE_pooled has 77 subjects (the plan's
 78 counts one dropped in preprocessing), so true LOSO = 77 folds via LeaveOneGroupOut
 (one subject held out per fold). Uses the irds_only encoders. Writes to a SEPARATE root
-(results/kimore_loso_78fold/) so the 5-fold results (outputs/ssl_results/) are kept.
+(archive/legacy_results/kimore_loso_78fold/) so the 5-fold results (outputs/ssl_results/) are kept.
 
 After training, pools out-of-fold predictions (N=380) per condition and runs the Paper-1
 sample-level protocol: per-exercise Spearman rho, 20-seed bootstrap 95% CIs, and pairwise

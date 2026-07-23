@@ -30,8 +30,8 @@ from selfsup.data import load_corpus_with_labels  # noqa: E402
 OUT_DIR = "outputs/reviewer_round4"
 # padded (22-24) + REHAB246 duplicated permutation targets (7,11) -> zero in ALL corpora
 ZERO_JOINTS = [7, 11, 22, 23, 24]
-TCN_DIR = "results/kimore_loso_78fold/A_scratch"
-STGCN_DIR = "results/kimore_loso_78fold_stgcn"
+TCN_DIR = "archive/legacy_results/kimore_loso_78fold/A_scratch"
+STGCN_DIR = "archive/legacy_results/kimore_loso_78fold_stgcn"
 
 
 def _mask(X):

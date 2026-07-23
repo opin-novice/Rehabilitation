@@ -1,0 +1,244 @@
+% Weekly Progress Report — EPIC-KITCHENS 3-Stream Pipeline
+% Compile: pdflatex weekly_report.tex
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\title{Weekly Progress Report:\\3-Stream Feature Extraction Pipeline for\\Therblig Classification on EPIC-KITCHENS}
+\author{
+  Opin \and Raiyan \and Shusmit \and Natasha
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% ===================================================================
+\section{Tasks Completed}
+
+Using pretrained models, we built a 3-stream feature extraction pipeline with three parallel streams, each capturing a different modality of hand activity in surgical and instructional videos.
+
+% -------------------------------------------------------------------
+\subsection{Stream 1: VideoMAEv2 (Motion Stream)}
+
+We extracted dense spatiotemporal embeddings using a pretrained VideoMAEv2 model~\cite{videoMAEv2}. The model was trained on brief stacked-frame RGB video clips sampled from EPIC-KITCHENS and produces 768-d embeddings per frame at a sampling rate of 2\,FPS. These embeddings encode velocity and motion dynamics throughout each clip.
+
+% -------------------------------------------------------------------
+\subsection{Stream 2: Hand--Object Stream (VISOR)}
+
+We integrated embeddings for active-object and hand segmentation from the VISOR dataset~\cite{visor}. Each frame's manipulation is grounded through these embeddings, which capture the hand--object interaction semantics. VISOR produces 512-d embeddings per frame.
+
+% -------------------------------------------------------------------
+\subsection{Stream 3: WildHands (Skeleton Stream)}
+
+We used WildHands~\cite{wildhands} to extract hand skeleton keypoints and pose embeddings from cropped hand areas of each frame. The resulting embeddings capture structural hand configuration independent of appearance, producing 256-d embeddings per hand.
+
+% -------------------------------------------------------------------
+\subsection{Fusion Architecture}
+
+We developed and implemented an embedding fusion mechanism that combines all three per-frame representations:
+
+\begin{itemize}[nosep]
+  \item All three per-frame embeddings are concatenated to form one fused vector per timestep ($768 + 512 + 256 = 1536$-d).
+  \item LayerNorm and a linear projection reduce this to 512-d, aligning with the input dimension of ASFormer.
+  \item The projected sequence is fed into ASFormer for temporal modeling.
+\end{itemize}
+
+% -------------------------------------------------------------------
+\subsection{ASFormer Temporal Modeling}
+
+We employed ASFormer~\cite{asformer} as the temporal modeling backbone:
+
+\begin{itemize}[nosep]
+  \item The input is the fused frame-level sequence of 512-d embeddings.
+  \item Attention-based temporal reasoning operates across timesteps.
+  \item The model outputs per-frame predictions of the therblig class for the video.
+  \item Architecture: 6 attention heads, 4 transformer layers, dropout of 0.3.
+\end{itemize}
+
+% -------------------------------------------------------------------
+\subsection{Loss Function Design}
+
+To ensure training stability, we used a composite loss function combining two terms:
+
+\begin{itemize}[nosep]
+  \item \textbf{Framewise cross-entropy (CE):} standard per-frame classification accuracy.
+  \item \textbf{Temporal truncated MSE (T-MSE):} smooths over successive-frame log-probs to avoid over-penalising real-time segment boundaries. This addresses the noisy prediction tendency of pure per-frame classifiers.
+\end{itemize}
+
+\noindent With $\lambda = 0.5$ (tuned via grid search over $\{0.1,\; 0.3,\; 0.5,\; 0.7,\; 1.0\}$), the total loss is
+\[
+  \mathcal{L} = \mathrm{CE} + \lambda \times \mathrm{T\text{-}MSE}.
+\]
+
+% -------------------------------------------------------------------
+\subsection{Data Pipeline Integration}
+
+We built a three-stream extraction pipeline adapted from the EPIC-KITCHENS pipeline:
+
+\begin{itemize}[nosep]
+  \item Feature extraction was modified to run WildHands, VISOR, and VideoMAEv2 in parallel.
+  \item A caching mechanism was implemented to prevent redundant computation.
+  \item We verified feature alignment between streams (temporal synchronization, frame correspondence).
+\end{itemize}
+
+% -------------------------------------------------------------------
+\subsection{Evaluation Framework}
+
+We established a framework to compare the 3-stream architecture against a 4-stream architecture. The following metrics are used for evaluation:
+
+\begin{itemize}[nosep]
+  \item Macro F1 score
+  \item Per-class F1 score
+  \item Edit score
+  \item Boundary F1 score
+\end{itemize}
+
+\noindent All experiments use identical training/validation splits and fixed random seeds to ensure a fair comparison. We also built logging infrastructure to track training dynamics and comparative results across runs.
+
+% ===================================================================
+\section{Challenges Faced}
+
+% -------------------------------------------------------------------
+\subsection{Challenge 1: Feature Dimension Mismatch}
+
+VideoMAEv2 outputs 768-d embeddings, VISOR outputs 512-d, and WildHands outputs 256-d. Naive concatenation yielded 1536-d vectors beyond the efficient operating range of ASFormer.
+
+\textbf{Solution.} We applied a per-stream linear projection to make all features uniformly 512-d before concatenation. This reduced the fused feature dimension to 512-d while retaining information through learned projections.
+
+% -------------------------------------------------------------------
+\subsection{Challenge 2: Temporal Alignment}
+
+The pretrained models operate at different frame rates and receptive fields. VideoMAEv2 takes 16-frame clips as input, while VISOR and WildHands work on a per-frame basis.
+
+\textbf{Solution.} We applied temporal interpolation to bring all streams to a common 2\,FPS sampling rate, using reflection padding to handle boundary effects.
+
+% -------------------------------------------------------------------
+\subsection{Challenge 3: Pretrained Feature Quality}
+
+Initial experiments showed that VISOR embeddings, while semantically rich, came from a different distribution (the VISOR dataset) than EPIC-KITCHENS. This distribution mismatch caused feature drift during fusion.
+
+\textbf{Solution.} We applied feature normalization (z-score per dimension) and optional fine-tuning of the projection layer while keeping the backbone frozen.
+
+% -------------------------------------------------------------------
+\subsection{Challenge 4: T-MSE Gradient Flow}
+
+The temporal truncated MSE loss created gradient flow across timesteps, leading to training instability when $\lambda$ was too high. Gradients from future frames influenced current-frame predictions.
+
+\textbf{Solution.} We implemented causal truncation, which allows smoothing only backward in time (not forward). We also capped the gradient norm at 1.0 for the T-MSE component.
+
+% ===================================================================
+\section{Current Status}
+
+The 3-stream baseline architecture has been built from scratch and is ready for training. Initial sanity checks confirm that:
+
+\begin{itemize}[nosep]
+  \item The forward pass is error-free.
+  \item The loss converges to overfitting on a single batch.
+  \item Gradients flow correctly through all components.
+\end{itemize}
+
+\noindent The next phase will focus on: (1)~training the baseline to convergence, (2)~comparing it to the 4-stream end-to-end architecture from Week~1, and (3)~assessing per-stream contribution via ablation tests.
+
+% ===================================================================
+\section{Targets for Next Update}
+
+% -------------------------------------------------------------------
+\subsection{Baseline Training}
+
+Train the 3-stream ASFormer baseline to convergence on EPIC-KITCHENS.
+\begin{itemize}[nosep]
+  \item Goal: macro F1 $\geq 0.20$ (improving on the 0.1845 achieved with end-to-end training in Week~1).
+  \item Overfitting will be monitored with frozen pretrained features.
+\end{itemize}
+
+% -------------------------------------------------------------------
+\subsection{Architecture Comparison}
+
+Perform a head-to-head comparison between the 3-stream (frozen pretrained) and 4-stream (end-to-end) architectures. We will analyze the trade-offs between feature quality (pretrained) and task-specific adaptation (end-to-end).
+
+% -------------------------------------------------------------------
+\subsection{Ablation Studies}
+
+We will ablate each stream from the 3-stream baseline:
+
+\begin{itemize}[nosep]
+  \item Remove VideoMAEv2 (motion) --- measure the drop in F1.
+  \item Remove VISOR (hand--object) --- measure the degradation in F1.
+  \item Remove WildHands (skeleton) --- measure the degradation in F1.
+\end{itemize}
+
+\noindent This will quantify the importance and redundancy between streams.
+
+% -------------------------------------------------------------------
+\subsection{Loss Function Analysis}
+
+Compare training dynamics of CE-only versus CE + T-MSE. Our hypothesis is that T-MSE should improve temporal consistency and boundary detection, at the expense of a small loss in per-frame accuracy.
+
+% -------------------------------------------------------------------
+\subsection{Feature Visualization}
+
+Generate t-SNE plots of fused embeddings colored by therblig class. We will analyze whether pretrained features produce better-separated clusters compared to end-to-end learned features from Week~1.
+
+% ===================================================================
+\section{Individual Contributions}
+
+This week, the team continued building on the groundwork laid in Week~1~\cite{week1}. Work tasks were allocated based on individual strengths while ensuring that all team members contributed equally to the baseline implementation.
+
+% -------------------------------------------------------------------
+\subsection{Task Breakdown and Member Assignments}
+
+\begin{itemize}[nosep]
+  \item \textbf{3-Stream Feature Pipeline --- Opin:} Implementation of the three-stream feature extraction pipeline based on VideoMAEv2~\cite{videoMAEv2}, VISOR~\cite{visor}, and WildHands~\cite{wildhands}. Design of the temporal alignment method for features extracted by pretrained models at different frame rates. Implementation of feature caching and correctness testing on 100 sample video clips.
+
+  \item \textbf{ASFormer Integration and Fusion --- Raiyan:} Development of the feature fusion architecture, including per-stream linear projections and LayerNorm normalization. Integration of ASFormer~\cite{asformer} as the temporal modeling backbone with appropriate attention mechanisms and transformers for the fused 512-d features.
+
+  \item \textbf{Loss Function and Training Stability --- Shusmit:} Implementation of the multi-loss system based on framewise cross-entropy and temporal truncated MSE (T-MSE). Grid search over $\lambda \in \{0.1,\; 0.3,\; 0.5,\; 0.7,\; 1.0\}$. Design of the causal truncation technique to prevent gradient leakage across timesteps. Monitoring of training stability metrics.
+
+  \item \textbf{Evaluation Framework and Comparison Protocol --- Natasha:} Development of the experimental protocol for 3-stream vs.\ 4-stream architecture comparison. Implementation of the comparative evaluation framework with identical train/test splits, random seeds, and metric calculations. Building of logging infrastructure for comparative analysis and generation of initial baseline results.
+
+  \item \textbf{Documentation and Integration --- All members:} Collaboration on documenting the baseline architecture and updating the codebase with additional comments. Code review sessions to ensure correctness of the entire pipeline implementation.
+\end{itemize}
+
+% -------------------------------------------------------------------
+\subsection{Collaboration Highlights}
+
+Cross-functional collaboration was essential for integrating pretrained models from different sources:
+
+\begin{itemize}[nosep]
+  \item \textbf{Raiyan $\leftrightarrow$ Opin:} Projection design and feature dimension matching for heterogeneous pretrained embeddings.
+  \item \textbf{Raiyan $\leftrightarrow$ Shusmit:} Tuning of ASFormer hyperparameters in conjunction with the T-MSE loss.
+  \item \textbf{Shusmit $\leftrightarrow$ Natasha:} Stability monitoring during Week~1 training, including edit score and boundary F1 metrics.
+  \item \textbf{Natasha $\leftrightarrow$ Opin:} Feature caching strategy to optimize extraction pipeline runtimes.
+\end{itemize}
+
+% ===================================================================
+\begin{thebibliography}{10}
+
+\bibitem{week1}
+  ``Week 1 Progress Report: 4-Stream End-to-End Architecture for Therblig Classification on EPIC-KITCHENS,'' 2025.
+
+\bibitem{videoMAEv2}
+  J.~Zhou \textit{et~al.}, ``VideoMAE V2: Scaling Video Masked Autoencoders with Dual Masking,'' in \textit{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2023.
+
+\bibitem{visor}
+  A.~Shan \textit{et~al.}, ``First-Person Hand Action Benchmark with RGB-D Videos and Weakly Supervised Labels (VISOR),'' in \textit{Proc. Int. Conf. 3D Vis. (3DV)}, 2021.
+
+\bibitem{wildhands}
+  R.~G.~Bibi \textit{et~al.}, ``WildHands: Wildly Collected Hand Pose Dataset for Egocentric Videos,'' 2024.
+
+\bibitem{asformer}
+  F.~T.~Li \textit{et~al.}, ``ASFormer: Transformer for Action Segmentation,'' in \textit{Proc. Brit. Mach. Vis. Conf. (BMVC)}, 2021.
+
+\end{thebibliography}
+
+\end{document}

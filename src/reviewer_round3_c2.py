@@ -10,7 +10,7 @@ Usage:
   python src/reviewer_round3_c2.py build
   # then train (orchestrated):
   #   python src/train_loso.py --model_type tcn --loso --resume \
-  #       --pooled_dir KIMORE_pooled_bonevec --out_dir results/kimore_loso_78fold_bonevec \
+  #       --pooled_dir KIMORE_pooled_bonevec --out_dir archive/legacy_results/kimore_loso_78fold_bonevec \
   #       --epochs 100 --batch_size 16 --patience 100 --d_model 128
   python src/reviewer_round3_c2.py eval
 """
@@ -38,7 +38,7 @@ from selfsup.naive_baseline import naive_auroc  # noqa: E402
 
 SRC_POOLED = "KIMORE_pooled"
 DST_POOLED = "KIMORE_pooled_bonevec"
-BONEVEC_DIR = "results/kimore_loso_78fold_bonevec"
+BONEVEC_DIR = "archive/legacy_results/kimore_loso_78fold_bonevec"
 OUT_DIR = "outputs/reviewer_round3"
 
 

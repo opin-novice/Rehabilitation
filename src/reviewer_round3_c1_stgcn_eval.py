@@ -1,7 +1,7 @@
 """Reviewer round-3, C1 (Q6): does a spatial-prior backbone (ST-GCN) change the null?
 
 Evaluates the 77-fold LOSO ST-GCN models (trained by
-`train_loso.py --model_type stgcn --loso --out_dir results/kimore_loso_78fold_stgcn`)
+`train_loso.py --model_type stgcn --loso --out_dir archive/legacy_results/kimore_loso_78fold_stgcn`)
 in the identical zero-shot protocol used for the TCN: per-fold direction-agnostic
 AUROC on REHAB246 + UI-PRMD, mean rank-Spearman, pred_SD degeneracy gate, the naive
 kinematic baseline, and a 3-way sensor-identity probe on the ST-GCN embeddings.
@@ -32,7 +32,7 @@ from selfsup.zeroshot_eval import _rebuild_model, _predict, DEGENERACY_PRED_SD  
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 from selfsup.naive_baseline import naive_auroc  # noqa: E402
 
-STGCN_DIR = "results/kimore_loso_78fold_stgcn"
+STGCN_DIR = "archive/legacy_results/kimore_loso_78fold_stgcn"
 OUT_DIR = "outputs/reviewer_round3"
 
 

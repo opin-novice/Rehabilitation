@@ -28,8 +28,8 @@ from selfsup.data import load_corpus_with_labels  # noqa: E402
 
 FIG_DIR = "figures"
 BACKBONES = {
-    "TCN (scratch)": "results/kimore_loso_78fold/A_scratch",
-    "ST-GCN": "results/kimore_loso_78fold_stgcn",
+    "TCN (scratch)": "archive/legacy_results/kimore_loso_78fold/A_scratch",
+    "ST-GCN": "archive/legacy_results/kimore_loso_78fold_stgcn",
 }
 SENSOR_COLORS = {"KIMORE": "#4477AA", "REHAB246": "#EE6677", "UIPRMD": "#228833"}
 MAX_PER_CORPUS = 400  # subsample for legible t-SNE

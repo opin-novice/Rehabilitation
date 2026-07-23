@@ -6,11 +6,16 @@ logs
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+
+# Nested git repo (reference implementation, not part of this repo's history)
+Transformer_Rehabilitation/
 
 # Environment
 .env
 
 # Raw / regeneratable data
+data/
 KIMORE/
 KIMORE_processed/
 KIMORE_pooled/

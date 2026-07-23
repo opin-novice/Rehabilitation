@@ -53,6 +53,7 @@ Zenodo & the *Data* paper are explicit: each file is `..._CorrectLabel_Position.
 ### 3.2 Self-supervised pretraining for rehab (closest pre-emption of the core idea)
 - **SSL-Rehab — Kourbane, Papadakis, Andries (IMT Atlantique), "Assessment of Physical Rehabilitation Exercises Through Self-Supervised Learning of 3D Skeleton Representations."** Foundation model pretrained on 3D skeletons via **masked-motion self-supervision** with progressive masking + **LoRA**; fine-tuned on **KIMORE and UI-PRMD**; reports SOTA and **improved cross-dataset generalization under limited labels**. This is the single most threatening prior work — it is "self-supervised pretraining → better rehab generalization," differing from the plan mainly in using masked-motion rather than contrastive/NT-Xent.
 - **Du, Graham, Depp, Nguyen (EMBC 2021)** — GCN with self-supervised regularization for rehab assessment.
+
 - **Frame-Level Real-Time Assessment of Stroke Rehab (EMBC 2025)** — uses the **MOMENT** time-series foundation model, fine-tuned under LOSO; pretrained foundation model beats LSTM (AUC 0.73 vs 0.58) and generalizes better to new patients. Independent evidence that pretraining helps generalization — cite as support, but also as prior art.
 
 ### 3.3 Skeleton contrastive SSL (the augmentation-taxonomy field)

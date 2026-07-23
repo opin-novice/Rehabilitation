@@ -69,3 +69,47 @@ J. NeuroEng. Rehabil. 21:217 (2024), DOI 10.1186/s12984-024-01506-7 (post-stroke
 upper-limb compensatory-movement rating reliability); Man. Ther. (passive accessory
 movement reliability in novice manual therapists). Capecci et al., IEEE TNSRE 27(7):
 1436-1448, 2019, DOI 10.1109/TNSRE.2019.2923060.
+
+## (c) 2026-07-23 follow-up: MCID (magnitude-of-change) anchor, not just ICC (agreement)
+
+A second targeted search (WACV rebuttal, W1) confirmed the (a) finding still holds — no
+inter-/intra-rater ICC/kappa for KIMORE or REHAB24-6 is surfaced by search engines or the
+papers' abstracts/summaries (scispace, ResearchGate, Semantic Scholar, Zenodo record all
+checked; the KIMORE questionnaire is the 10-item EAAQ, summed into TS/PO/CF, with no visible
+reliability coefficient reported). No further hunting is warranted without direct full-text
+access to Capecci et al. 2019's methods section.
+
+However, a *different* and directly useful anchor was found: minimal clinically important
+difference (MCID) values on comparable 0-66/0-100-point rehabilitation motor-assessment scales:
+
+| Scale | MCID | Population | Source |
+|---|---|---|---|
+| Fugl-Meyer upper-extremity | 4-12.4 pts | chronic stroke | multiple (see search) |
+| Fugl-Meyer lower-extremity | 6 pts | chronic stroke | PubMed 27086865 |
+| Fugl-Meyer (TBI, UE/LE/Motor) | 6.2 / 3.2 / 8.4 pts | traumatic brain injury | tandfonline 10.1080/14737175.2021.1968299 |
+| Stroke Rehab. Assessment of Movement (STREAM) | 1.9-4.8 pts/subscale | stroke | Ovid nener 10.1177/1545968308316385 |
+
+This is used in `paper_wacv.tex` (Results, "Clinical interpretation of the MAD scale" paragraph,
+after `fig:viewpoint`) as a plausibility bound: our 3.03-MAD (of 50) per-sequence viewpoint swing
+sits in the same order of magnitude as these MCIDs, and the int8/streaming score shifts
+(<=0.05 MAD) sit one to two orders of magnitude below them. Explicitly flagged in the paper as
+a bound from adjacent instruments, not a KIMORE-specific threshold — the missing KIMORE-specific
+ICC/MCID remains the paper's clearest open measurement gap.
+
+## (d) 2026-07-23 second follow-up: direct-fetch attempts, and re-anchoring on construct match
+
+Tried to get past the search-snippet wall by fetching Capecci et al. 2019 directly rather than
+relying on secondary summaries: `https://doi.org/10.1109/TNSRE.2019.2923060` (redirects to
+`ieeexplore.ieee.org/document/8736767/`) returned no extractable text (publisher access wall), and
+the ResearchGate copy (`researchgate.net/publication/333791841_...`) returned HTTP 403. Both are a
+firm boundary, not a "search harder" gap — no further automated retrieval will get past them without
+institutional/publisher access or a co-author who has it.
+
+Given that, reprioritized the anchor in `paper_wacv.tex`: the paragraph now LEADS with the
+movement-QUALITY rating ICCs (CMAS 0.58-0.93, MQS 0.93) from finding (b) above rather than the
+Fugl-Meyer/STREAM MCIDs from finding (c). Rationale: CMAS/MQS rate the same construct KIMORE's
+clinicians rate — how well a movement was executed — whereas Fugl-Meyer/STREAM measure a different
+construct (post-stroke motor-function recovery) repurposed as a magnitude analogy. The MCID numbers
+are kept as a secondary, explicitly-labeled magnitude-of-change cross-check, not the primary anchor.
+The disclosure sentence in the paper now names the direct-fetch attempts specifically, so the
+"we tried harder than a search-engine pass" claim is concrete and checkable by a reviewer.
