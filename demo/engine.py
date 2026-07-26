@@ -34,6 +34,7 @@ import kimore_cde_data as kd                                    # noqa: E402
 import block2_transforms as bt                                  # noqa: E402
 from equivariant_gru import SE3EquivariantGRU                   # noqa: E402
 from models_curvenet import PointCloudTransformerRegressor      # noqa: E402
+from invariant_controls import InvariantGRU, invariant_series   # noqa: E402
 
 SCORE_MAX = kd.SCORE_MAX
 N_JOINTS = kd.N_JOINTS
@@ -44,7 +45,8 @@ class DemoEngine:
     """Load once, predict many. Thread-agnostic; call predict() from the capture loop."""
 
     def __init__(self, ckpt_dir="outputs/cde_block2", device=None, model_seed=0,
-                 folds=(0, 1, 2, 3, 4), n_frames=100, pct_operator="linear", load_pct=True):
+                 folds=(0, 1, 2, 3, 4), n_frames=100, pct_operator="linear",
+                 load_pct=True, load_invgru=False):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.ckpt_dir = ckpt_dir
         self.n_frames = n_frames
@@ -87,6 +89,21 @@ class DemoEngine:
             m.eval()
             self.pct.append(m)
 
+        # --- InvariantGRU control (hand-crafted invariants + discrete GRU) ---
+        self.invgru = []
+        self._invgru_mu = []
+        self._invgru_sd = []
+        if load_invgru:
+            for f in folds:
+                ck = os.path.join(ckpt_dir, f"invgru_s{model_seed}_pooled_f{f}.pt")
+                ckd = torch.load(ck, map_location=self.device)
+                m = InvariantGRU(ckd["n_feat"]).to(self.device)
+                m.load_state_dict(ckd["state"])
+                m.eval()
+                self.invgru.append(m)
+                self._invgru_mu.append(ckd["mu"].to(self.device))
+                self._invgru_sd.append(ckd["sd"].to(self.device))
+
     # -- individual pathways ------------------------------------------------
     @torch.no_grad()
     def _egru_one(self, model, sample):
@@ -109,12 +126,32 @@ class DemoEngine:
         s = np.mean([self._pct_one(m, sample) for m in self.pct])
         return float(s * SCORE_MAX)
 
+    @torch.no_grad()
+    def _invgru_one(self, model, mu, sd, sample, exercise):
+        """Score one sample with a single InvariantGRU fold."""
+        feats = invariant_series(sample)                    # (L, F)
+        X = torch.tensor(feats, dtype=torch.float32, device=self.device)
+        mu_1d = mu.to(self.device).squeeze()
+        sd_1d = sd.to(self.device).squeeze()
+        X = (X - mu_1d) / sd_1d
+        e = torch.tensor([int(exercise) - 1], dtype=torch.long, device=self.device)
+        return float(model(X.unsqueeze(0), e).item())
+
+    def predict_invgru(self, sample, exercise=1):
+        """Ensemble mean InvariantGRU score in clinical units."""
+        if not self.invgru:
+            return 0.0
+        scores = [self._invgru_one(m, mu, sd, sample, exercise)
+                  for m, mu, sd in zip(self.invgru, self._invgru_mu, self._invgru_sd)]
+        return float(np.mean(scores) * SCORE_MAX)
+
     # -- the demo call ------------------------------------------------------
     def predict(self, sample, exercise=1, angle=0.0):
-        """Score one buffered sample with BOTH models. `angle` rotates the skeleton about the
-        vertical axis (Act 2) -- the SAME rotated bytes go to both models. Returns clinical scores.
+        """Score one buffered sample with all loaded models. `angle` rotates the skeleton about the
+        vertical axis (Act 2) -- the SAME rotated bytes go to all models. Returns clinical scores.
 
-        exercise: 1..5 (KIMORE exercise id; enters both models as a Type-0 invariant one-hot).
+        exercise: 1..5 (KIMORE exercise id; enters all models as a Type-0 invariant one-hot).
+        EGRU and PCT are always returned; InvariantGRU is returned if loaded.
         """
         s = dict(sample)
         s["exercise"] = int(exercise)
@@ -122,10 +159,13 @@ class DemoEngine:
         if angle:
             s = bt.rotate_sample(s, float(angle))
             s["exercise"] = int(exercise)                # rotate_sample copies the dict; keep ex
-        return {
+        out = {
             "egru": self.predict_egru(s),
             "pct": self.predict_pct(s),
             "angle": float(angle),
             "exercise": int(exercise),
             "n_frames": int(s["n_frames"]),
         }
+        if self.invgru:
+            out["invgru"] = self.predict_invgru(s, exercise=exercise)
+        return out
