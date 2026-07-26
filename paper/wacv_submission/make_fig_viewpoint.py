@@ -23,17 +23,27 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ANGLES = [0, 15, 30, 45, 60, 90, 120, 150, 180]           # azimuth sweep (deg)
 FLOOR = 8.313360007924256                                  # mean-predictor floor
 
-# Okabe-Ito (CVD-safe). ours = blue (emphasised); transformer = vermillion (the blow-up).
+# Okabe-Ito (CVD-safe). ours = blue (emphasised); non-equivariant = red/orange shades.
 STYLE = {
-    "EGRU  SO(3) chiral": dict(label="EGRU (ours)",   color="#0072B2", lw=2.4, z=5, ls="-"),
-    "InvariantGRU  SO(3)": dict(label="InvariantGRU", color="#009E73", lw=1.6, z=4, ls="-"),
-    "PCT + rot-aug":       dict(label="PCT + rot-aug", color="#E69F00", lw=1.6, z=3, ls="-"),
-    "PCT (baseline)":      dict(label="PCT",           color="#D55E00", lw=2.0, z=4, ls="-"),
+    "EGRU  SO(3) chiral": dict(label="EGRU (ours)",   color="#0072B2", lw=2.4, z=10, ls="-"),
+    "InvariantGRU  SO(3)": dict(label="InvariantGRU", color="#009E73", lw=1.8, z=9, ls="-"),
+    "Ridge":              dict(label="Ridge (inv.)",  color="#2CA02C", lw=1.6, z=8, ls="--"),
+    "PCT (baseline)":     dict(label="PCT",           color="#D55E00", lw=1.8, z=5, ls="-"),
+    "ST-GCN":             dict(label="ST-GCN",        color="#FF7F0E", lw=1.6, z=4, ls="-"),
+    "TCN":                dict(label="TCN",           color="#D62728", lw=1.6, z=3, ls="-"),
+    "PCT + rot-aug":      dict(label="PCT + aug",     color="#E69F00", lw=1.6, z=6, ls="-"),
 }
 
 
 def main():
-    tables = json.load(open(os.path.join(HERE, "outputs", "cde_block2", "final_tables.json")))
+    # Look for final_tables.json in project root's outputs directory
+    # HERE = paper/wacv_submission, go up 3 levels to project root
+    import sys
+    sys.path.insert(0, HERE)
+    root_dir = os.path.abspath(os.path.join(HERE, "../.."))
+    tables_path = os.path.join(root_dir, "outputs", "cde_block2", "final_tables.json")
+    print(f"Loading from: {tables_path}")
+    tables = json.load(open(tables_path))
     vp = {r["model"]: r["mad"] for r in tables["viewpoint"]}
 
     plt.rcParams.update({
@@ -60,7 +70,7 @@ def main():
                 fontweight="bold" if st["label"] == "EGRU (ours)" else "normal")
 
     ax.set_xlim(0, 232)
-    ax.set_ylim(6.0, 11.2)
+    ax.set_ylim(6.0, 13.5)
     ax.set_xticks([0, 45, 90, 135, 180])
     ax.set_xlabel("Test-time camera azimuth (deg)")
     ax.set_ylabel("MAD (clinical score)")
@@ -73,6 +83,12 @@ def main():
     out = os.path.join(HERE, "fig_viewpoint.pdf")
     fig.savefig(out, bbox_inches="tight", pad_inches=0.02)
     print(f"wrote {out}")
+
+    # Also save to outputs for reference
+    out2 = os.path.join(root_dir, "outputs", "figures", "fig_viewpoint_with_baselines.pdf")
+    os.makedirs(os.path.dirname(out2), exist_ok=True)
+    fig.savefig(out2, bbox_inches="tight", pad_inches=0.02)
+    print(f"also wrote {out2}")
 
 
 if __name__ == "__main__":
