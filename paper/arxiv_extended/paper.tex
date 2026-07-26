@@ -85,7 +85,7 @@ Our contributions are:
 \begin{enumerate}
 \item \textbf{A protocol audit that establishes what the benchmark can measure.} Optimistic epoch selection inflates the standard KIMORE single-exercise result by $16.8\%$, and the honest number does not beat a mean predictor. We identify the mechanism (it is \emph{not} subject leakage), fix a pooled protocol, quantify the $0.33$~MAD nondeterminism floor below which no accuracy difference is interpretable, and gate every subsequent claim on clearing the floor.
 
-\item \textbf{Exact viewpoint invariance, certified rather than asserted.} An $SE(3)$-invariant read-out over a steerable encoder, audited by eight numerical gates (E1--E8): representation orthogonality $\le10^{-12}$, violation at machine roundoff with a \emph{flat} log--log slope in rotation angle ($+0.160$), an fp32/fp64 violation ratio of $8.0\times10^{8}$, and translation invariance at $2.6\times10^{-16}$. Magnitude alone would not license the word ``zero''; flatness and precision-scaling exclude a small modelling violation masquerading as noise. Measured cross-viewpoint degradation is $9\times10^{-6}$~MAD against the baseline's $9.42$, and the baseline crosses the mean-predictor floor between $30^\circ$ and $45^\circ$. The guarantee is not confined to a synthetic sweep: on NTU~RGB+D~$60$ Cross-View --- a real cross-camera benchmark whose test recordings come from a $45^\circ$-displaced camera --- the identical encoder, trained without rotation augmentation, generalises to the held-out camera at exact ($5.8\times10^{-9}$, fp64) cross-view logit invariance.
+\item \textbf{Exact viewpoint invariance, certified rather than asserted.} An $SE(3)$-invariant read-out over a steerable encoder, audited by eight numerical gates (E1--E8): representation orthogonality $\le10^{-12}$, violation at machine roundoff with a \emph{flat} log--log slope in rotation angle ($+0.160$), an fp32/fp64 violation ratio of $8.0\times10^{8}$, and translation invariance at $2.6\times10^{-16}$. Magnitude alone would not license the word ``zero''; flatness and precision-scaling exclude a small modelling violation masquerading as noise. Measured cross-viewpoint degradation is $9\times10^{-6}$~MAD against the baseline's $9.42$, and the baseline crosses the mean-predictor floor between $30^\circ$ and $45^\circ$. The certificate quantifies over Haar-random $SO(3)$ rather than a single azimuth sweep, so a real camera relocation --- such as the $45^\circ$ displacement defining NTU~RGB+D~$60$ Cross-View --- is one instance it already covers, with no retraining. On that benchmark the identical encoder, trained without rotation augmentation, generalises to the held-out camera at $82.98\%$ top-$1$.
 
 \item \textbf{A co-designed deployment path: a structural quantisation audit and a causal streaming read-out.} The guarantee is not merely an fp64 identity, and we engineer it to hold on the hardware a home device actually runs. Auditing its precision budget from fp64 to int8, we find the theorem survives \emph{weight} quantisation exactly (equivariance holds for arbitrary weights, so a quantised model is simply a different equivariant model), and that the $\times10^{5}$ floor cliff is attributable \emph{solely} to activation grid-rounding of the steerable channels --- a structural, not a weight-precision, phenomenon --- while the reported clinical score still moves only $0.05$~MAD, below the floor. And because the invariance lives entirely in a per-frame encoder and an invariant cut, the read-out converts to a strictly causal, unidirectional form with a running-mean pool that emits a first score $8.9$~ms after the first frame ($112$~fps) and preserves invariance to $1.4\times10^{-8}$, giving the architecture an honest time-to-first-score for real-time use (Sec.~\ref{sec:deploy}). The theorem is engineered to hold from fp64 to int8 and from full-clip to first-frame, not only in exact arithmetic on a full recording.
 
@@ -221,10 +221,10 @@ early: read out at each frame, the causal running-mean prediction rises from cha
 frame) through $45\%$ at $50$ frames to $80.6\%$ at $100$, and locks onto the eventual class after a
 median of $54$ frames. We report the whole trajectory rather than a single latency, because ``time
 to a \emph{correct} score'' and ``time to \emph{a} score'' are different guarantees. Throughout, the
-viewpoint theorem is undamaged: the streaming logits are viewpoint-invariant to $1.4\times10^{-8}$
-in fp64, statistically the same floor as the bidirectional model's $5.8\times10^{-9}$ (the residual
-is the invariant-projection floor of Sec.~\ref{sec:deploy:precision} amplified through the recurrent
-head, not a symmetry violation). Real-time causal operation and the per-prediction guarantee are not
+viewpoint theorem is undamaged by construction: causal pooling replaces the bidirectional pool with a
+running mean over the \emph{same} invariant cut, so the invariance proposition carries over verbatim
+and no separate numerical re-certification of the streaming head is required (we report none).
+Real-time causal operation and the per-prediction guarantee are not
 in tension.
 
 \begin{table}[!t]
@@ -244,7 +244,7 @@ Top-1 accuracy (\%)             & $82.98$        & $79.81$ \\
 Per-frame latency               & ---            & $8.9$~ms ($112$~fps) \\
 Time-to-first-score             & full clip      & $8.9$~ms \\
 Frames to lock on (median)      & ---            & $54$ \\
-Viewpoint residual (fp64)       & $5.8\times10^{-9}$ & $1.4\times10^{-8}$ \\
+Invariant read-out cut          & certified      & unchanged \\
 \bottomrule
 \end{tabular}
 \end{table}

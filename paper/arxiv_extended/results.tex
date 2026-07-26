@@ -278,16 +278,18 @@ in here rather than defer it. On NTU~RGB+D~$60$ Cross-View the train and test re
 from physically distinct cameras --- setups $2$ and $3$ record the training split, and the
 $45^\circ$-displaced setup~$1$ records a test split the model never sees at any angle during
 training (the test stream is never rotation-augmented). Trained \textbf{without any rotation
-augmentation}, our equivariant encoder transfers to the held-out camera at $82.98\%$ top-$1$, and its
-cross-view logit invariance is exact --- $5.8\times10^{-9}$ in fp64, the same E1--E8 theorem carried
-onto a $60$-class action head rather than a KIMORE regression head. The guarantee is not specific to
+augmentation}, our equivariant encoder transfers to the held-out camera at $82.98\%$ top-$1$, and the
+same E1--E8 certificate covers this displacement --- carried onto a $60$-class action head rather than
+a KIMORE regression head --- by inheritance from the group, not by a separate NTU-specific
+measurement, which we did not run. The guarantee is not specific to
 the $45^\circ$ camera displacement that defines this split, nor to azimuthal motion: the certificate
 (E1--E8) quantifies over Haar-random proper rotations spanning the \emph{full} $SO(3)$ up to angle
 $\pi$, and the cross-view displacement is one instance of that group. Logit invariance is therefore
 exact under \emph{arbitrary} proper rotations of the input, of which the benchmark's inter-camera
 geometry is a special case. We state plainly what this is and
-is not. It is \textbf{not} an accuracy win: $82.98\%$ sits some five points below a well-tuned ST-GCN
-on this split (published $\approx\!88\%$~\cite{yan2018stgcn}), and under a recipe (causal sampling,
+is not. It is \textbf{not} an accuracy win: $82.98\%$ is only $2.6$ points above our own faithful
+ST-GCN control trained under the identical protocol ($80.38\%$), and still some five points below the
+published $\approx\!88\%$ for a fully tuned ST-GCN on this split~\cite{yan2018stgcn}, under a recipe (causal sampling,
 root-relative coordinates, AdamW) that we did not tune to the published leaderboard --- entirely
 consistent with the clean-data tie of Section~\ref{sec:results:accuracy}, where accuracy was never
 the axis. What it \emph{is} is the KIMORE result reproduced on real hardware: a model whose viewpoint

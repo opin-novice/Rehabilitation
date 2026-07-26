@@ -1,10 +1,13 @@
 % =====================================================================
 %  WACV 2026 — Applications Track — 8pp submission
 %  "Viewpoint Invariance Is a Theorem, Not a Fit"
-%  PRIMARY SOURCE for the WACV submission. The 17pp IEEEtran twins
-%  (paper.tex / paper_overleaf.tex) are FROZEN as the arXiv extended version.
-%  Condensation map: WACV_CUT_LIST.md
+%  PRIMARY SOURCE for the WACV submission.
 %  Compile:  pdflatex paper_wacv && pdflatex paper_wacv
+%
+%  DOUBLE-BLIND -- do not add to this file: \author content, an
+%  acknowledgements or funding section, a repository URL, or a reference to
+%  any non-anonymous version of this work. Comments travel with the .tex if
+%  the source is ever shared, so keep them free of identifying material too.
 % =====================================================================
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
@@ -35,8 +38,9 @@ An $SE(3)$-Equivariant Recurrence for Rehabilitation Exercise Assessment}
 A clinical screening instrument must return the same patient the same score from a different room. We
 show that for skeleton-based rehabilitation assessment this per-prediction guarantee is available by
 construction: an $SE(3)$-equivariant recurrent model whose read-out is invariant to camera viewpoint
-as a \emph{theorem}, certified to the fp64 roundoff floor ($\sim\!10^{-16}$ on KIMORE,
-$\sim\!10^{-9}$ on the \emph{real} $45^\circ$ NTU~RGB+D Cross-View camera displacement). On clean frontal
+as a \emph{theorem}, certified to the fp64 roundoff floor ($\sim\!10^{-16}$) over Haar-random
+$SO(3)$ --- of which any camera relocation, including the $45^\circ$ NTU~RGB+D Cross-View
+displacement, is one instance. On clean frontal
 data no model separates from another --- ours, a point-cloud-transformer baseline, and a
 hand-crafted-invariant GRU tie within a $0.33$~MAD nondeterminism floor --- so the benchmark's aggregate
 metric is saturated and the decisive axis lies elsewhere: the augmented baseline
@@ -109,7 +113,7 @@ a restored parity channel that is principled but unrewarded on healthy-form exer
 (i) A protocol audit that establishes what the benchmark can measure --- an $18.6\%$ epoch-selection
 inflation, a $0.33$~MAD nondeterminism floor below which no accuracy gap is interpretable, and a gated
 pooled protocol. (ii) Exact viewpoint invariance, \emph{certified} by eight numerical gates (E1--E8)
-and validated on real NTU~RGB+D Cross-View ($5.8\times10^{-9}$, fp64), against a baseline that crosses
+over Haar-random $SO(3)$ rather than a single azimuth sweep, against a baseline that crosses
 the floor by $45^\circ$. (iii) A measured justification for the steerable encoder --- sensor-node
 failure --- and, behind the identical invariant cut, evidence that lighter $E(n)$ equivariance is more
 node-fail brittle. (iv) A second-corpus replication (REHAB24-6) of the viewpoint and node-failure
@@ -191,7 +195,7 @@ any rigid motion of the camera. (Proof in the supplement.)
 \end{proposition}
 
 \textbf{Certificate.} We audit the read-out with eight numerical gates (\cref{tab:certificate}), all
-passed, each re-runnable and refutable from the released code: representation orthogonality
+passed, each independently re-runnable and refutable (see Code availability): representation orthogonality
 $\le10^{-12}$; violation at the fp64 roundoff floor ($\sim\!10^{-16}$) with a \emph{flat} log--log
 slope in rotation angle ($|\text{slope}|<0.5$, against $\approx\!1$ for a genuine modelling error) and
 an fp32/fp64 violation ratio $>\!10^{8}$ (excluding a small modelling violation masquerading as noise);
@@ -228,7 +232,9 @@ E8 & full-$SO(3)$, parity-odd active & $\sim\!10^{-16}$ \checkmark \\
 
 % =====================================================================
 \section{Results}\label{sec:results}
-All experiments are pooled, subject-disjoint, over 3 seeds. \emph{Protocol audit}
+All experiments are pooled, subject-disjoint, over 3 seeds, except the TCN, ST-GCN and Ridge
+viewpoint curves of \cref{fig:viewpoint}, which are 5-fold cross-validated at a single seed.
+\emph{Protocol audit}
 (\cref{tab:protocol3seed}): on the single-exercise slice most commonly reported, honest epoch selection
 removes an $18.6\%$ inflation (3 seeds) and leaves no robust separation from a mean predictor --- the
 paired subject-cluster bootstrap gives $\Delta=-0.44$ and clears zero in only $1/3$ seeds. This is not
@@ -277,8 +283,8 @@ model) reflects the added parity-odd capacity, not instability --- every seed st
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}
 \caption{Clean-data accuracy (pooled, subject-disjoint, mean$\pm$std over 3 seeds). Every pairwise gap
-is inside the $0.33$~MAD \emph{fixed-configuration} floor (seed-to-seed std $0.48$, supp.\
-\cref{tab:seed}). $\Delta$ vs.\ floor is the SAME paired subject-cluster bootstrap statistic used in
+is inside the $0.33$~MAD \emph{fixed-configuration} floor (seed-to-seed std $0.48$; the wider
+seed-variation table is in the supplement). $\Delta$ vs.\ floor is the SAME paired subject-cluster bootstrap statistic used in
 \cref{tab:protocol3seed} ($n{=}77$ held-out subjects, pooled over 3 seeds $\times$ 5 folds, checkpoints
 re-evaluated with no retraining --- see \texttt{pooled\_bootstrap\_eval.py}): every model's interval is
 entirely below $0$, so the tie \emph{among} models coexists with each one genuinely beating the floor.}
@@ -300,18 +306,29 @@ Mean-predictor floor        & ---     & $8.31\pm0.05$ & --- & --- \\
 
 \textbf{Viewpoint invariance is a theorem, not a fit} (\cref{fig:viewpoint}). Across test-time camera
 azimuth the certified-invariant models are flat to machine precision (EGRU worst-case
-$9\times10^{-6}$~MAD; InvariantGRU exactly $0$), while PCT crosses the mean-predictor floor between
-$30^\circ$ and $45^\circ$ (worst degradation $9.42$~MAD). Rotation augmentation flattens PCT's aggregate
-curve but leaves a $3.03$~MAD \emph{per-sequence} score shift --- the difference between a guarantee and
-a fit. The guarantee is not synthetic: on NTU~RGB+D~$60$ Cross-View, whose test camera is $45^\circ$
-displaced, the identical encoder trained \emph{without} rotation augmentation attains exact cross-view
-logit invariance ($5.8\times10^{-9}$, fp64).
+$9\times10^{-6}$~MAD; InvariantGRU exactly $0$; hand-crafted invariant features Ridge at the fp64
+roundoff floor, $10^{-14}$ --- both invariant by construction, so these two curves are a
+positive control, not independent evidence),
+while all non-equivariant baselines degrade catastrophically: PCT crosses the mean-predictor floor between
+$30^\circ$ and $45^\circ$ (worst degradation $9.42$~MAD); TCN worst-case $13.17$~MAD; ST-GCN worst-case
+$9.18$~MAD. This pattern holds across three independently-designed non-equivariant architectures (temporal-conv,
+graph-conv, attention), indicating viewpoint fragility is a generic property of non-equivariance, not
+PCT-specific. Rotation augmentation flattens PCT's aggregate curve but leaves a $3.03$~MAD \emph{per-sequence}
+score shift --- the difference between a guarantee and a fit. The certificate is over Haar-random
+$SO(3)$, so the $45^\circ$ NTU~RGB+D~$60$ Cross-View camera displacement is one instance of the group
+it covers: invariance there is \emph{inherited} from \cref{prop:invariance}, not separately measured.
+What NTU contributes independently is generalisation, not invariance --- trained \emph{without}
+rotation augmentation on cameras $2$--$3$ and tested on the displaced camera $1$, the identical encoder
+reaches $82.98\%$ Top-1 against a faithful ST-GCN control's $80.38\%$.
 
 \begin{figure}[t]\centering
   \includegraphics[width=\linewidth]{fig_viewpoint}
-  \caption{MAD vs.\ camera azimuth. Certified-invariant models are flat by theorem; the transformer
-  degrades through the mean-predictor floor. Augmentation flattens the mean but not the per-sequence
-  swing ($3.03$~MAD).}
+  \caption{MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge)
+  are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at
+  extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures.
+  Augmentation flattens PCT's aggregate but not per-sequence swing ($3.03$~MAD). Azimuth here is a
+  rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint
+  and does not model per-view tracker degradation.}
   \label{fig:viewpoint}
 \end{figure}
 
@@ -457,9 +474,9 @@ rotates by more than $45^\circ$ across $21\%$ of frame transitions (sign flips t
 \cref{fig:guarantee}b); the
 downstream network learns to absorb this jitter on this corpus, but no theorem bounds it off
 distribution. Our cut estimates \emph{no} frame: it is $SE(3)$-invariant for arbitrary weights by
-construction (\cref{prop:invariance}), certified to roundoff, and the \emph{same} certificate --- with no
-retraining --- holds on NTU~RGB+D Cross-View, a corpus with a genuinely displaced $45^\circ$ camera
-($5.8\times10^{-9}$). A frame estimator offers neither the worst-case bound nor that transfer. We do
+construction (\cref{prop:invariance}), certified to roundoff over the full rotation group --- so the
+\emph{same} certificate covers, with no retraining, the genuinely displaced $45^\circ$ camera of
+NTU~RGB+D Cross-View. A frame estimator offers neither the worst-case bound nor that transfer. We do
 not claim an accuracy or on-distribution win over the hand-crafted or canonicalized baselines here ---
 the tie is total; we claim a \emph{certified} worst-case that they structurally cannot offer, and we
 recommend the cheaper models where an off-distribution guarantee is not required.
@@ -565,8 +582,9 @@ per-frame encoder and an invariant cut, the read-out converts to a strictly caus
 with a running-mean pool that emits a first score $8.9$~ms after the first frame on an RTX-class GPU
 (batch~1; $112$~fps, inside a $30$~fps budget) --- we report GPU latency as an upper bound on compute
 and leave edge-SoC profiling to deployment --- reaching a usable prediction after $\sim\!55$ frames
-(median), an honest time-to-first-\emph{reliable}-score for real-time use, and preserves invariance to
-$1.4\times10^{-8}$, at a $3.2$-point NTU accuracy cost vs.\ the bidirectional model (NTU-60 X-View SOTA
+(median), an honest time-to-first-\emph{reliable}-score for real-time use. The invariant read-out cut
+is unchanged by the causal pooling, so \cref{prop:invariance} carries over verbatim; the cost is
+$3.2$ points of NTU accuracy vs.\ the bidirectional model (NTU-60 X-View SOTA
 is $\sim\!92\%$; our backbone is deliberately untuned --- we measure the streaming \emph{delta}, not
 absolute accuracy). A canonicalization
 front-end would instead add a per-frame eigendecomposition to the hot path and re-open the invariance
@@ -595,7 +613,7 @@ int8, weights only     & $3.09\times10^{-7}$ & $1.2\times10^{-5}$ & theorem hold
 int8, activations only & $3.38\times10^{-2}$ & $0.056$ & cliff (acts) \\
 int8, weights$+$acts   & $\mathbf{3.40\times10^{-2}}$ & $\mathbf{0.051}$ & weight-quant.\ theorem-safe \\
 \midrule
-\multicolumn{4}{l}{Streaming: $8.9$~ms/frame ($112$~fps); invariance $1.4\times10^{-8}$;} \\
+\multicolumn{4}{l}{Streaming: $8.9$~ms/frame ($112$~fps); read-out cut unchanged;} \\
 \multicolumn{4}{l}{causal vs.\ bidir NTU X-View $79.8$ vs.\ $83.0$ ($-3.2$ pt).} \\
 \bottomrule
 \end{tabular}}
@@ -613,11 +631,18 @@ and to causal streaming. We recommend the field report a mean-predictor floor an
 degradation alongside aggregate error, and evaluate off the frontal manifold --- camera relocation and
 node failure are the ordinary conditions of a home device, not adversarial constructions.
 
+\vspace{2pt}
+\noindent\textbf{Code availability.} KIMORE~\cite{capecci2019kimore}, NTU~RGB+D and REHAB24-6 are
+publicly available from their authors. The equivariance certificate (gates E1--E8), the corruption
+pipeline, the spectral census, the node-failure harness, the quantization and streaming benchmarks,
+and the aggregation script that regenerates every number in this paper from banked artifacts will be
+released publicly on acceptance. The repository URL is withheld here to preserve double-blind review;
+an anonymized copy is available to reviewers on request through the program chairs.
+
 % =====================================================================
-% Bibliography reused verbatim from the journal source (paper.tex).
 \begin{thebibliography}{00}
 \bibitem{capecci2019kimore} M.~Capecci et al., ``The KIMORE dataset: Kinematic assessment of movement and clinical scores for remote monitoring of physical rehabilitation,'' \textit{IEEE TNSRE}, vol.~27, no.~7, pp.~1436--1448, 2019.
-\bibitem{pct2026} ``A point cloud transformer for remote monitoring and automated assessment of physical rehabilitation exercises,'' arXiv:2606.30309, 2026.
+\bibitem{pct2026} K.~Rafat, M.~I.~Hossain, M.~M.~L.~Elahi, S.~Momen, F.~Rahman, N.~Mohammed, and S.~Rahman, ``A point cloud transformer for remote monitoring and automated assessment of physical rehabilitation exercises,'' \textit{IEEE J. Biomed. Health Inform.}, 2026, accepted; arXiv:2606.30309.
 \bibitem{karlov2024} M.~Karlov, A.~Abedi, and S.~S.~Khan, ``Rehabilitation exercise quality assessment through supervised contrastive learning with hard and soft negatives,'' \textit{Med. Biol. Eng. Comput.}, 2024.
 \bibitem{abedi2023} A.~Abedi, M.~Malmirian, and S.~S.~Khan, ``Cross-modal video to body-joints augmentation for rehabilitation exercise quality assessment,'' arXiv:2306.09546, 2023.
 \bibitem{kuang2026} Z.~Kuang et al., ``Dual-stream STGCN with motion-aware grouping for rehabilitation action quality assessment,'' \textit{Sensors}, vol.~26, no.~1, p.~287, 2026.

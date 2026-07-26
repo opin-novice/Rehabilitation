@@ -1,8 +1,11 @@
 % =====================================================================
 %  WACV 2026 — Applications Track — SUPPLEMENTARY MATERIAL
-%  Depth carried out of the 8pp main paper (paper_wacv.tex). Numbers are
-%  ported verbatim from the frozen journal source (methodology.tex / results.tex).
+%  Depth carried out of the 8pp main paper (paper_wacv.tex).
 %  Compile:  pdflatex supp_wacv && pdflatex supp_wacv
+%
+%  DOUBLE-BLIND -- see the header of paper_wacv.tex. No \author content, no
+%  acknowledgements, no repository URL, no reference to any non-anonymous
+%  version of this work, in the body or in comments.
 % =====================================================================
 \documentclass[10pt,twocolumn,letterpaper]{article}
 
@@ -131,7 +134,8 @@ roundoff-floor ones, and vary across seeds.
 \item[E8] \textbf{The fix is free:} read-out invariance under Haar-random \emph{proper} rotations (up to
 $\theta{=}\pi$), with the parity-odd channels active, is $2.9\times10^{-16}$ --- unchanged. E1--E5 are
 likewise over Haar-random $SO(3)$, so the certified invariance is to the full rotation group, of which a
-camera azimuth or the NTU cross-view displacement is one instance ($5.8\times10^{-9}$, fp64).
+camera azimuth or the NTU cross-view displacement is one instance. We report no separate NTU-specific
+invariance measurement: the gates are architectural and the corpus does not change them.
 \end{itemize}
 
 % =====================================================================
