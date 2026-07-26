@@ -1,0 +1,8 @@
+# Deck build only. Kept separate from the root requirements.txt (as demo/ does)
+# because nothing here is needed to run an experiment.
+python-pptx>=1.0
+matplotlib>=3.7
+pillow>=10.0
+# PPTX -> PDF conversion via Microsoft PowerPoint COM (Windows only).
+# comtypes also works; either bridge is accepted by pptx_to_pdf.py.
+pywin32>=306 ; sys_platform == "win32"
