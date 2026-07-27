@@ -36,7 +36,7 @@ import block2_transforms as bt                               # noqa: E402
 from train_cde import metrics                                # noqa: E402
 from joint_failure import fail_joints                        # noqa: E402
 from egnn_model import EGNNRecurrence                        # noqa: E402
-from models_curvenet import PointCloudTransformerRegressor   # noqa: E402
+from models_curvenet import build_pct_for_checkpoint         # noqa: E402
 from canonicalize import pca_canonicalize                    # noqa: E402
 
 OUT = os.path.join(_HERE, "outputs")
@@ -79,10 +79,11 @@ def _pred_canon(m, samples, bs=8):
 
 
 def _load_canon(seed, fold):
-    m = PointCloudTransformerRegressor(
-        seq_len=N_FRAMES, num_joints=kd.N_JOINTS, num_channels=3, dim=256,
-        spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10, num_exercises=5).to(DEVICE)
-    m.load_state_dict(torch.load(os.path.join(OUT, f"canon_pct_s{seed}_f{fold}.pt"), map_location=DEVICE))
+    sd = torch.load(os.path.join(OUT, f"canon_pct_s{seed}_f{fold}.pt"), map_location=DEVICE)
+    m = build_pct_for_checkpoint(
+        sd, seq_len=N_FRAMES, num_joints=kd.N_JOINTS, num_channels=3, dim=256,
+        spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10).to(DEVICE)
+    m.load_state_dict(sd)
     return m.eval()
 
 

@@ -123,9 +123,12 @@ def train_canon_fold(tr, va, te, args, device):
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     trc = [pca_canonicalize(s) for s in tr]                   # canonicalize the training data once
+    # 0, NOT 5: the banked canon_pct_*.pt this trains are loaded by sandbox_eval / pareto_k2_eval,
+    # and were produced when num_exercises was accepted and IGNORED. Training conditioned here
+    # would silently fork the canonicalization arm from the checkpoints it is compared against.
     model = PointCloudTransformerRegressor(
         seq_len=args.n_frames, num_joints=kd.N_JOINTS, num_channels=3, dim=256,
-        spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10, num_exercises=5).to(device)
+        spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10, num_exercises=0).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
     sched = CosineAnnealingLR(opt, T_max=args.canon_epochs)
     lossf = nn.HuberLoss(delta=0.1)

@@ -675,6 +675,30 @@ class CurveNetEncoder(nn.Module):
 # Full Temporal Model — CurveNet + Axial Transformer + Temporal Transformer
 # ---------------------------------------------------------------------------
 
+def pct_num_exercises_in(state_dict, dim: int = 256) -> int:
+    """How many exercises a banked PCT checkpoint was actually conditioned on.
+
+    The head's input width is ``dim + num_exercises``, so this reads the conditioning off the
+    weights instead of trusting a caller-supplied constant. Necessary because every call site
+    predating the exercise-conditioning fix passes ``num_exercises=5`` while the checkpoint it
+    loads was trained when the argument was silently IGNORED, i.e. is 256-wide and unconditioned.
+    Hardcoding 5 against such a checkpoint is a load-time shape error, not a silent mismatch --
+    but only if the model is built to match, which is what this function is for.
+    """
+    return int(state_dict["head.1.weight"].shape[1]) - dim
+
+
+def build_pct_for_checkpoint(state_dict, **kwargs):
+    """Construct a PointCloudTransformerRegressor whose head matches ``state_dict``.
+
+    Any ``num_exercises`` in ``kwargs`` is overridden by what the checkpoint actually carries;
+    everything else is passed through. Use this at every LOAD site so that conditioned and
+    unconditioned checkpoints both round-trip without the caller having to know which it holds.
+    """
+    kwargs["num_exercises"] = pct_num_exercises_in(state_dict, kwargs.get("dim", 256))
+    return PointCloudTransformerRegressor(**kwargs)
+
+
 class PointCloudTransformerRegressor(nn.Module):
     """Full rehabilitation scoring model using point-cloud transformer.
 

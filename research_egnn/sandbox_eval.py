@@ -33,7 +33,7 @@ for p in (_HERE, _SRC):
 import kimore_cde_data as kd                                  # noqa: E402
 import block2_transforms as bt                               # noqa: E402
 from train_cde import metrics                                # noqa: E402
-from models_curvenet import PointCloudTransformerRegressor   # noqa: E402
+from models_curvenet import build_pct_for_checkpoint         # noqa: E402
 from joint_failure import fail_joints, hash_samples          # noqa: E402
 from egnn_model import EGNNRecurrence                        # noqa: E402
 from canonicalize import pca_canonicalize                    # noqa: E402
@@ -59,10 +59,11 @@ def load_egnn(f):
 
 
 def load_canon(f):
-    m = PointCloudTransformerRegressor(
-        seq_len=100, num_joints=kd.N_JOINTS, num_channels=3, dim=256, spatial_depth=6,
-        temporal_depth=3, heads=4, dropout=0.1, k=10, num_exercises=5).to(DEVICE)
-    m.load_state_dict(torch.load(os.path.join(OUT, f"canon_pct_s0_f{f}.pt"), map_location=DEVICE))
+    sd = torch.load(os.path.join(OUT, f"canon_pct_s0_f{f}.pt"), map_location=DEVICE)
+    m = build_pct_for_checkpoint(
+        sd, seq_len=100, num_joints=kd.N_JOINTS, num_channels=3, dim=256, spatial_depth=6,
+        temporal_depth=3, heads=4, dropout=0.1, k=10).to(DEVICE)
+    m.load_state_dict(sd)
     return m.eval()
 
 

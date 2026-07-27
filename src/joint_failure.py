@@ -66,7 +66,7 @@ import invariant_controls as ic                                 # noqa: E402
 import kimore_cde_data as kd                                    # noqa: E402
 import chirality as ch                                          # noqa: E402
 from equivariant_gru import SE3EquivariantGRU                   # noqa: E402
-from models_curvenet import PointCloudTransformerRegressor      # noqa: E402
+from models_curvenet import build_pct_for_checkpoint            # noqa: E402
 from train_cde import metrics                                   # noqa: E402
 
 SCORE_MAX = kd.SCORE_MAX
@@ -206,16 +206,17 @@ def load_arms(f, args, device):
     inv.load_state_dict(ck["state"])
     inv._mu, inv._sd = ck["mu"].to(device), ck["sd"].to(device)
 
-    pct = PointCloudTransformerRegressor(
-        seq_len=args.n_frames, num_joints=kd.N_JOINTS, num_channels=3,
-        dim=256, spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10,
-        num_exercises=5).to(device)
     # The ROTATION-AUGMENTED baseline is the only competitor that also survives Block 3, so it is
     # the one arm that could contest the Pareto claim. Its node-failure cell must be MEASURED, not
     # borrowed from the clean baseline.
     ptag = "pooledrot" if args.pct_rot else "pooled"
-    pct.load_state_dict(torch.load(
-        os.path.join(args.ckpt, f"pct_{ptag}_s{s}_f{f}.pt"), map_location=device))
+    pct_sd = torch.load(
+        os.path.join(args.ckpt, f"pct_{ptag}_s{s}_f{f}.pt"), map_location=device)
+    # Conditioning is read off the checkpoint rather than assumed; see build_pct_for_checkpoint.
+    pct = build_pct_for_checkpoint(
+        pct_sd, seq_len=args.n_frames, num_joints=kd.N_JOINTS, num_channels=3,
+        dim=256, spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10).to(device)
+    pct.load_state_dict(pct_sd)
     return egru, inv, pct
 
 

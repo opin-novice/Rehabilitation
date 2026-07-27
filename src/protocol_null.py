@@ -100,7 +100,13 @@ def run_fold(model_name, tr, va, te, args, device):
     np.random.seed(args.seed)
 
     if model_name == "pct":
-        nex = 5 if args.pooled else 0
+        # 0, NOT 5. This script produces the epoch-selection audit the paper quotes
+        # (6.42+/-0.44 honest vs 5.21+/-0.19 test-selected). Those numbers were produced when
+        # num_exercises was accepted and IGNORED, i.e. by an unconditioned head. Now that the
+        # argument is live, passing 5 would silently train a different model and the audit would
+        # no longer describe the run it is cited for. Conditioning is a separate, measured arm
+        # (train_baseline_pct.py --exercise-cond); it does not belong in the protocol audit.
+        nex = 0
         model = PointCloudTransformerRegressor(
             seq_len=args.n_frames, num_joints=kd.N_JOINTS, num_channels=3,
             dim=256, spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10,

@@ -33,7 +33,7 @@ if _SRC not in sys.path:
 import kimore_cde_data as kd                                    # noqa: E402
 import block2_transforms as bt                                  # noqa: E402
 from equivariant_gru import SE3EquivariantGRU                   # noqa: E402
-from models_curvenet import PointCloudTransformerRegressor      # noqa: E402
+from models_curvenet import build_pct_for_checkpoint            # noqa: E402
 from invariant_controls import InvariantGRU, invariant_series   # noqa: E402
 
 SCORE_MAX = kd.SCORE_MAX
@@ -80,12 +80,14 @@ class DemoEngine:
         if not load_pct:
             return
         for f in folds:
-            m = PointCloudTransformerRegressor(
-                seq_len=n_frames, num_joints=N_JOINTS, num_channels=3,
-                dim=256, spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10,
-                num_exercises=5).to(self.device)
             ck = os.path.join(ckpt_dir, f"pct_pooled_f{f}.pt")
-            m.load_state_dict(torch.load(ck, map_location=self.device))
+            sd = torch.load(ck, map_location=self.device)
+            # Conditioning read off the checkpoint; the demo ships unconditioned weights.
+            m = build_pct_for_checkpoint(
+                sd, seq_len=n_frames, num_joints=N_JOINTS, num_channels=3,
+                dim=256, spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1,
+                k=10).to(self.device)
+            m.load_state_dict(sd)
             m.eval()
             self.pct.append(m)
 
