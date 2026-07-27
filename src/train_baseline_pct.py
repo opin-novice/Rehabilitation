@@ -77,7 +77,10 @@ def train_fold(train_s, val_s, test_s, args, device, verbose=True):
         seq_len=args.n_frames, num_joints=kd.N_JOINTS, num_channels=3,
         dim=args.dim, spatial_depth=args.spatial_depth,
         temporal_depth=args.temporal_depth, heads=4, dropout=args.dropout, k=args.k,
-        num_exercises=(5 if args.pooled else 0),
+        # Opt-in. Every banked run passed num_exercises=5 here, but the model IGNORED it, so the
+        # baseline was scored blind to the exercise while EGRU and the floor were not. Defaulting
+        # this OFF keeps those runs reproducible bit-for-bit; --exercise-cond is the fixed arm.
+        num_exercises=(5 if (args.pooled and args.exercise_cond) else 0),
     ).to(device)
 
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
@@ -208,6 +211,10 @@ def main():
     ap.add_argument("--aug-drop", type=float, default=0.0,
                     help="train on burst drops ~ U[0, aug_drop], then resample. Test goes to 0.7")
     ap.add_argument("--aug-jitter", type=float, default=1.0)
+    ap.add_argument("--exercise-cond", action="store_true",
+                    help="condition the head on a one-hot exercise id, as EGRU and the "
+                         "per-exercise mean-predictor floor already are. Off by default so the "
+                         "banked pooled runs stay reproducible.")
     ap.add_argument("--aug-rot", action="store_true",
                     help="Block-3 fairness arm: train with random azimuth rotations")
     ap.add_argument("--seed", type=int, default=0)

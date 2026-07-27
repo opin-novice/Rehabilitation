@@ -714,6 +714,11 @@ class PointCloudTransformerRegressor(nn.Module):
         self.dim = dim
         self.out_dim = dim  # SSL encoder output dimension
         self.multitask = multitask
+        # Exercise conditioning. Was previously accepted and SILENTLY IGNORED, which handicapped
+        # the baseline in the pooled comparison: EGRU one-hots the exercise id and the
+        # mean-predictor floor is per-exercise, so PCT alone was scored blind to which exercise it
+        # was looking at. num_exercises=0 preserves the old (unconditioned) behaviour exactly.
+        self.num_exercises = int(num_exercises)
 
         # Point-cloud encoder
         self.encoder = CurveNetEncoder(k=k, num_joints=num_joints, setting=curve_setting)
@@ -748,10 +753,11 @@ class PointCloudTransformerRegressor(nn.Module):
                 nn.Linear(d // 2, 1),
             )
 
-        self.head = _head(dim, dropout)
+        head_dim = dim + self.num_exercises        # one-hot exercise id concatenated to the pool
+        self.head = _head(head_dim, dropout)
         if multitask:
-            self.head_po = _head(dim, dropout)
-            self.head_cf = _head(dim, dropout)
+            self.head_po = _head(head_dim, dropout)
+            self.head_cf = _head(head_dim, dropout)
         else:
             self.head_po = None
             self.head_cf = None
@@ -807,6 +813,18 @@ class PointCloudTransformerRegressor(nn.Module):
             (B, 1) quality score, or (score, embedding) if return_features.
         """
         feat = self.forward_features(x)  # (B, dim)
+
+        if self.num_exercises:
+            if exercise_id is None:
+                raise ValueError(
+                    "model was built with num_exercises="
+                    f"{self.num_exercises} but forward() got exercise_id=None; "
+                    "pass the exercise index or build with num_exercises=0"
+                )
+            oh = torch.nn.functional.one_hot(
+                exercise_id.reshape(-1).long(), self.num_exercises
+            ).to(feat.dtype)
+            feat = torch.cat([feat, oh], dim=-1)      # (B, dim + n_ex)
 
         ts = self.head(feat)  # (B, 1)
 

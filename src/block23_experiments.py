@@ -68,6 +68,24 @@ from models_curvenet import PointCloudTransformerRegressor      # noqa: E402
 from train_cde import metrics                                   # noqa: E402
 
 SCORE_MAX = kd.SCORE_MAX
+
+
+def degr_stats(s_rot, s_clean, base):
+    """Per-sequence score shift under rotation, as a DISTRIBUTION, not just its mean.
+
+    `base` is the mean over test sequences -- the quantity previously reported alone, and
+    mislabelled downstream as a worst case. A clinical claim of the form "an individual patient's
+    score moves by up to X" is a statement about the tail, so we also record the median, the 95th
+    percentile and the max. The max is the literal "up to"; p95 is the robust version, since a max
+    over ~15 held-out sequences per fold rides on a single subject.
+    """
+    d = np.abs(np.asarray(s_rot) - np.asarray(s_clean)) * SCORE_MAX
+    return {base: float(d.mean()),
+            f"{base}_p50": float(np.percentile(d, 50)),
+            f"{base}_p95": float(np.percentile(d, 95)),
+            f"{base}_max": float(d.max())}
+
+
 DROP_LEVELS = [0.0, 0.1, 0.2, 0.3, 0.5, 0.7]
 ANGLES = [0, 15, 30, 45, 60, 90, 120, 150, 180]
 OPERATORS = ["linear", "cubic", "zero_fill"]
@@ -104,7 +122,19 @@ def build_ours(f, args, device):
             lmax=args.lmax, gru_hidden=args.gru_hidden, dropout=0.0,
             n_exercises=5, use_speed=not args.no_speed, use_chiral=args.chiral).to(device)
         ck = f"{'egruaug' if args.aug else 'egru'}{chi}_s{s}_pooled_f{f}.pt"
-        m.load_state_dict(torch.load(os.path.join(args.ckpt, ck), map_location=device))
+        sd = torch.load(os.path.join(args.ckpt, ck), map_location=device)
+        # Checkpoints banked before `encoder.dead_scalar` was added still load here. That parameter
+        # is only read inside `if mask is not None` (equivariant_gru.py:181-183), and Blocks 2/3
+        # never mask joints -- node failure lives in joint_failure.py. Verified empirically: two
+        # different random dead_scalar draws give bit-identical predictions with mask=None.
+        # The allow-list is deliberately exact: any OTHER missing key is a real mismatch and must
+        # not be silently filled with random init.
+        missing, unexpected = m.load_state_dict(sd, strict=False)
+        stale = set(missing) - {"encoder.dead_scalar"}
+        if stale or unexpected:
+            raise RuntimeError(
+                f"checkpoint {ck} does not match the current model: "
+                f"missing={sorted(stale)} unexpected={sorted(unexpected)}")
         return m
 
     if args.method == "invgru":
@@ -169,13 +199,19 @@ def run_fold(f, samples, folds, args, device):
 
     ours = build_ours(f, args, device)
 
+    ptag = "pooled" + ("aug" if args.aug else "") + ("rot" if args.pct_rot else "")
+    pct_sd = torch.load(
+        os.path.join(args.ckpt, f"pct_{ptag}_s{args.model_seed}_f{f}.pt"), map_location=device)
+    # Infer exercise conditioning from the checkpoint rather than hardcoding it. The head's input
+    # width is dim + num_exercises, so an unconditioned checkpoint (every banked one) gives 0 and a
+    # --exercise-cond checkpoint gives 5. Hardcoding 5 silently worked only while the model ignored
+    # the argument entirely; now that it uses it, the wrong value is a load-time shape error.
+    n_ex_ckpt = int(pct_sd["head.1.weight"].shape[1]) - 256
     pct = PointCloudTransformerRegressor(
         seq_len=args.n_frames, num_joints=kd.N_JOINTS, num_channels=3,
         dim=256, spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10,
-        num_exercises=5).to(device)
-    ptag = "pooled" + ("aug" if args.aug else "") + ("rot" if args.pct_rot else "")
-    pct.load_state_dict(torch.load(
-        os.path.join(args.ckpt, f"pct_{ptag}_s{args.model_seed}_f{f}.pt"), map_location=device))
+        num_exercises=n_ex_ckpt).to(device)
+    pct.load_state_dict(pct_sd)
 
     rows = []
 
@@ -202,11 +238,11 @@ def run_fold(f, samples, folds, args, device):
             rec = {"fold": f, "angle": deg, "floor_mad": floor_mad,
                    "has_signal": has_signal, "clean_mad": clean_mad,
                    "ours_mad": metrics(s_o, y)["MAD"],
-                   "ours_degr": float(np.mean(np.abs(s_o - s_ours0)) * SCORE_MAX)}
+                   **degr_stats(s_o, s_ours0, "ours_degr")}
             for op in OPERATORS:
                 s_p = predict_pct(pct, rot, args.n_frames, op, device)
                 rec[f"pct_{op}_mad"] = metrics(s_p, y)["MAD"]
-                rec[f"pct_{op}_degr"] = float(np.mean(np.abs(s_p - s_pct0[op])) * SCORE_MAX)
+                rec.update(degr_stats(s_p, s_pct0[op], f"pct_{op}_degr"))
             rows.append(rec)
             print(f"  fold {f} angle {deg:3d}deg   ours MAD {rec['ours_mad']:6.3f} "
                   f"(degr {rec['ours_degr']:5.3f})   "
