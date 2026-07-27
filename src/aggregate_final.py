@@ -26,6 +26,9 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 O = "outputs/cde_block2"
 SEEDS = (0, 1, 2)
+# The fixed-grid baseline is granted a BEST-CASE resampling operator (methodology: "we report
+# whichever is strongest for it at every level"). Reporting only pct_linear silently withheld that.
+PCT_OPERATORS = ("linear", "cubic", "zero_fill")
 NOISE = 0.33          # measured run-to-run MAD spread (cuDNN GRU backward + e3nn index_add_ atomics)
 # Node failure is reported on the CHIRAL (SO(3)) checkpoints so that every column of the Pareto
 # table describes the SAME model. Mixing the O(3) arm's node-failure numbers with the SO(3) arm's
@@ -81,10 +84,17 @@ def t1_accuracy():
         return [np.mean(jload(f.format(s))["per_fold"]["gru"]) for s in SEEDS]
 
     def pct(kind):
-        # PCT clean/rot MADs live in the block-3 sweeps at angle 0 (its own clean reference)
+        # PCT clean/rot MADs live in the block-3 sweeps at angle 0 (its own clean reference).
+        # Methodology promises the baseline a BEST-CASE resampling operator, so take the min over
+        # {linear, cubic, zero_fill}. The min is taken on the AGGREGATE (mean over folds and seeds),
+        # never per fold -- a per-fold min would select noise and bias the baseline down.
         f = "block3_rot_s{}_results.json" if kind == "rot" else "block3_s{}_results.json"
-        return [np.mean([r["pct_linear_mad"] for r in jload(f.format(s))["rows"] if r["angle"] == 0])
-                for s in SEEDS]
+        per_op = {}
+        for op in PCT_OPERATORS:
+            per_op[op] = [np.mean([r[f"pct_{op}_mad"] for r in jload(f.format(s))["rows"]
+                                   if r["angle"] == 0]) for s in SEEDS]
+        best = min(per_op, key=lambda o: float(np.mean(per_op[o])))
+        return per_op[best]
 
     def floor():
         return [np.mean([r["floor_mad"] for r in jload(f"block3_s{s}_results.json")["rows"]])
@@ -151,23 +161,116 @@ def t2_viewpoint():
             ("EGRU  SO(3) chiral", "block3_chi_s{}_results.json", "ours"),
             ("InvariantGRU  O(3)", "block3_invgru_s{}_results.json", "ours"),
             ("InvariantGRU  SO(3)", "block3_invgru_chi_s{}_results.json", "ours"),
-            ("PCT (baseline)", "block3_s{}_results.json", "pct_linear"),
-            ("PCT + rot-aug", "block3_rot_s{}_results.json", "pct_linear"))
+            ("PCT (baseline)", "block3_s{}_results.json", "pct_best"),
+            ("PCT + rot-aug", "block3_rot_s{}_results.json", "pct_best"))
     angles = [0, 15, 30, 45, 60, 90, 120, 150, 180]
-    print(f"\n  {'model':<21s} " + " ".join(f"{a:>6d}" for a in angles) + "   max degr")
-    print(f"  {'-'*21} " + " ".join("-" * 6 for _ in angles) + "   " + "-" * 9)
+    # Three degradation columns, because one was being made to do the work of three:
+    #   mean-degr = worst angle's MEAN over sequences  (what was previously called "worst case")
+    #   p95 / max = the actual per-sequence tail       (what a per-patient claim needs)
+    print(f"\n  {'model':<21s} " + " ".join(f"{a:>6d}" for a in angles)
+          + "   mean-degr       p95       max")
+    print(f"  {'-'*21} " + " ".join("-" * 6 for _ in angles) + "   " + "-" * 9 + " " + "-" * 9
+          + " " + "-" * 9)
+    def agg_global_max(f, key, a):
+        """True max of |score shift| over every sequence, fold and seed at this angle.
+
+        max-of-maxes IS the global max, so unlike the mean and p95 this needs no averaging and
+        loses nothing. The best-case operator is still granted to the baseline, but per ROW rather
+        than on the aggregate: for a max, taking the min over operators row-by-row is the operator
+        choice that genuinely minimises the reported worst case, which is what "best case for the
+        baseline" means here.
+        """
+        keys = [f"pct_{o}_degr_max" for o in PCT_OPERATORS] if key == "pct_best" \
+            else [f"{key}_degr_max"]
+        rows = [r for s in SEEDS for r in jload(f.format(s))["rows"] if r["angle"] == a]
+        if not all(k in r for k in keys for r in rows):
+            return None                     # artifact predates the tail stats; never fake a 0.0
+        return float(max(min(r[k] for k in keys) for r in rows))
+
     out = []
     for name, f, key in arms:
-        mad, degr = [], []
+        mad, degr, p95, worst = [], [], [], []
         for a in angles:
-            mm = [np.mean([r[f"{key}_mad"] for r in jload(f.format(s))["rows"] if r["angle"] == a])
-                  for s in SEEDS]
-            dd = [np.mean([r[f"{key}_degr"] for r in jload(f.format(s))["rows"] if r["angle"] == a])
-                  for s in SEEDS]
-            mad.append(np.mean(mm))
-            degr.append(np.mean(dd))
-        out.append({"model": name, "mad": mad, "max_degr": float(max(degr))})
-        print(f"  {name:<21s} " + " ".join(f"{v:6.2f}" for v in mad) + f"   {max(degr):9.2e}")
+            def agg(metric):
+                """Aggregate one metric at this angle, granting the baseline its best-case operator.
+
+                For PCT the min runs over {linear, cubic, zero_fill} and is taken on the
+                seed-and-fold AGGREGATE, never per fold -- a per-fold min would select noise and
+                flatter the baseline with a number it cannot actually achieve. The two metrics are
+                minimised independently, so the row is a per-metric best-case envelope: a lower
+                bound on both the baseline's error and its degradation.
+                """
+                keys = [f"pct_{o}_{metric}" for o in PCT_OPERATORS] if key == "pct_best" \
+                    else [f"{key}_{metric}"]
+                # An artifact predating the per-sequence tail stats yields None, not 0.0 -- a
+                # missing measurement must never render as a flattering zero.
+                if not all(k in r for k in keys
+                           for s in SEEDS for r in jload(f.format(s))["rows"]):
+                    return None
+                per_key = [float(np.mean([np.mean([r[k] for r in jload(f.format(s))["rows"]
+                                                   if r["angle"] == a]) for s in SEEDS]))
+                           for k in keys]
+                return min(per_key)
+            mad.append(agg("mad"))
+            degr.append(agg("degr"))
+            v95 = agg("degr_p95")
+            if v95 is not None:
+                p95.append(v95)
+            # The MAX must NOT be averaged over folds. A max of maxes is the true global max, and
+            # that is the only statistic that supports the sentence "an individual patient's score
+            # moves by up to X". Averaging per-fold maxima (as `agg` does, correctly, for the mean
+            # and p95) gives the worst sequence in a TYPICAL fold, which is materially smaller --
+            # 12.81 vs the true 20.12 for PCT+rot -- and quoting it as the worst case understates
+            # the baseline's swing by 1.6x. p95 stays fold-averaged because pooling percentiles
+            # exactly would need the per-sequence deltas, which degr_stats does not retain.
+            vmx = agg_global_max(f, key, a)
+            if vmx is not None:
+                worst.append(vmx)
+        # max_degr is the worst ANGLE's MEAN-over-sequences shift. It is NOT a worst case over
+        # patients, and must not be described as one. worst_degr_max is the literal "an individual
+        # patient's score moves by up to X"; worst_degr_p95 is its outlier-robust counterpart,
+        # averaged over folds (see above).
+        out.append({"model": name, "mad": mad,
+                    "max_degr": float(max(degr)),
+                    "worst_degr_p95": float(max(p95)) if p95 else None,
+                    "worst_degr_p95_note": "mean over folds and seeds of each fold's p95",
+                    "worst_degr_max": float(max(worst)) if worst else None,
+                    "worst_degr_max_note": "true global max over all sequences, folds and seeds"})
+        print(f"  {name:<21s} " + " ".join(f"{v:6.2f}" for v in mad)
+              + f"   {max(degr):9.2e}" + (f" {max(p95):9.2e} {max(worst):9.2e}" if p95 else ""))
+
+    # Non-equivariant baselines (TCN, ST-GCN) and the hand-crafted-invariant Ridge control.
+    # These live in their own JSONs with a flat {mad, degradation} schema and are 5-fold CV at a
+    # SINGLE seed, unlike the 3-seed arms above -- fig_viewpoint and the paper both say so.
+    # Emitted here so final_tables.json is regenerated in one place; merging them by hand after
+    # the fact is how they got silently dropped once already.
+    for name, stem in (("TCN", "block3_tcn_s0_results.json"),
+                       ("ST-GCN", "block3_stgcn_s0_results.json"),
+                       ("Ridge", "block3_ridge_s0_results.json")):
+        if not os.path.exists(os.path.join(O, stem)):
+            print(f"  {name:<21s} (absent -- run src/block3_baselines.py --model {name.lower()})")
+            continue
+        rows = jload(stem)["rows"]
+
+        def col(k, reduce=np.mean):
+            """None if this artifact predates the per-sequence tail stats, rather than 0.0 --
+            a missing measurement must not render as a flattering zero."""
+            if not all(k in r for r in rows):
+                return None
+            return [float(reduce([r[k] for r in rows if r["angle"] == a])) for a in angles]
+
+        mad = col("mad")
+        degr = col("degradation")
+        # Same rule as the 3-seed arms: the max is reduced with max (a max of maxes is the true
+        # global max), never with mean, which would report a typical fold's worst rather than the
+        # actual worst sequence.
+        p95, worst = col("degradation_p95"), col("degradation_max", np.max)
+        out.append({"model": name, "mad": mad, "max_degr": float(max(degr)), "seeds": 1,
+                    "worst_degr_p95": float(max(p95)) if p95 else None,
+                    "worst_degr_max": float(max(worst)) if worst else None})
+        print(f"  {name:<21s} " + " ".join(f"{v:6.2f}" for v in mad) + f"   {max(degr):9.2e}"
+              + (f" {max(p95):9.2e} {max(worst):9.2e}" if p95 else "   (no tail stats)"))
+
     fl = np.mean([np.mean([r["floor_mad"] for r in jload(f"block3_s{s}_results.json")["rows"]])
                   for s in SEEDS])
     print(f"  {'mean-predictor floor':<21s} " + " ".join(f"{fl:6.2f}" for _ in angles))
@@ -288,11 +391,17 @@ def t5_pareto(vp, floor, nf, acc):
     print("  Rotation-augmented PCT survives BOTH stressors too (it only fails at 8 dead nodes).")
     print("  Augmentation is a real answer to viewpoint, and we say so. What separates the two is")
     print("  the LAST column, and it is the whole point of the paper:")
-    print(f"\n    EGRU        max score shift under ANY rotation = {v_eg['max_degr']:.1e} MAD  "
+    print(f"\n    EGRU        MEAN score shift under ANY rotation = {v_eg['max_degr']:.1e} MAD  "
           f"(machine precision)")
-    print(f"    PCT+rot-aug max score shift under ANY rotation = {v_ro['max_degr']:.2f}   MAD")
+    print(f"    PCT+rot-aug MEAN score shift under ANY rotation = {v_ro['max_degr']:.2f}   MAD")
+    if v_ro.get("worst_degr_max") is not None:
+        print(f"    PCT+rot-aug WORST single sequence               = {v_ro['worst_degr_max']:.2f}   MAD"
+              f"   (p95 {v_ro['worst_degr_p95']:.2f})")
+        print(f"    EGRU        WORST single sequence               = {v_eg['worst_degr_max']:.1e} MAD")
     print("\n  Both look flat in AGGREGATE MAD. But the augmented baseline's flatness is statistical:")
-    print(f"  an INDIVIDUAL patient's score moves by up to {v_ro['max_degr']:.1f} points (of 50) purely by moving")
+    # "up to" is a claim about the TAIL, so it must quote the per-sequence max, not the mean.
+    _upto = v_ro.get("worst_degr_max") or v_ro["max_degr"]
+    print(f"  an INDIVIDUAL patient's score moves by up to {_upto:.1f} points (of 50) purely by moving")
     print("  the camera -- the errors merely cancel in the mean. Our score does not move at all, for")
     print("  ANY weights, because it is a theorem rather than a fit. A clinical instrument is required")
     print("  to give the SAME patient the SAME score from a different room; aggregate MAD cannot see")

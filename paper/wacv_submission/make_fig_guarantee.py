@@ -14,20 +14,36 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import LogLocator
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
+# Two distinct roots, and they must not be conflated. HERE is where the figure is WRITTEN (next to
+# the .tex that \includegraphics it); ROOT is where the DATA is read from. This script predates the
+# directory reorganisation and used its own directory for both, so it had been failing to run at all
+# -- which is why its hardcoded 3.03/9.42 could drift from final_tables unnoticed.
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 
-# ---- Panel (a): worst per-sequence score shift (MAD of 50) --------------------
-# Certified models read their measured worst-case degradation; the two heuristic/
-# augmented survivors read their per-sequence shift. Values traced to final_tables
-# (viewpoint max_degr) and the pareto grid in the paper.
+# ---- Panel (a): per-sequence score shift at the worst azimuth (MAD of 50) -----
+# Bars are the MEAN over held-out sequences (`max_degr`: worst angle's mean). The whisker runs
+# p95 -> max, i.e. the tail the mean hides -- which is the panel's whole argument, so it is drawn
+# rather than described. Every number is read from final_tables; nothing here is transcribed by
+# hand, because 3.03/9.42 were once transcribed and then drifted from the artifact.
+#
+# EGNN has no tail artifact (the sandbox recorded only the mean), so it gets a bar and NO whisker.
+# That absence is deliberate and self-documenting: inventing a tail to fill the column would be
+# the same mean-as-worst-case conflation this panel exists to correct.
 ft = json.load(open(os.path.join(ROOT, "outputs/cde_block2/final_tables.json")))
-vp = {d["model"]: d["max_degr"] for d in ft["viewpoint"]}
-egru_worst = vp["EGRU  SO(3) chiral"]          # ~9.1e-6, certified
+vp = {d["model"]: d for d in ft["viewpoint"]}
+
+
+def arm(label, key, colour):
+    d = vp[key]
+    return (label, d["max_degr"], d.get("worst_degr_p95"), d.get("worst_degr_max"), colour)
+
+
 methods = [
-    ("EGRU (ours, certified)", egru_worst,          "#1a7f6b"),
-    ("Lighter $E(n)$ (EGNN)",  1.4e-5,               "#1a7f6b"),
-    ("PCT + rotation aug.",    3.03,                 "#c24a3f"),
-    ("PCT (baseline)",         9.42,                 "#c24a3f"),
+    arm("EGRU (ours, certified)", "EGRU  SO(3) chiral", "#1a7f6b"),
+    ("Lighter $E(n)$ (EGNN)", 1.4e-5, None, None, "#1a7f6b"),
+    arm("PCT + rotation aug.", "PCT + rot-aug", "#c24a3f"),
+    arm("PCT (baseline)", "PCT (baseline)", "#c24a3f"),
 ]
 FLOOR = ft["floor"] if isinstance(ft.get("floor"), (int, float)) else 8.31
 
@@ -52,21 +68,31 @@ fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(3.4, 3.5),
 # Panel (a)
 labels = [m[0] for m in methods]
 vals = [m[1] for m in methods]
-cols = [m[2] for m in methods]
+cols = [m[4] for m in methods]
 y = range(len(methods))
 ax1.barh(list(y), vals, color=cols, height=0.62, zorder=3)
+# p95 -> max whisker: what the bar's mean conceals. Drawn only where measured.
+for i, (_, mean, p95, mx, _c) in enumerate(methods):
+    if p95 is None or mx is None:
+        continue
+    ax1.plot([p95, mx], [i, i], color="0.15", lw=0.9, zorder=5)
+    for x in (p95, mx):
+        ax1.plot([x, x], [i-0.16, i+0.16], color="0.15", lw=0.9, zorder=5)
 ax1.set_xscale("log")
-ax1.set_xlim(3e-6, 3e1)
+ax1.set_xlim(3e-6, 6e1)
 ax1.axvline(FLOOR, color="0.35", ls="--", lw=0.8, zorder=2)
 ax1.text(FLOOR, len(methods)-0.35, " mean-pred.\n floor", color="0.35",
          fontsize=6.2, va="top", ha="left")
 ax1.set_yticks(list(y)); ax1.set_yticklabels(labels, fontsize=7)
 ax1.invert_yaxis()
-ax1.set_xlabel("worst per-patient score shift under rotation (MAD of 50)", fontsize=7)
+ax1.set_xlabel("per-patient score shift under rotation (MAD of 50)\n"
+               "bar = mean over sequences, whisker = p95 to worst", fontsize=6.6)
 ax1.xaxis.set_major_locator(LogLocator(base=10, numticks=8))
-for i, v in enumerate(vals):
-    txt = f"{v:.0e}" if v < 1e-2 else f"{v:.2f}"
-    ax1.text(v*1.4, i, txt, va="center", ha="left", fontsize=6.4, color="0.15")
+for i, (_, mean, _p95, mx, _c) in enumerate(methods):
+    # Label sits past the whisker where one is drawn, so the two never overlap.
+    anchor = mx if mx is not None else mean
+    txt = f"{mean:.0e}" if mean < 1e-2 else f"{mean:.2f}"
+    ax1.text(anchor*1.5, i, txt, va="center", ha="left", fontsize=6.4, color="0.15")
 ax1.set_title("(a) A guarantee vs. a fit: 6 orders of magnitude",
               fontsize=8, loc="left", pad=4)
 ax1.grid(axis="x", which="major", color="0.9", lw=0.4, zorder=0)
@@ -88,7 +114,7 @@ ax2.set_title("(b) The cheap alternative's frame is a coin flip",
               fontsize=8, loc="left", pad=4)
 ax2.grid(axis="x", which="major", color="0.9", lw=0.4, zorder=0)
 
-fig.savefig(os.path.join(ROOT, "fig_guarantee.pdf"), bbox_inches="tight")
+fig.savefig(os.path.join(HERE, "fig_guarantee.pdf"), bbox_inches="tight")
 print("wrote fig_guarantee.pdf")
 print("panel a:", [(m[0], m[1]) for m in methods], "floor", FLOOR)
 print("panel b:", [(b[0].replace(chr(10), ' '), round(b[1], 4)) for b in bbars])

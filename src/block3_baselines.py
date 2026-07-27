@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import kimore_cde_data as kd
 import block2_transforms as bt
 import invariant_controls as ic
+from block23_experiments import degr_stats          # shared definition; one source of truth
 from models_stgcn import TCNRegressor, STGCNRegressor
 from sklearn.linear_model import Ridge as SklearnRidge
 from sklearn.preprocessing import StandardScaler
@@ -128,7 +129,7 @@ def run_fold(f, samples, folds, args, device):
                 "fold": f, "angle": deg, "floor_mad": floor_mad,
                 "has_signal": has_signal, "clean_mad": clean_mad,
                 "mad": metrics(s_rot, y)["MAD"],
-                "degradation": float(np.mean(np.abs(s_rot - s0)) * SCORE_MAX),
+                **degr_stats(s_rot, s0, "degradation"),
             }
             rows.append(rec)
             print(f"  fold {f} angle {deg:3d}deg   MAD {rec['mad']:6.3f} "
@@ -162,7 +163,7 @@ def run_fold(f, samples, folds, args, device):
                 "fold": f, "angle": deg, "floor_mad": floor_mad,
                 "has_signal": has_signal, "clean_mad": clean_mad,
                 "mad": metrics(s_rot, y)["MAD"],
-                "degradation": float(np.mean(np.abs(s_rot - s0)) * SCORE_MAX),
+                **degr_stats(s_rot, s0, "degradation"),
             }
             rows.append(rec)
             print(f"  fold {f} angle {deg:3d}deg   MAD {rec['mad']:6.3f} "

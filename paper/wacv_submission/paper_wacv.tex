@@ -44,7 +44,7 @@ displacement, is one instance. On clean frontal
 data no model separates from another --- ours, a point-cloud-transformer baseline, and a
 hand-crafted-invariant GRU tie within a $0.33$~MAD nondeterminism floor --- so the benchmark's aggregate
 metric is saturated and the decisive axis lies elsewhere: the augmented baseline
-matches us in aggregate accuracy while still swinging an individual patient's score by $3.03$ MAD
+matches us in aggregate accuracy while still swinging an individual patient's score by up to $20.1$ MAD
 (of $50$) under camera rotation, against our $9\times10^{-6}$. We isolate what the steerable encoder
 buys with a hostile stress suite: under sensor-node failure the graph-pooled equivariant model degrades
 gracefully where a hand-crafted-invariant control collapses through the mean-predictor floor, and a
@@ -94,8 +94,9 @@ real steerable layers, the adaptive solver, and int8 quantization) and the evalu
 floor, the audit, the per-sequence degradation curve --- that makes a guarantee's practical value legible
 rather than assumed. The distinction bites: a rotation-augmented baseline has a flat
 \emph{aggregate} accuracy curve across azimuth --- by the field's metric it has solved viewpoint --- yet
-its \emph{per-sequence} degradation is $3.03$~MAD, individual scores swinging three points of fifty as
-the camera moves, the errors merely cancelling in the mean. Ours move by $9\times10^{-6}$. We therefore
+its \emph{per-sequence} degradation averages $3.0$~MAD and reaches $20.1$ in the tail, individual scores
+swinging up to two fifths of the fifty-point scale as the camera moves, the errors merely cancelling in
+the mean. Ours move by $9\times10^{-6}$. We therefore
 report degradation and accuracy side by side throughout.
 
 The tie with the hand-crafted model leaves an obligation elegance cannot discharge: if a plain GRU on
@@ -280,6 +281,13 @@ parameters and the removal of a silent handedness assumption; we adopt the chira
 not an accuracy one. The chiral read-out's wider seed spread ($\pm0.30$ vs $\pm0.08$ for the parity-even
 model) reflects the added parity-odd capacity, not instability --- every seed stays inside the floor.
 
+One asymmetry against the baseline is worth closing: EGRU sees a one-hot exercise id and the floor is
+per-exercise, so pooled PCT alone was scored blind to the exercise. Re-training it with identical
+conditioning (3 seeds, both arms) changes nothing: clean $6.59\pm0.07$ vs.\ $6.47\pm0.20$, augmented
+$7.42\pm0.22$ vs.\ $7.47\pm0.23$ --- inside the floor and opposite in sign --- and the per-sequence
+swing is if anything \emph{larger} ($21.43$ vs.\ $20.12$~MAD worst sequence). Viewpoint fragility is not
+an artefact of withholding exercise identity; we report the unconditioned arm throughout.
+
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}
 \caption{Clean-data accuracy (pooled, subject-disjoint, mean$\pm$std over 3 seeds). Every pairwise gap
@@ -305,16 +313,22 @@ Mean-predictor floor        & ---     & $8.31\pm0.05$ & --- & --- \\
 \end{table}
 
 \textbf{Viewpoint invariance is a theorem, not a fit} (\cref{fig:viewpoint}). Across test-time camera
-azimuth the certified-invariant models are flat to machine precision (EGRU worst-case
-$9\times10^{-6}$~MAD; InvariantGRU exactly $0$; hand-crafted invariant features Ridge at the fp64
+azimuth the certified-invariant models are flat to machine precision (EGRU mean
+$9\times10^{-6}$~MAD, worst single sequence $3\times10^{-4}$; InvariantGRU exactly $0$; hand-crafted invariant features Ridge at the fp64
 roundoff floor, $10^{-14}$ --- both invariant by construction, so these two curves are a
 positive control, not independent evidence),
 while all non-equivariant baselines degrade catastrophically: PCT crosses the mean-predictor floor between
-$30^\circ$ and $45^\circ$ (worst degradation $9.42$~MAD); TCN worst-case $13.17$~MAD; ST-GCN worst-case
+$30^\circ$ and $45^\circ$ (mean per-sequence shift $9.33$~MAD at its worst angle); TCN $13.17$~MAD; ST-GCN
 $9.18$~MAD. This pattern holds across three independently-designed non-equivariant architectures (temporal-conv,
 graph-conv, attention), indicating viewpoint fragility is a generic property of non-equivariance, not
-PCT-specific. Rotation augmentation flattens PCT's aggregate curve but leaves a $3.03$~MAD \emph{per-sequence}
-score shift --- the difference between a guarantee and a fit. The certificate is over Haar-random
+PCT-specific. Rotation augmentation flattens PCT's aggregate curve but leaves a \emph{per-sequence}
+score shift averaging $3.01$~MAD --- and the average is the wrong statistic for a clinical claim: the
+$95$th percentile is $8.65$~MAD and the worst single held-out sequence moves $20.12$, two fifths of the
+scale, purely because the camera moved. This is the difference between a guarantee and a fit. It is not
+an undertraining artefact: re-training the augmented arm at $3\times$ and $9\times$ the epoch budget
+leaves the shift flat ($3.01$/$3.27$/$2.94$~MAD mean at $60$/$180$/$540$ epochs, worst sequence
+$20.1$/$21.4$/$19.9$), so the residual swing is what augmentation converges to, not what it has yet
+to learn. The certificate is over Haar-random
 $SO(3)$, so the $45^\circ$ NTU~RGB+D~$60$ Cross-View camera displacement is one instance of the group
 it covers: invariance there is \emph{inherited} from \cref{prop:invariance}, not separately measured.
 What NTU contributes independently is generalisation, not invariance --- trained \emph{without}
@@ -326,7 +340,8 @@ reaches $82.98\%$ Top-1 against a faithful ST-GCN control's $80.38\%$.
   \caption{MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge)
   are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at
   extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures.
-  Augmentation flattens PCT's aggregate but not per-sequence swing ($3.03$~MAD). Azimuth here is a
+  Augmentation flattens PCT's aggregate but not its per-sequence swing (mean $3.01$~MAD, worst
+  sequence $20.12$). Azimuth here is a
   rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint
   and does not model per-view tracker degradation.}
   \label{fig:viewpoint}
@@ -346,9 +361,12 @@ plausibly show, not a substitute for one. As a secondary, magnitude-of-change cr
 different construct and scale, minimal clinically important differences (MCIDs) on comparable
 $0$--$66$/$0$--$100$-point motor-\emph{recovery} scales sit in the low single digits to low teens of
 points (Fugl-Meyer upper-extremity $4$--$12.4$, lower-extremity $6$, Stroke Rehabilitation Assessment of
-Movement $1.9$--$4.8$ per subscale), putting our $3.03$-MAD (of $50$) per-sequence swing in the same
-order of magnitude as an established change-significance threshold on cognate instruments, and our int8
-and streaming score shifts ($0.05$ and lower, \cref{sec:edge}) one to two orders of magnitude below it.
+Movement $1.9$--$4.8$ per subscale), putting the augmented baseline's per-sequence swing (mean $3.01$,
+worst sequence $20.12$, of $50$) in the same order of magnitude as an established change-significance
+threshold on cognate instruments --- at the tail, above it --- and our own score shifts under rotation
+($9\times10^{-6}$), int8 and streaming ($0.05$ and lower, \cref{sec:edge}) orders of magnitude below it.
+A camera relocation that moves a patient's score by more than an MCID is a measurement the instrument
+cannot be trusted to make; that is the practical content of the guarantee.
 Both are plausibility bounds from adjacent instruments, not KIMORE-specific thresholds, and should be
 read as such.
 
@@ -420,8 +438,8 @@ axis/depth noise   & $6.77/7.20\,({+}0.47)$  & $6.70/8.24\,({+}1.93)$   & $6.48/
 \textbf{The whole thesis in one grid} (\cref{tab:pareto}). We do not claim to be the only survivor:
 rotation-augmented PCT also clears the floor under both a $90^\circ$ move and two dead nodes. What
 separates the two survivors is the last column (\cref{fig:guarantee}a) --- both flat in aggregate, but the augmented baseline's
-worst per-sequence degradation is $3.03$~MAD against our $9\times10^{-6}$, at $7.4\times$ more
-parameters. Behind the \emph{identical} invariant cut, a lighter $E(n)$-equivariant (EGNN) encoder ties
+mean per-sequence degradation is $3.01$~MAD (worst sequence $20.12$) against our $9\times10^{-6}$
+($3.0\times10^{-4}$ worst), at $7.4\times$ more parameters. Behind the \emph{identical} invariant cut, a lighter $E(n)$-equivariant (EGNN) encoder ties
 clean accuracy and viewpoint (exact by construction) but is measurably more node-fail brittle: tuned
 across depth, width, and coordinate-clamp over three seeds it still loses $+6.4\pm1.3$~MAD over eight
 dead joints (vs.\ EGRU's $+3.76$) and crosses the floor already at two dead joints ($8.44$ vs.\ EGRU's
@@ -429,31 +447,36 @@ $7.55$) --- so the steerable encoder is the more robust of the two equivariant o
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}
-\caption{Does each model clear the floor ($8.31$~MAD) under each stress? Last column: worst
-per-sequence score shift under any camera rotation. EGNN shares the identical cut (viewpoint exact
+\caption{Does each model clear the floor ($8.31$~MAD) under each stress? Last column: \emph{mean}
+per-sequence score shift at the worst camera azimuth. The mean understates what a patient experiences:
+for PCT $+$ rot the $95$th percentile is $8.65$ and the worst held-out sequence $20.12$, against
+$2.8\times10^{-5}$ and $3.0\times10^{-4}$ for EGRU. EGNN shares the identical cut (viewpoint exact
 by construction). $^{\dagger}$Canon-PCA's near-zero is \emph{empirical} --- a frame estimate that
 happens to be stable on KIMORE --- not a certificate; see text.}
 \label{tab:pareto}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
-Model & Params & Clean & $90^\circ$ & $2$ dead & Worst degr. \\
+Model & Params & Clean & $90^\circ$ & $2$ dead & Mean degr. \\
 \midrule
 \textbf{EGRU (ours)} & $0.66$M & $6.73$ & $6.73$\checkmark & $7.55$\checkmark & $\mathbf{9\!\times\!10^{-6}}$ \\
 InvariantGRU  & $0.21$M & $6.31$ & $6.31$\checkmark & $11.64\times$ & $\mathbf{0}$ \\
 Lighter $E(n)$ (EGNN) & $\sim\!0.6$M & $6.88$ & $6.88$\checkmark & $8.44\times$ & $1.4\!\times\!10^{-5}$ \\
 Canon-PCA $+$ PCT & $4.91$M & $6.85$ & $6.85$\checkmark & $7.79$\checkmark & $\approx\!0^{\dagger}$ \\
-PCT (baseline) & $4.91$M & $6.47$ & $10.13\times$ & $7.10$\checkmark & $9.42$ \\
-PCT $+$ rot   & $4.91$M & $7.47$ & $7.68$\checkmark & $7.76$\checkmark & $3.03$ \\
+PCT (baseline) & $4.91$M & $6.47$ & $10.13\times$ & $7.10$\checkmark & $9.33$ \\
+PCT $+$ rot   & $4.91$M & $7.47$ & $7.68$\checkmark & $7.76$\checkmark & $3.01$ \\
 \bottomrule
 \end{tabular}}
 \end{table}
 
 \begin{figure}[t]\centering
   \includegraphics[width=\linewidth]{fig_guarantee}
-  \caption{\textbf{The axis that separates the survivors.} (a)~Worst-case per-patient score shift under
-  camera rotation (log scale): the certified models (EGRU, EGNN) hold a patient's score to
-  $\sim\!10^{-5}$~MAD, six orders of magnitude below the augmented and unaugmented transformers.
+  \caption{\textbf{The axis that separates the survivors.} (a)~Per-patient score shift under
+  camera rotation (log scale); bar is the mean over held-out sequences at the worst azimuth, whisker
+  runs $95$th percentile to worst sequence --- the tail the mean conceals, and the reason we report
+  both. EGNN has no measured tail and so carries no whisker. The certified models (EGRU, EGNN) hold a
+  patient's score to $\sim\!10^{-5}$~MAD, five to six orders of magnitude below the augmented and
+  unaugmented transformers, whose worst sequences move $20.12$ and $33.96$ points of fifty.
   InvariantGRU is exactly $0$ and Canon-PCA empirically $\approx0$, but unbounded off distribution.
   (b)~Why the cheap canonicalization alternative is not a guarantee: its PCA frame flips by $>45^\circ$
   on $21\%$ of frame transitions and sits within an eigen-gap of $0.05$ of degeneracy on $18\%$ of frames.}
@@ -627,8 +650,10 @@ metric is saturated. What separates them is off the frontal manifold. Our read-o
 certified to machine roundoff, so relocating the camera moves a patient's score by $9\times10^{-6}$~MAD
 for arbitrary weights, while a broken tracking node --- fatal to the hand-crafted model --- is absorbed
 by the graph encoder; both properties replicate on a second corpus, and the guarantee survives to int8
-and to causal streaming. We recommend the field report a mean-predictor floor and per-sequence
-degradation alongside aggregate error, and evaluate off the frontal manifold --- camera relocation and
+and to causal streaming. We recommend the field report a mean-predictor floor and the per-sequence
+degradation \emph{distribution} --- not only its mean, which on our own augmented baseline understates
+what the worst patient experiences by nearly $7\times$ --- alongside aggregate error, and evaluate off the
+frontal manifold --- camera relocation and
 node failure are the ordinary conditions of a home device, not adversarial constructions.
 
 \vspace{2pt}

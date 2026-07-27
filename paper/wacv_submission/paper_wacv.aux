@@ -349,9 +349,6 @@
 \@LN{280}{3}
 \@LN{281}{3}
 \def\@LN@column{2}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge) are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures. Augmentation flattens PCT's aggregate but not per-sequence swing ($3.03$~MAD). Azimuth here is a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint and does not model per-view tracker degradation.}}{4}{figure.caption.4}\protected@file@percent }
-\newlabel{fig:viewpoint}{{1}{4}{MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge) are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures. Augmentation flattens PCT's aggregate but not per-sequence swing ($3.03$~MAD). Azimuth here is a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint and does not model per-view tracker degradation}{figure.caption.4}{}}
-\newlabel{fig:viewpoint@cref}{{[figure][1][]1}{[1][4][]4}{}{}{}}
 \@LN{282}{3}
 \@LN{283}{3}
 \@LN{284}{3}
@@ -380,35 +377,35 @@
 \@LN{307}{3}
 \@LN{308}{3}
 \@LN{309}{3}
+\@LN{310}{3}
+\@LN{311}{3}
+\@LN{312}{3}
+\@LN{313}{3}
+\@LN{314}{3}
+\@LN{315}{3}
+\@LN{316}{3}
+\@LN{317}{3}
+\@LN{318}{3}
+\@LN{319}{3}
+\@LN{320}{3}
+\@LN{321}{3}
+\@LN{322}{3}
+\@LN{323}{3}
+\@LN{324}{3}
+\@LN{325}{3}
+\@LN{326}{3}
+\@LN{327}{3}
+\@LN{328}{3}
+\@LN{329}{3}
+\@LN{330}{3}
+\@LN{331}{3}
+\@LN{332}{3}
+\@LN{333}{3}
+\@LN{334}{3}
 \def\@LN@column{1}
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Sensor-node failure: MAD as $k$ nodes freeze (mean over 3 seeds $\times $ 5 folds; identical hash-locked inputs; no retraining). \underline  {Underline}: past the floor ($8.31$). ``+oracle'': InvariantGRU given an oracle liveness mask (same checkpoint; features touching the dead joint zeroed at inference) --- the measured fairness control.}}{5}{table.caption.5}\protected@file@percent }
-\newlabel{tab:nodefail}{{4}{5}{Sensor-node failure: MAD as $k$ nodes freeze (mean over 3 seeds $\times $ 5 folds; identical hash-locked inputs; no retraining). \underline {Underline}: past the floor ($8.31$). ``+oracle'': InvariantGRU given an oracle liveness mask (same checkpoint; features touching the dead joint zeroed at inference) --- the measured fairness control}{table.caption.5}{}}
-\newlabel{tab:nodefail@cref}{{[table][4][]4}{[1][5][]5}{}{}{}}
-\@LN{310}{4}
-\@LN{311}{4}
-\@LN{312}{4}
-\@LN{313}{4}
-\@LN{314}{4}
-\@LN{315}{4}
-\@LN{316}{4}
-\@LN{317}{4}
-\@LN{318}{4}
-\@LN{319}{4}
-\@LN{320}{4}
-\@LN{321}{4}
-\@LN{322}{4}
-\@LN{323}{4}
-\@LN{324}{4}
-\@LN{325}{4}
-\@LN{326}{4}
-\@LN{327}{4}
-\@LN{328}{4}
-\@LN{329}{4}
-\@LN{330}{4}
-\@LN{331}{4}
-\@LN{332}{4}
-\@LN{333}{4}
-\@LN{334}{4}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge) are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures. Augmentation flattens PCT's aggregate but not its per-sequence swing (mean $3.01$~MAD, worst sequence $20.12$). Azimuth here is a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint and does not model per-view tracker degradation.}}{5}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:viewpoint}{{1}{5}{MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge) are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures. Augmentation flattens PCT's aggregate but not its per-sequence swing (mean $3.01$~MAD, worst sequence $20.12$). Azimuth here is a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint and does not model per-view tracker degradation}{figure.caption.4}{}}
+\newlabel{fig:viewpoint@cref}{{[figure][1][]1}{[1][4][]5}{}{}{}}
 \@LN{335}{4}
 \@LN{336}{4}
 \@LN{337}{4}
@@ -424,13 +421,6 @@
 \@LN{347}{4}
 \@LN{348}{4}
 \@LN{349}{4}
-\def\@LN@column{2}
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Node failure under five operators (chiral models, 3 seeds $\times $ 5 folds, hash-locked). Each cell: MAD at $k{=}1$ / $k{=}8$ and total lost. The freeze/random row reproduces \cref  {tab:nodefail}.}}{5}{table.caption.6}\protected@file@percent }
-\newlabel{tab:nodefail_modes}{{5}{5}{Node failure under five operators (chiral models, 3 seeds $\times $ 5 folds, hash-locked). Each cell: MAD at $k{=}1$ / $k{=}8$ and total lost. The freeze/random row reproduces \cref {tab:nodefail}}{table.caption.6}{}}
-\newlabel{tab:nodefail_modes@cref}{{[table][5][]5}{[1][5][]5}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Does each model clear the floor ($8.31$~MAD) under each stress? Last column: worst per-sequence score shift under any camera rotation. EGNN shares the identical cut (viewpoint exact by construction). $^{\dagger }$Canon-PCA's near-zero is \emph  {empirical} --- a frame estimate that happens to be stable on KIMORE --- not a certificate; see text.}}{5}{table.caption.7}\protected@file@percent }
-\newlabel{tab:pareto}{{6}{5}{Does each model clear the floor ($8.31$~MAD) under each stress? Last column: worst per-sequence score shift under any camera rotation. EGNN shares the identical cut (viewpoint exact by construction). $^{\dagger }$Canon-PCA's near-zero is \emph {empirical} --- a frame estimate that happens to be stable on KIMORE --- not a certificate; see text}{table.caption.7}{}}
-\newlabel{tab:pareto@cref}{{[table][6][]6}{[1][5][]5}{}{}{}}
 \@LN{350}{4}
 \@LN{351}{4}
 \@LN{352}{4}
@@ -443,6 +433,13 @@
 \@LN{359}{4}
 \@LN{360}{4}
 \@LN{361}{4}
+\def\@LN@column{2}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Sensor-node failure: MAD as $k$ nodes freeze (mean over 3 seeds $\times $ 5 folds; identical hash-locked inputs; no retraining). \underline  {Underline}: past the floor ($8.31$). ``+oracle'': InvariantGRU given an oracle liveness mask (same checkpoint; features touching the dead joint zeroed at inference) --- the measured fairness control.}}{5}{table.caption.5}\protected@file@percent }
+\newlabel{tab:nodefail}{{4}{5}{Sensor-node failure: MAD as $k$ nodes freeze (mean over 3 seeds $\times $ 5 folds; identical hash-locked inputs; no retraining). \underline {Underline}: past the floor ($8.31$). ``+oracle'': InvariantGRU given an oracle liveness mask (same checkpoint; features touching the dead joint zeroed at inference) --- the measured fairness control}{table.caption.5}{}}
+\newlabel{tab:nodefail@cref}{{[table][4][]4}{[1][5][]5}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Node failure under five operators (chiral models, 3 seeds $\times $ 5 folds, hash-locked). Each cell: MAD at $k{=}1$ / $k{=}8$ and total lost. The freeze/random row reproduces \cref  {tab:nodefail}.}}{5}{table.caption.6}\protected@file@percent }
+\newlabel{tab:nodefail_modes}{{5}{5}{Node failure under five operators (chiral models, 3 seeds $\times $ 5 folds, hash-locked). Each cell: MAD at $k{=}1$ / $k{=}8$ and total lost. The freeze/random row reproduces \cref {tab:nodefail}}{table.caption.6}{}}
+\newlabel{tab:nodefail_modes@cref}{{[table][5][]5}{[1][5][]5}{}{}{}}
 \@LN{362}{4}
 \@LN{363}{4}
 \@LN{364}{4}
@@ -461,23 +458,26 @@
 \@LN{377}{4}
 \@LN{378}{4}
 \@LN{379}{4}
+\@LN{380}{4}
+\@LN{381}{4}
+\@LN{382}{4}
+\@LN{383}{4}
+\@LN{384}{4}
+\@LN{385}{4}
+\@LN{386}{4}
+\@LN{387}{4}
+\@LN{388}{4}
+\@LN{389}{4}
+\@LN{390}{4}
+\@LN{391}{4}
+\@LN{392}{4}
 \def\@LN@column{1}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textbf  {The axis that separates the survivors.} (a)~Worst-case per-patient score shift under camera rotation (log scale): the certified models (EGRU, EGNN) hold a patient's score to $\sim \!10^{-5}$~MAD, six orders of magnitude below the augmented and unaugmented transformers. InvariantGRU is exactly $0$ and Canon-PCA empirically $\approx 0$, but unbounded off distribution. (b)~Why the cheap canonicalization alternative is not a guarantee: its PCA frame flips by $>45^\circ $ on $21\%$ of frame transitions and sits within an eigen-gap of $0.05$ of degeneracy on $18\%$ of frames.}}{6}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:guarantee}{{2}{6}{\textbf {The axis that separates the survivors.} (a)~Worst-case per-patient score shift under camera rotation (log scale): the certified models (EGRU, EGNN) hold a patient's score to $\sim \!10^{-5}$~MAD, six orders of magnitude below the augmented and unaugmented transformers. InvariantGRU is exactly $0$ and Canon-PCA empirically $\approx 0$, but unbounded off distribution. (b)~Why the cheap canonicalization alternative is not a guarantee: its PCA frame flips by $>45^\circ $ on $21\%$ of frame transitions and sits within an eigen-gap of $0.05$ of degeneracy on $18\%$ of frames}{figure.caption.8}{}}
-\newlabel{fig:guarantee@cref}{{[figure][2][]2}{[1][5][]6}{}{}{}}
-\@LN{380}{5}
-\@LN{381}{5}
-\@LN{382}{5}
-\@LN{383}{5}
-\@LN{384}{5}
-\@LN{385}{5}
-\@LN{386}{5}
-\@LN{387}{5}
-\@LN{388}{5}
-\@LN{389}{5}
-\@LN{390}{5}
-\@LN{391}{5}
-\@LN{392}{5}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Does each model clear the floor ($8.31$~MAD) under each stress? Last column: \emph  {mean} per-sequence score shift at the worst camera azimuth. The mean understates what a patient experiences: for PCT $+$ rot the $95$th percentile is $8.65$ and the worst held-out sequence $20.12$, against $2.8\times 10^{-5}$ and $3.0\times 10^{-4}$ for EGRU. EGNN shares the identical cut (viewpoint exact by construction). $^{\dagger }$Canon-PCA's near-zero is \emph  {empirical} --- a frame estimate that happens to be stable on KIMORE --- not a certificate; see text.}}{6}{table.caption.7}\protected@file@percent }
+\newlabel{tab:pareto}{{6}{6}{Does each model clear the floor ($8.31$~MAD) under each stress? Last column: \emph {mean} per-sequence score shift at the worst camera azimuth. The mean understates what a patient experiences: for PCT $+$ rot the $95$th percentile is $8.65$ and the worst held-out sequence $20.12$, against $2.8\times 10^{-5}$ and $3.0\times 10^{-4}$ for EGRU. EGNN shares the identical cut (viewpoint exact by construction). $^{\dagger }$Canon-PCA's near-zero is \emph {empirical} --- a frame estimate that happens to be stable on KIMORE --- not a certificate; see text}{table.caption.7}{}}
+\newlabel{tab:pareto@cref}{{[table][6][]6}{[1][6][]6}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textbf  {The axis that separates the survivors.} (a)~Per-patient score shift under camera rotation (log scale); bar is the mean over held-out sequences at the worst azimuth, whisker runs $95$th percentile to worst sequence --- the tail the mean conceals, and the reason we report both. EGNN has no measured tail and so carries no whisker. The certified models (EGRU, EGNN) hold a patient's score to $\sim \!10^{-5}$~MAD, five to six orders of magnitude below the augmented and unaugmented transformers, whose worst sequences move $20.12$ and $33.96$ points of fifty. InvariantGRU is exactly $0$ and Canon-PCA empirically $\approx 0$, but unbounded off distribution. (b)~Why the cheap canonicalization alternative is not a guarantee: its PCA frame flips by $>45^\circ $ on $21\%$ of frame transitions and sits within an eigen-gap of $0.05$ of degeneracy on $18\%$ of frames.}}{6}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:guarantee}{{2}{6}{\textbf {The axis that separates the survivors.} (a)~Per-patient score shift under camera rotation (log scale); bar is the mean over held-out sequences at the worst azimuth, whisker runs $95$th percentile to worst sequence --- the tail the mean conceals, and the reason we report both. EGNN has no measured tail and so carries no whisker. The certified models (EGRU, EGNN) hold a patient's score to $\sim \!10^{-5}$~MAD, five to six orders of magnitude below the augmented and unaugmented transformers, whose worst sequences move $20.12$ and $33.96$ points of fifty. InvariantGRU is exactly $0$ and Canon-PCA empirically $\approx 0$, but unbounded off distribution. (b)~Why the cheap canonicalization alternative is not a guarantee: its PCA frame flips by $>45^\circ $ on $21\%$ of frame transitions and sits within an eigen-gap of $0.05$ of degeneracy on $18\%$ of frames}{figure.caption.8}{}}
+\newlabel{fig:guarantee@cref}{{[figure][2][]2}{[1][6][]6}{}{}{}}
 \@LN{393}{5}
 \@LN{394}{5}
 \@LN{395}{5}
@@ -485,6 +485,7 @@
 \@LN{397}{5}
 \@LN{398}{5}
 \@LN{399}{5}
+\def\@LN@column{2}
 \@LN{400}{5}
 \@LN{401}{5}
 \@LN{402}{5}
@@ -492,10 +493,6 @@
 \@LN{404}{5}
 \@LN{405}{5}
 \@LN{406}{5}
-\def\@LN@column{2}
-\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces REHAB24-6 second-corpus replication ($3$ seeds, subject-disjoint CV). AUROC@$90^\circ $ is the same model evaluated under a $90^\circ $ camera rotation: EGRU is invariant by theorem (logit drift $\le 1.5\times 10^{-4}$); the transformer falls to chance (drift $23.2$). Node-fail: AUROC lost over $8$ frozen nodes.}}{6}{table.caption.9}\protected@file@percent }
-\newlabel{tab:rehab246}{{7}{6}{REHAB24-6 second-corpus replication ($3$ seeds, subject-disjoint CV). AUROC@$90^\circ $ is the same model evaluated under a $90^\circ $ camera rotation: EGRU is invariant by theorem (logit drift $\le 1.5\times 10^{-4}$); the transformer falls to chance (drift $23.2$). Node-fail: AUROC lost over $8$ frozen nodes}{table.caption.9}{}}
-\newlabel{tab:rehab246@cref}{{[table][7][]7}{[1][6][]6}{}{}{}}
 \@LN{407}{5}
 \@LN{408}{5}
 \@LN{409}{5}
@@ -539,14 +536,17 @@
 \@LN{447}{5}
 \@LN{448}{5}
 \@LN{449}{5}
+\@LN{450}{5}
+\@LN{451}{5}
+\@LN{452}{5}
 \citation{vanderplas2018lombscargle}
 \def\@LN@column{1}
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces REHAB24-6 second-corpus replication ($3$ seeds, subject-disjoint CV). AUROC@$90^\circ $ is the same model evaluated under a $90^\circ $ camera rotation: EGRU is invariant by theorem (logit drift $\le 1.5\times 10^{-4}$); the transformer falls to chance (drift $23.2$). Node-fail: AUROC lost over $8$ frozen nodes.}}{7}{table.caption.9}\protected@file@percent }
+\newlabel{tab:rehab246}{{7}{7}{REHAB24-6 second-corpus replication ($3$ seeds, subject-disjoint CV). AUROC@$90^\circ $ is the same model evaluated under a $90^\circ $ camera rotation: EGRU is invariant by theorem (logit drift $\le 1.5\times 10^{-4}$); the transformer falls to chance (drift $23.2$). Node-fail: AUROC lost over $8$ frozen nodes}{table.caption.9}{}}
+\newlabel{tab:rehab246@cref}{{[table][7][]7}{[1][7][]7}{}{}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Per-family ablation of the cut (each family zeroed at inference; 3 seeds $\times $ 5 folds). $\Delta $Acc below the $0.33$ floor is a tie; ``nf lost'' is worst MAD over $8$ dead joints (full cut $+3.76$).}}{7}{table.caption.10}\protected@file@percent }
 \newlabel{tab:ablation}{{8}{7}{Per-family ablation of the cut (each family zeroed at inference; 3 seeds $\times $ 5 folds). $\Delta $Acc below the $0.33$ floor is a tie; ``nf lost'' is worst MAD over $8$ dead joints (full cut $+3.76$)}{table.caption.10}{}}
 \newlabel{tab:ablation@cref}{{[table][8][]8}{[1][7][]7}{}{}{}}
-\@LN{450}{6}
-\@LN{451}{6}
-\@LN{452}{6}
 \@LN{453}{6}
 \@LN{454}{6}
 \@LN{455}{6}
@@ -573,22 +573,16 @@
 \@LN{476}{6}
 \@LN{477}{6}
 \@LN{478}{6}
-\@writefile{toc}{\contentsline {section}{\numberline {5}\hskip -1em.~Deployment Analysis}{7}{section.5}\protected@file@percent }
-\newlabel{sec:edge}{{5}{7}{\texorpdfstring {\hskip -1em.~}{}Deployment Analysis}{section.5}{}}
-\newlabel{sec:edge@cref}{{[section][5][]5}{[1][7][]7}{}{}{}}
 \@LN{479}{6}
 \@LN{480}{6}
 \@LN{481}{6}
 \@LN{482}{6}
+\def\@LN@column{2}
 \@LN{483}{6}
 \@LN{484}{6}
 \@LN{485}{6}
 \@LN{486}{6}
 \@LN{487}{6}
-\def\@LN@column{2}
-\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Deployment audit. Top: the \emph  {full} equivariance precision budget of the deployed pooled EGRU (INV floor = relative violation of the $160$-d parity-even projection; score shift in MAD of $50$). fp16 is $3.2\times $ tighter than bf16 --- equivariance pays in mantissa bits, which bf16 trades for exponent range --- and the int8 cliff is \emph  {solely} activation grid-rounding (weight-only quant preserves the theorem). Bottom: causal streaming vs.\ bidirectional read-out.}}{7}{table.caption.11}\protected@file@percent }
-\newlabel{tab:deploy}{{9}{7}{Deployment audit. Top: the \emph {full} equivariance precision budget of the deployed pooled EGRU (INV floor = relative violation of the $160$-d parity-even projection; score shift in MAD of $50$). fp16 is $3.2\times $ tighter than bf16 --- equivariance pays in mantissa bits, which bf16 trades for exponent range --- and the int8 cliff is \emph {solely} activation grid-rounding (weight-only quant preserves the theorem). Bottom: causal streaming vs.\ bidirectional read-out}{table.caption.11}{}}
-\newlabel{tab:deploy@cref}{{[table][9][]9}{[1][7][]7}{}{}{}}
 \@LN{488}{6}
 \@LN{489}{6}
 \@LN{490}{6}
@@ -604,13 +598,13 @@
 \@LN{500}{6}
 \@LN{501}{6}
 \@LN{502}{6}
+\@writefile{toc}{\contentsline {section}{\numberline {5}\hskip -1em.~Deployment Analysis}{7}{section.5}\protected@file@percent }
+\newlabel{sec:edge}{{5}{7}{\texorpdfstring {\hskip -1em.~}{}Deployment Analysis}{section.5}{}}
+\newlabel{sec:edge@cref}{{[section][5][]5}{[1][7][]7}{}{}{}}
 \@LN{503}{6}
 \@LN{504}{6}
 \@LN{505}{6}
 \@LN{506}{6}
-\@writefile{toc}{\contentsline {section}{\numberline {6}\hskip -1em.~Conclusion}{7}{section.6}\protected@file@percent }
-\newlabel{sec:conclusion}{{6}{7}{\texorpdfstring {\hskip -1em.~}{}Conclusion}{section.6}{}}
-\newlabel{sec:conclusion@cref}{{[section][6][]6}{[1][7][]7}{}{}{}}
 \@LN{507}{6}
 \@LN{508}{6}
 \@LN{509}{6}
@@ -626,6 +620,20 @@
 \@LN{519}{6}
 \@LN{520}{6}
 \@LN{521}{6}
+\@LN{522}{6}
+\@LN{523}{6}
+\@LN{524}{6}
+\@LN{525}{6}
+\@LN{526}{6}
+\@LN{527}{6}
+\@LN{528}{6}
+\@LN{529}{6}
+\@LN{530}{6}
+\@writefile{toc}{\contentsline {section}{\numberline {6}\hskip -1em.~Conclusion}{7}{section.6}\protected@file@percent }
+\newlabel{sec:conclusion}{{6}{7}{\texorpdfstring {\hskip -1em.~}{}Conclusion}{section.6}{}}
+\newlabel{sec:conclusion@cref}{{[section][6][]6}{[1][7][]7}{}{}{}}
+\@LN{531}{6}
+\@LN{532}{6}
 \citation{capecci2019kimore}
 \bibcite{capecci2019kimore}{{1}{}{{}}{{}}}
 \bibcite{pct2026}{{2}{}{{}}{{}}}
@@ -647,20 +655,10 @@
 \bibcite{kidger2020neuralcde}{{18}{}{{}}{{}}}
 \bibcite{che2018grud}{{19}{}{{}}{{}}}
 \bibcite{dormand1980prince}{{20}{}{{}}{{}}}
-\bibcite{vanderplas2018lombscargle}{{21}{}{{}}{{}}}
-\providecommand\NAT@force@numbers{}\NAT@force@numbers
 \def\@LN@column{1}
-\@LN{522}{7}
-\@LN{523}{7}
-\@LN{524}{7}
-\@LN{525}{7}
-\@LN{526}{7}
-\@LN{527}{7}
-\@LN{528}{7}
-\@LN{529}{7}
-\@LN{530}{7}
-\@LN{531}{7}
-\@LN{532}{7}
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Deployment audit. Top: the \emph  {full} equivariance precision budget of the deployed pooled EGRU (INV floor = relative violation of the $160$-d parity-even projection; score shift in MAD of $50$). fp16 is $3.2\times $ tighter than bf16 --- equivariance pays in mantissa bits, which bf16 trades for exponent range --- and the int8 cliff is \emph  {solely} activation grid-rounding (weight-only quant preserves the theorem). Bottom: causal streaming vs.\ bidirectional read-out.}}{8}{table.caption.11}\protected@file@percent }
+\newlabel{tab:deploy}{{9}{8}{Deployment audit. Top: the \emph {full} equivariance precision budget of the deployed pooled EGRU (INV floor = relative violation of the $160$-d parity-even projection; score shift in MAD of $50$). fp16 is $3.2\times $ tighter than bf16 --- equivariance pays in mantissa bits, which bf16 trades for exponent range --- and the int8 cliff is \emph {solely} activation grid-rounding (weight-only quant preserves the theorem). Bottom: causal streaming vs.\ bidirectional read-out}{table.caption.11}{}}
+\newlabel{tab:deploy@cref}{{[table][9][]9}{[1][7][]8}{}{}{}}
 \@LN{533}{7}
 \@LN{534}{7}
 \@LN{535}{7}
@@ -695,13 +693,13 @@
 \@LN{564}{7}
 \@LN{565}{7}
 \@LN{566}{7}
+\def\@LN@column{2}
 \@LN{567}{7}
 \@LN{568}{7}
 \@LN{569}{7}
 \@LN{570}{7}
 \@LN{571}{7}
 \@LN{572}{7}
-\def\@LN@column{2}
 \@LN{573}{7}
 \@LN{574}{7}
 \@LN{575}{7}
@@ -727,4 +725,35 @@
 \@LN{595}{7}
 \@LN{596}{7}
 \@LN{597}{7}
-\gdef \@abspage@last{8}
+\@LN{598}{7}
+\@LN{599}{7}
+\@LN{600}{7}
+\@LN{601}{7}
+\@LN{602}{7}
+\@LN{603}{7}
+\@LN{604}{7}
+\@LN{605}{7}
+\@LN{606}{7}
+\@LN{607}{7}
+\@LN{608}{7}
+\@LN{609}{7}
+\@LN{610}{7}
+\@LN{611}{7}
+\@LN{612}{7}
+\@LN{613}{7}
+\@LN{614}{7}
+\@LN{615}{7}
+\@LN{616}{7}
+\@LN{617}{7}
+\@LN{618}{7}
+\@LN{619}{7}
+\bibcite{vanderplas2018lombscargle}{{21}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\def\@LN@column{1}
+\@LN{620}{8}
+\@LN{621}{8}
+\@LN{622}{8}
+\@LN{623}{8}
+\@LN{624}{8}
+\def\@LN@column{2}
+\gdef \@abspage@last{9}
