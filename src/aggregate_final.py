@@ -56,9 +56,13 @@ def count_params():
 
     n_inv = {chi: int(torch.load(os.path.join(O, f"invgru{'chi' if chi else ''}_s0_pooled_f0.pt"),
                                  map_location="cpu")["n_feat"]) for chi in (False, True)}
+    # num_exercises=0 because this counts the parameters of the model whose accuracy is REPORTED,
+    # and every banked pct_pooled*.pt is unconditioned (4,914,609 = 4.91M, the paper's figure).
+    # Passing 5 here widens the head to 261 and the count to 4,915,785 = 4.92M -- a model that was
+    # never trained or evaluated. The param column must describe the checkpoint, not the class.
     pct = PointCloudTransformerRegressor(
         seq_len=100, num_joints=kd.N_JOINTS, num_channels=3, dim=256, spatial_depth=6,
-        temporal_depth=3, heads=4, dropout=0.1, k=10, num_exercises=5)
+        temporal_depth=3, heads=4, dropout=0.1, k=10, num_exercises=0)
     return {
         "PCT (baseline)": cp(pct), "PCT + rot-aug": cp(pct),
         "EGRU  O(3)": cp(SE3EquivariantGRU(use_chiral=False)),
@@ -118,6 +122,23 @@ def t1_accuracy():
         except FileNotFoundError:
             return None
 
+    # Spearman rho, from the same OOF predictions as the bootstrap (pooled_bootstrap_eval.py).
+    # Reported because KIMORE's literature reports rho and reporting only MAD reads as evasive;
+    # reported WITH the floor row because a rho is uninterpretable without its null. The floor's
+    # within-exercise rho is ~0, which is the evidence that its pooled rho is purely a
+    # between-exercise artifact. There is no rho for "PCT + rot-aug": pooled_bootstrap_eval
+    # evaluates the clean arms only, and a missing measurement stays None rather than being faked.
+    RHO_TAG = {**BOOT_TAG, "per-exercise mean floor": "floor"}
+
+    def rho(name):
+        tag = RHO_TAG.get(name)
+        if tag is None:
+            return None
+        try:
+            return jload("spearman_pooled3seed.json")["rho"][tag]
+        except (FileNotFoundError, KeyError):
+            return None
+
     for name, vals in (("PCT (baseline)", pct("clean")),
                        ("PCT + rot-aug", pct("rot")),
                        ("InvariantGRU  O(3)", invgru(False)),
@@ -128,12 +149,16 @@ def t1_accuracy():
         m, s = ms(vals)
         p = PARAMS.get(name)
         boot = bootstrap_ci(name)
+        rh = rho(name)
         rows.append({"model": name, "mad": m, "std": s, "params": p, "seeds": list(map(float, vals)),
-                     "bootstrap_vs_floor": boot})
+                     "bootstrap_vs_floor": boot, "spearman": rh})
         ci_str = (f"  Delta {boot['delta']:+.3f} CI[{boot['lo']:+.3f},{boot['hi']:+.3f}]"
                   if boot is not None else "")
+        rho_str = ("" if rh is None else
+                   f"  rho {rh['pooled_mean']:.3f}/{rh['within_exercise_mean']:.3f}")
         print(f"  {name:<28s} {m:6.3f} +/- {s:5.3f}   "
-              f"{'' if p is None else f'{p/1e6:5.2f}M params'}   seeds {np.round(vals,3)}{ci_str}")
+              f"{'' if p is None else f'{p/1e6:5.2f}M params'}   seeds {np.round(vals,3)}"
+              f"{rho_str}{ci_str}")
 
     print(f"\n  nondeterminism floor = {NOISE:.2f} MAD. Every gap among the top four is INSIDE it.")
     print("  On clean frontal data these models are NOT separable. That is the honest headline,")

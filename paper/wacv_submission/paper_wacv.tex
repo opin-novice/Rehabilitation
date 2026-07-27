@@ -134,7 +134,10 @@ We do not enter these papers' published numbers into \cref{tab:accuracy} because
 Kuang et al.~\cite{kuang2026} report MAD $0.10$--$0.16$ on a $0$--$100$ scale ($\sim\!2$ orders of
 magnitude below our subject-disjoint $6.3$--$6.7$ on a $0$--$50$ scale, even after rescaling) under an
 explicit $8{:}1{:}1$ \emph{sample-level} stratified split, not a subject-disjoint one; Karlov et
-al.~\cite{karlov2024} report a Spearman correlation rather than MAD; Abedi et al.~\cite{abedi2023} report
+al.~\cite{karlov2024} report a Spearman correlation rather than MAD --- we now report $\rho$ too
+(\cref{tab:accuracy}), which makes the non-comparability legible rather than asserted: our pooled
+$\rho\!\approx\!0.6$ sits below the $0.74$--$0.965$ band that literature spans, on a protocol whose
+mean-predictor null we also state; Abedi et al.~\cite{abedi2023} report
 only a relative MAD reduction with no absolute baseline recoverable. Kuang et al.'s split is itself an
 instance of the leakage \cref{tab:protocol3seed} exists to measure, so we read the field's published
 numbers as a protocol artifact rather than an external accuracy ceiling to beat.
@@ -273,7 +276,11 @@ subject-level signal: unlike the fragile single-exercise slice (\cref{tab:protoc
 only $1/3$ seeds), the pooled bootstrap $\Delta$ vs.\ floor is entirely below $0$ for all three
 --- PCT $-1.87\,[-2.72,-1.06]$, InvariantGRU $-2.03\,[-2.89,-1.23]$, EGRU $-1.60\,[-2.37,-0.88]$
 --- so the tie is a tie among models that each genuinely beat the mean predictor, not three models
-indistinguishable from noise. A benchmark on
+indistinguishable from noise. The tie survives the metric change: Spearman $\rho$ separates the same
+models by at most $0.05$ (\cref{tab:accuracy}), so saturation is a property of the benchmark, not of
+the error measure chosen to report it. $\rho$ also needs its null stated --- the mean predictor scores
+pooled $\rho=0.17$ while ignoring its input entirely, and exactly $0$ once the between-exercise
+score differences it exploits are removed. A benchmark on
 which three architectures of vastly different inductive bias cannot be told apart is not measuring
 architecture --- which is the premise for evaluating on an axis that can. Restoring
 chirality ($O(3)\!\to\!SO(3)$) costs $+0.11$~MAD for EGRU --- inside the floor --- for $16.7\%$ more
@@ -295,19 +302,27 @@ is inside the $0.33$~MAD \emph{fixed-configuration} floor (seed-to-seed std $0.4
 seed-variation table is in the supplement). $\Delta$ vs.\ floor is the SAME paired subject-cluster bootstrap statistic used in
 \cref{tab:protocol3seed} ($n{=}77$ held-out subjects, pooled over 3 seeds $\times$ 5 folds, checkpoints
 re-evaluated with no retraining --- see \texttt{pooled\_bootstrap\_eval.py}): every model's interval is
-entirely below $0$, so the tie \emph{among} models coexists with each one genuinely beating the floor.}
+entirely below $0$, so the tie \emph{among} models coexists with each one genuinely beating the floor.
+Spearman $\rho$ is reported per seed on that seed's complete out-of-fold vector (never per fold), pooled
+over the five exercises and again \emph{within} each exercise and averaged --- the latter being the
+like-for-like comparison to a literature of single-exercise models. The floor row is why both are given:
+a predictor that ignores its input still attains pooled $\rho=0.17$ purely from between-exercise score
+differences, and exactly $0$ within exercise. Every $\rho$ above it should be read as an increment over
+that null, not as an absolute.}
 \label{tab:accuracy}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{llccc}
+\begin{tabular}{llccccc}
 \toprule
-Model & Group & MAD $\downarrow$ & Params & $\Delta$ vs.\ floor (95\% CI) \\
+& & & & \multicolumn{2}{c}{Spearman $\rho$ $\uparrow$} & \\
+\cmidrule(lr){5-6}
+Model & Group & MAD $\downarrow$ & Params & pooled & within-ex. & $\Delta$ vs.\ floor (95\% CI) \\
 \midrule
-PCT (baseline)              & ---     & $\mathbf{6.47\pm0.20}$ & $4.91$M & $-1.87\ [-2.72,-1.06]$ \\
-PCT $+$ rotation aug.       & ---     & $7.47\pm0.23$ & $4.91$M & --- \\
-InvariantGRU (hand-crafted) & $SO(3)$ & $\mathbf{6.31\pm0.16}$ & $0.21$M & $-2.03\ [-2.89,-1.23]$ \\
-\textbf{EGRU (ours)}        & $SO(3)$ & $\mathbf{6.73\pm0.30}$ & $0.66$M & $-1.60\ [-2.37,-0.88]$ \\
+PCT (baseline)              & ---     & $\mathbf{6.47\pm0.20}$ & $4.91$M & $0.60\pm0.02$ & $0.55\pm0.02$ & $-1.87\ [-2.72,-1.06]$ \\
+PCT $+$ rotation aug.       & ---     & $7.47\pm0.23$ & $4.91$M & ---           & ---           & --- \\
+InvariantGRU (hand-crafted) & $SO(3)$ & $\mathbf{6.31\pm0.16}$ & $0.21$M & $0.59\pm0.01$ & $\mathbf{0.56\pm0.01}$ & $-2.03\ [-2.89,-1.23]$ \\
+\textbf{EGRU (ours)}        & $SO(3)$ & $\mathbf{6.73\pm0.30}$ & $0.66$M & $0.56\pm0.04$ & $0.52\pm0.04$ & $-1.60\ [-2.37,-0.88]$ \\
 \midrule
-Mean-predictor floor        & ---     & $8.31\pm0.05$ & --- & --- \\
+Mean-predictor floor        & ---     & $8.31\pm0.05$ & --- & $0.17\pm0.01$ & $-0.07\pm0.02$ & --- \\
 \bottomrule
 \end{tabular}}
 \end{table}

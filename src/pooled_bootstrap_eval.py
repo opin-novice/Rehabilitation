@@ -27,11 +27,12 @@ import sys
 
 import numpy as np
 import torch
+from scipy.stats import spearmanr
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import kimore_cde_data as kd                              # noqa: E402
 import block2_transforms as bt                             # noqa: E402
-from models_curvenet import PointCloudTransformerRegressor  # noqa: E402
+from models_curvenet import build_pct_for_checkpoint        # noqa: E402
 from equivariant_gru import SE3EquivariantGRU               # noqa: E402
 from invariant_controls import InvariantGRU, invariant_series  # noqa: E402
 from protocol_null import bootstrap_delta                   # noqa: E402
@@ -49,13 +50,15 @@ VARIANTS = ("pct", "egru", "egruchi", "invgru", "invgruchi")
 # Per-variant: reconstruct model from a bare checkpoint, run inference on `te`
 # =============================================================================
 def load_pct(seed, fold, device):
-    model = PointCloudTransformerRegressor(
-        seq_len=N_FRAMES, num_joints=kd.N_JOINTS, num_channels=3,
-        dim=256, spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10,
-        num_exercises=5,
-    ).to(device)
     path = os.path.join(OUT_DIR, f"pct_pooled_s{seed}_f{fold}.pt")
-    model.load_state_dict(torch.load(path, map_location=device))
+    sd = torch.load(path, map_location=device)
+    # Conditioning is read off the checkpoint, never assumed: the banked pooled runs are
+    # UNconditioned (head width 256) because num_exercises was ignored when they were trained.
+    model = build_pct_for_checkpoint(
+        sd, seq_len=N_FRAMES, num_joints=kd.N_JOINTS, num_channels=3,
+        dim=256, spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10,
+    ).to(device)
+    model.load_state_dict(sd)
     model.eval()
     return model
 
@@ -129,6 +132,12 @@ def main():
     err_floor = {v: [] for v in VARIANTS}
     subj = {v: [] for v in VARIANTS}
     per_slice_mad = {v: [] for v in VARIANTS}
+    # Raw out-of-fold predictions, banked so that any future rank/correlation statistic is a CPU
+    # re-analysis instead of another GPU pass over 75 checkpoints. Keyed by seed because each seed
+    # is a COMPLETE 5-fold OOF partition of the corpus: rho is computed once per seed on the full
+    # vector, never per fold (a 15-sequence fold gives a rank correlation dominated by noise).
+    oof = {s: {"y": [], "exercise": [], "subject": [], "floor": [],
+               **{v: [] for v in VARIANTS}} for s in SEEDS}
 
     for seed in SEEDS:
         folds = kd.subject_folds(S, k=FOLDS, seed=seed)
@@ -148,6 +157,11 @@ def main():
             m, mu, sd = load_invgru(seed, f, device, chiral=True)
             preds["invgruchi"] = predict_invgru(m, mu, sd, True, te, device)
 
+            oof[seed]["y"] += list(y * SCORE_MAX)
+            oof[seed]["exercise"] += [int(s["exercise"]) for s in te]
+            oof[seed]["subject"] += list(subjects)
+            oof[seed]["floor"] += list(np.asarray(floor, dtype=np.float64) * SCORE_MAX)
+
             for v in VARIANTS:
                 p = np.asarray(preds[v], dtype=np.float64)
                 mad = float(np.mean(np.abs(p - y)) * SCORE_MAX)
@@ -155,6 +169,7 @@ def main():
                 err[v] += list((p - y) * SCORE_MAX)
                 err_floor[v] += floor_err
                 subj[v] += subjects
+                oof[seed][v] += list(p * SCORE_MAX)
 
             print(f"  seed {seed} fold {f}: " +
                   "  ".join(f"{v}={per_slice_mad[v][-1]:.3f}" for v in VARIANTS))
@@ -178,8 +193,58 @@ def main():
             json.dump({"variant": v, "seeds": list(SEEDS), "folds": FOLDS,
                        **results[v]}, fh, indent=2)
 
+    # ---- Spearman rho, reported against its own null -------------------------------------------
+    # KIMORE's literature reports rho (0.74-0.965) and we report MAD, which reads as evasive even
+    # though cross-paper rho is not protocol-comparable. So we report it -- with the mean-predictor
+    # floor's rho beside it, exactly as MAD is reported against the floor. Without that null a rho
+    # cannot be read: the floor is a model that ignores its input entirely.
+    #
+    # Two flavours, because they answer different questions:
+    #   pooled  -- rho over all 5 exercises at once. Inflated by between-exercise score differences,
+    #              though only mildly here (between-exercise variance is 4.8% of the total).
+    #   within  -- rho inside each exercise, averaged over the five. This is the like-for-like
+    #              comparison to the literature, whose numbers come from single-exercise models.
+    # The floor's within-exercise rho is the diagnostic: it predicts one constant per exercise per
+    # fold, so any departure from 0 is fold-to-fold drift in the training mean, not signal.
+    def rho_pair(pred, y, ex):
+        pooled = float(spearmanr(pred, y).statistic)
+        per_ex = [float(spearmanr(pred[ex == e], y[ex == e]).statistic) for e in np.unique(ex)]
+        return pooled, float(np.mean(per_ex))
+
+    print(f"\n{'-'*78}\nSPEARMAN rho (per-seed OOF, mean +/- std over "
+          f"{len(SEEDS)} seeds)\n{'-'*78}")
+    print(f"  {'model':<12s} {'pooled rho':>18s} {'within-exercise rho':>22s}")
+    rho_out = {}
+    for v in list(VARIANTS) + ["floor"]:
+        pooled, within = [], []
+        for s in SEEDS:
+            y_s = np.asarray(oof[s]["y"], dtype=np.float64)
+            ex_s = np.asarray(oof[s]["exercise"], dtype=int)
+            p_s = np.asarray(oof[s][v], dtype=np.float64)
+            a, b = rho_pair(p_s, y_s, ex_s)
+            pooled.append(a)
+            within.append(b)
+        rho_out[v] = {"pooled_mean": float(np.mean(pooled)), "pooled_std": float(np.std(pooled)),
+                      "within_exercise_mean": float(np.mean(within)),
+                      "within_exercise_std": float(np.std(within)),
+                      "per_seed_pooled": pooled, "per_seed_within": within}
+        print(f"  {v:<12s} {np.mean(pooled):9.4f} +/- {np.std(pooled):.4f}"
+              f" {np.mean(within):13.4f} +/- {np.std(within):.4f}")
+    print("\n  The floor row is the null: a model that ignores its input. Read every rho above it")
+    print("  as an increment over that, not as an absolute. Cross-paper rho remains non-comparable")
+    print("  (protocol, not architecture, sets it) -- reported so the comparison can be refused")
+    print("  on the evidence rather than by omission.")
+
+    with open(os.path.join(OUT_DIR, "spearman_pooled3seed.json"), "w") as fh:
+        json.dump({"seeds": list(SEEDS), "folds": FOLDS, "rho": rho_out,
+                   "note": "per-seed OOF; 'within' averages rho over the 5 exercises"}, fh, indent=2)
+    # Bank the raw OOF predictions so no future rank statistic needs the GPU again.
+    with open(os.path.join(OUT_DIR, "oof_predictions_pooled3seed.json"), "w") as fh:
+        json.dump({"seeds": list(SEEDS), "folds": FOLDS, "score_max": SCORE_MAX,
+                   "units": "clinical 0-50 scale", "oof": oof}, fh)
+
     with open(os.path.join(OUT_DIR, "pooled_bootstrap_eval_summary.json"), "w") as fh:
-        json.dump(results, fh, indent=2)
+        json.dump({**results, "spearman": rho_out}, fh, indent=2)
     return 0
 
 
