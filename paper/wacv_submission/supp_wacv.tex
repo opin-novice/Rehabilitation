@@ -251,7 +251,16 @@ $38.1$ against a true per-exercise mean of $35.0$--$40.7$ (median relative error
 standardised reading is excluded by at least $70\times$ --- it would require these papers to have
 printed MAPE values in the tens of percent rather than the $0.17$--$6.0$ they report. The published
 KIMORE MAD numbers are therefore in $0$--$50$ clinical-score units, and our $6.3$--$6.7$ is on the same
-axis. The audit is reproduced by \texttt{src/published\_units\_audit.py}, which gates on all three
+axis.
+
+The convention is also documented at its source, so the inference above is corroborated rather than
+load-bearing. Both papers load KIMORE through descendants of a single \texttt{Data\_Loader}, the one
+released with the STGCN-rehab benchmark (Deb et al., IEEE TNSRE 2022); the point-cloud transformer's
+copy is near-identical line for line. That release's training script inverse-transforms predictions
+\emph{and} targets before computing MAD, RMSE and MAPE, and its released label file holds raw clinical
+Total Scores. The reporting convention is therefore fixed upstream of any individual paper, and
+\cref{tab:supp:units} confirms it independently, from published numbers alone.
+The audit is reproduced by \texttt{src/published\_units\_audit.py}, which gates on all three
 conditions.
 
 \end{document}

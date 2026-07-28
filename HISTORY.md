@@ -476,6 +476,17 @@ and closing them changed no headline number.
   **We reproduce them.** 5.21 vs 5.35 is inside our own 0.33 noise floor. The "35.8× gap" was a
   units mismatch stacked on a protocol difference. It had never entered the paper, so nothing needed
   retracting.
+
+  > **CONFOUND, recorded 2026-07-29.** That comparison scored *their* checkpoint on *our* features.
+  > Their repo ships **no data** — `Transformer_Rehabilitation/KIMORE/` is untracked in their own git
+  > checkout, and their README points at a Drive link for the processed splits. The
+  > `KIMORE/Kimore_ex1/Train_X.csv` and `Train_Y.csv` we fed their code are **byte-identical**
+  > (md5 `706633be5e4186a9238a4853fb989ec5`) to our own `KIMORE_processed/Exercise1/`. So "we reproduce
+  > them at 5.21 vs 5.35" is not clean: a model trained on their preprocessing was scored on ours. The
+  > same caveat applies to the 3-seed reruns below, which trained on our features throughout.
+  > Surfaced by the repo owner, who asked exactly the right question. It does **not** touch the units
+  > conclusion (E10), which rests on published tables and the upstream release, not on this run.
+  > Closing it needs their processed splits and one `eval.py` call — no training.
 - Not leakage: KIMORE ex1 has 77 sequences ≈ one per subject, so their random split is effectively
   subject-disjoint. (This concern was raised during the audit and **withdrawn**.)
 - **Their full 2000-epoch protocol, re-run from their code, 3 seeds** (145 = their default, plus 146
@@ -576,6 +587,22 @@ and closing them changed no headline number.
   establishes, and which is all that is needed to keep their numbers out of Table 1. **No claim of
   cheating or misconduct is made or implied anywhere**; sample-level splitting is a widespread
   unexamined convention in this literature, not fraud.
+- **Primary-source corroboration (2026-07-29) — the "rests on inference" caveat is now closed.** The
+  MAD/MAPE identity is a deduction; it is now backed by the released source of the pipeline this whole
+  lineage shares. Both papers load KIMORE through descendants of one `Data_Loader`, the one released
+  with the **STGCN-rehab** benchmark (Deb et al., TNSRE 2022, `github.com/fokhruli/STGCN-rehab`) — the
+  point-cloud transformer's `Data_Proc/data_processing.py` is near-identical to Deb's
+  `GCN/data_processing.py` line for line, and D2STA's is a two-stream extension of the same class.
+  In that release:
+  - `train.py:61-62` passes **both** `y_pred` and `test_y` through `sc2.inverse_transform` *before*
+    `mean_absolute_error` and MAPE → the reported metrics are in **label units**, not standardised.
+  - `Data/label.csv` holds **`48.333`** — a raw KIMORE cTS on the 0–50 scale (cTS takes
+    fractional-third values; our own ex5 minimum is `12.667`).
+
+  So the reporting convention is fixed **upstream of any individual paper**, and the two lines of
+  evidence agree. Recorded in `PROVENANCE` in `src/published_units_audit.py`; a five-line paragraph in
+  supplement §S7 states it. This came out of the repo owner's own reply to Opin's reproduction issue —
+  he stated the inverse-transform step correctly, and it is checkable, so it is now cited as support.
 - **Honest note.** Kuang et al.'s *released* code (`BryceLoski21/D2STA`) standardises its targets with
   a `StandardScaler` and never inverse-transforms before calling `mad()`, which would put its metrics
   in z-units and contradict the above. But that repo is visibly ablation leftovers (hard-coded `ex3`,

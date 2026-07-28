@@ -31,6 +31,13 @@ G2  the standardised reading is excluded by >= 20x on the printed MAPE.
 G3  the recovered magnitude tracks the true per-exercise means (rank agreement / relative error).
 
 Sources for the hard-coded tables are cited inline; both are public.
+
+Independent corroboration
+-------------------------
+The MAD/MAPE identity above is an inference from published numbers. It is corroborated by the
+released source of the pipeline this whole lineage shares, which fixes the reporting convention
+upstream of any individual paper -- see PROVENANCE below. Both lines of evidence agree, so neither is
+load-bearing on its own.
 """
 from __future__ import annotations
 
@@ -74,6 +81,35 @@ PCT_TABLE = {
     "Point-cloud transformer": ([0.185, 0.560, 0.128, 0.256, 0.388],
                                 [0.543, 1.891, 0.336, 0.766, 1.199]),
 }
+
+# ---------------------------------------------------------------------------
+# Primary-source provenance: where the reporting convention actually comes from.
+#
+# Both papers above load KIMORE through descendants of one Data_Loader, the one released with the
+# STGCN-rehab benchmark (Deb et al., IEEE TNSRE 2022, github.com/fokhruli/STGCN-rehab). The
+# point-cloud transformer's Data_Proc/data_processing.py is near-identical to it line for line; the
+# dual-stream STGCN's KIMORE/data_processing.py is a two-stream extension of the same class. So the
+# convention is fixed upstream, and these three files establish it directly rather than by inference.
+# ---------------------------------------------------------------------------
+PROVENANCE = [
+    {
+        "file": "fokhruli/STGCN-rehab :: train.py:61-62",
+        "shows": "y_pred and test_y are both passed through sc2.inverse_transform BEFORE "
+                 "mean_absolute_error / MAPE are computed, so the reported metrics are in "
+                 "label units, not standardised units",
+    },
+    {
+        "file": "fokhruli/STGCN-rehab :: Data/label.csv",
+        "shows": "the released label value is 48.333 -- a raw KIMORE clinical Total Score on the "
+                 "0-50 scale (cTS takes fractional-third values; our own ex5 minimum is 12.667), "
+                 "so the labels being inverse-transformed onto are raw clinical scores",
+    },
+    {
+        "file": "fokhruli/STGCN-rehab :: GCN/data_processing.py",
+        "shows": "the Data_Loader both papers inherit: sc1 fit on X, sc2 fit on y, 100 timesteps "
+                 "per sample, reading Train_X.csv / Train_Y.csv from a per-exercise directory",
+    },
+]
 
 
 def kimore_score_stats() -> dict[int, dict[str, float]]:
@@ -187,8 +223,14 @@ def main() -> int:
             print("     %-24s MAD %.3f-%.3f  ->  %.0fx-%.0fx below ours"
                   % (label, lo, hi, f_lo, f_hi))
 
+    print("\nPrimary-source corroboration (the convention is fixed upstream of these papers)")
+    for p in PROVENANCE:
+        print("  %s" % p["file"])
+        print("      %s" % p["shows"])
+
     payload = {
         "kimore_score_stats": {str(k): v for k, v in stats.items()},
+        "provenance": PROVENANCE,
         "rows": rows,
         "median_recovered_magnitude": median_recovered,
         "min_standardised_overshoot": min_overshoot,
