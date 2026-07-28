@@ -141,9 +141,11 @@ al.~\cite{karlov2024} report a Spearman correlation rather than MAD --- we now r
 (\cref{tab:accuracy}), which makes the non-comparability legible rather than asserted: our pooled
 $\rho\!\approx\!0.6$ sits below the $0.74$--$0.965$ band that literature spans, on a protocol whose
 mean-predictor null we also state; Abedi et al.~\cite{abedi2023} report
-only a relative MAD reduction with no absolute baseline recoverable. Kuang et al.'s split is itself an
-instance of the leakage \cref{tab:protocol3seed} exists to measure, so we read the field's published
-numbers as a protocol artifact rather than an external accuracy ceiling to beat.
+only a relative MAD reduction with no absolute baseline recoverable. We do not attribute these
+differences: we have neither their preprocessed data nor a subject-disjoint rerun of their pipelines,
+so we report the protocols as incomparable rather than diagnose their numbers, and treat the field's
+published values as measured under a different protocol rather than as an external accuracy ceiling
+to beat.
 Group-equivariant networks impose symmetry as a constraint on the hypothesis class~\cite{cohen2016gconv};
 the steerable family --- tensor-field networks~\cite{thomas2018tfn}, $SE(3)$-Transformers~\cite{fuchs2020se3transformer},
 \texttt{e3nn}~\cite{geiger2022e3nn} --- guarantees equivariance for arbitrary weights, while lighter

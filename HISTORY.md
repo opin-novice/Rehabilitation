@@ -551,6 +551,19 @@ and closing them changed no headline number.
 - **Knock-on.** The same correction applies to E8: the reference paper's published 0.185 is in score
   units, so their released code at their own budget under their own test-selection lands at 4.09 —
   **22× above** their published figure, not 2.6×. E8 has been amended.
+- **Scope discipline — the causal claim was cut the same day.** Settling the *units* is not settling
+  the *cause*, and the two got blurred in the first write-up. We have never run Kuang's pipeline; their
+  preprocessed data (`train_x_pos.npy` etc., a "NewDataset") is not public; we have not measured any
+  leakage effect in it. Their sample-level stratified split is a *mechanism*, not a measurement — and
+  the one time this hypothesis was actually tested on KIMORE it **failed** (77 sequences ≈ one per
+  subject, so a random split is already subject-disjoint; the charge against the PCT paper was raised
+  and withdrawn on exactly that ground). The paper also carried a live self-contradiction: Related Work
+  called Kuang's split "an instance of the leakage `tab:protocol3seed` exists to measure" while Results
+  said that table is "**not** subject leakage". So the attribution is gone. The paragraph now says only
+  that the protocols are incomparable — which their own paper's "8:1:1 stratified sampling" sentence
+  establishes, and which is all that is needed to keep their numbers out of Table 1. **No claim of
+  cheating or misconduct is made or implied anywhere**; sample-level splitting is a widespread
+  unexamined convention in this literature, not fraud.
 - **Honest note.** Kuang et al.'s *released* code (`BryceLoski21/D2STA`) standardises its targets with
   a `StandardScaler` and never inverse-transforms before calling `mad()`, which would put its metrics
   in z-units and contradict the above. But that repo is visibly ablation leftovers (hard-coded `ex3`,
