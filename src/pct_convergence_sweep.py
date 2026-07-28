@@ -38,13 +38,21 @@ from train_cde import metrics                                     # noqa: E402
 SCORE_MAX = kd.SCORE_MAX
 
 
-def load_pct(path, device):
-    """Build a PCT matching the checkpoint's head width, then load it."""
+def load_pct(path, device, k):
+    """Build a PCT matching the checkpoint's head width, then load it.
+
+    `k` (the kNN neighbourhood the CurveNet encoder gathers over) MUST be passed in and MUST match
+    the value the checkpoint was trained with. Unlike num_exercises it changes no weight shape, so
+    a mismatch loads cleanly through strict load_state_dict and silently returns wrong predictions:
+    evaluating k=20 weights at k=10 moved this script's angle-0 clean MAD from 6.41 to 8.63 while
+    raising no error at all. It cannot be inferred from the state_dict -- it is a runtime gather
+    width, not a parameter -- so it is an explicit argument with no default.
+    """
     sd = torch.load(path, map_location=device)
     n_ex = int(sd["head.1.weight"].shape[1]) - 256      # dim + num_exercises
     m = PointCloudTransformerRegressor(
         seq_len=100, num_joints=kd.N_JOINTS, num_channels=3, dim=256,
-        spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=10,
+        spatial_depth=6, temporal_depth=3, heads=4, dropout=0.1, k=k,
         num_exercises=n_ex).to(device)
     m.load_state_dict(sd)
     return m, n_ex
@@ -60,6 +68,11 @@ def main():
     ap.add_argument("--n-frames", type=int, default=100)
     ap.add_argument("--max-len", type=int, default=150)
     ap.add_argument("--tag", default=None, help="output filename stem")
+    ap.add_argument("--k", type=int, default=10,
+                    help="kNN neighbourhood the encoder gathers over. MUST match what the "
+                         "checkpoints were trained with -- it changes no weight shape, so a "
+                         "mismatch loads silently and returns wrong numbers. 10 for the banked "
+                         "arms, 20 for the steelman arm and for the reference implementation.")
     args = ap.parse_args()
     out_dir = args.out or args.ckpt
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -77,7 +90,7 @@ def main():
             floor_mad = metrics(kd.exercise_mean_floor(tr, te), y)["MAD"]
 
             ck = os.path.join(args.ckpt, f"pct_{ptag}_s{s}_f{f}.pt")
-            pct, n_ex = load_pct(ck, device)
+            pct, n_ex = load_pct(ck, device, args.k)
             n_ex_seen.add(n_ex)
 
             base = {op: predict_pct(pct, te, args.n_frames, op, device) for op in OPERATORS}
