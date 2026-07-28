@@ -478,34 +478,46 @@ and closing them changed no headline number.
   retracting.
 - Not leakage: KIMORE ex1 has 77 sequences ≈ one per subject, so their random split is effectively
   subject-disjoint. (This concern was raised during the audit and **withdrawn**.)
-- **Their full 2000-epoch protocol, re-run from their code** (seed 145, `scripts/run_reference_protocol.sh`,
-  artifacts at `Transformer_Rehabilitation/repro_s145/`). Their `eval.py` on the checkpoint their own
-  rule selected: **MAD 4.0885**, which my parse of their training curve reproduces to 4 decimals
-  (4.088) — the pipeline is validated end to end.
+- **Their full 2000-epoch protocol, re-run from their code, 3 seeds** (145 = their default, plus 146
+  and 147; `scripts/run_reference_protocol_seeds.sh`, artifacts at
+  `Transformer_Rehabilitation/repro_s{145,146,147}/`). Their own `eval.py` on the checkpoint their own
+  rule selected agrees with my parse of their training curve to **0.0003 MAD** on every seed — the
+  pipeline is validated end to end. Aggregator: `src/reference_repro_seeds.py`.
 
-  | statistic (score units) | value |
-  |---|---|
-  | **min over 2000 test evals** — *their selection rule* | **4.09** |
-  | median of last 200 epochs | 6.91 |
-  | final epoch | 9.56 |
-  | train MAD at final epoch | 1.01 |
+  | seed | test-selected (*their rule*) | late-median (honest) | final | train (final) | selection effect |
+  |---|---|---|---|---|---|
+  | 145 | 4.088 | 6.906 | 9.56 | 1.007 | +2.818 |
+  | 146 | 4.690 | 10.998 | 12.65 | 0.461 | +6.308 |
+  | 147 | 3.944 | 9.785 | 9.75 | 1.810 | +5.840 |
+  | **mean ± sd** | **4.241 ± 0.396** | 9.230 ± 2.102 | 10.654 ± 1.731 | — | **+4.989 ± 1.894 (52.6%)** |
+  | **95% CI** | **[3.26, 5.22]** | [4.01, 14.45] | [6.35, 14.95] | — | [0.28, 9.70] |
 
-  **The selection effect is now measured inside their own pipeline: +2.82 MAD** versus a median late
-  epoch (+5.47 versus the final one). Train 1.01 against test 9.56 at the final epoch is a 9.5× gap —
-  selecting the minimum of 2000 test evaluations on a 16-sequence test set is the mechanism, and the
-  overfitting makes it large. **Strip the selection and their pipeline lands where ours does**: their
-  6.91 against our 6.42 (single-exercise) and 6.47 (pooled, subject-disjoint).
+  Read the three rows separately, because they are not equally solid:
 
-  Their code still does not reach the published figure. *(Corrected 2026-07-28: this was first
-  written as "0.483 standardised against a claimed 0.185, short by 2.6×", which assumed their
-  published number was in standardised units. The units audit below shows it is in score units, so
-  the comparison is 4.09 against 0.185.)* At their own budget under their own test-selection their
-  code lands **22× above the published 0.185**; their released checkpoint (5.35) is worse still, so
-  it is not their best run either.
+  1. **Test-selected is stable — this is the load-bearing result.** 3.944–4.690, sd 0.396, CI
+     [3.26, 5.22]. Their published figure of 0.185 is nowhere near it. **The 21–23× gap is not seed
+     luck**, which was the whole question this run existed to answer.
+  2. **The selection effect is real but imprecise.** +4.99 ± 1.89 MAD (52.6%), CI [0.28, 9.70] —
+     clears zero, but only just. "Selection inflates their number" is supported; "it inflates it by
+     5 MAD" is not. Mechanism unchanged: minimum of 2000 test evaluations on a 16-sequence test set,
+     with train/test gaps of 9.5×, 27× and 5.4× at the final epoch.
+  3. ~~**Strip the selection and their pipeline lands where ours does**: their 6.91 against our 6.42.~~
+     **RETRACTED — this was a single-seed artifact.** Over three seeds the honest late-median is
+     9.230 ± 2.102, CI **[4.01, 14.45]**, which *contains* our 6.42. So we can claim **neither** that
+     their selection-stripped number matches ours **nor** that it differs. It is simply too
+     seed-unstable to support any statement, and seed 145 happened to be the lowest of the three. The
+     script now checks this containment explicitly so the claim cannot be quietly re-made.
 
-  **Caveat: single seed** (145, theirs). This establishes that the selection effect exists and is
-  large in their pipeline; it does not quantify how much of the specific 4.09 is seed luck. *(Seeds
-  146 and 147 are running as of 2026-07-28 to close this.)*
+  Their code still does not reach the published figure. *(Corrected 2026-07-28: first written as
+  "0.483 standardised against a claimed 0.185, short by 2.6×", which assumed their published number
+  was standardised. E10 shows it is in score units.)* At their own budget under their own
+  test-selection their code lands **21–23× above the published 0.185**; their released checkpoint
+  (5.35) is worse still, so it is not their best run either.
+
+  **What this does and does not license.** It measures *their pipeline's* behaviour under *their*
+  settings. It is one exercise (ex1), one architecture, three seeds. It does not diagnose why their
+  published number is what it is, and nothing here is evidence of misconduct — see the scope boundary
+  in E10.
 
 ### E9 — Spearman ρ reported against its own null (2026-07-27)
 

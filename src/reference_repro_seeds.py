@@ -102,6 +102,22 @@ def mean_sd(xs: list[float]) -> tuple[float, float]:
     return (float(np.mean(xs)), float(statistics.stdev(xs)) if len(xs) > 1 else float("nan"))
 
 
+def mean_ci(xs: list[float], conf: float = 0.95) -> tuple[float, float, float, float]:
+    """Mean, sd, and a t-based CI on the mean.
+
+    Three seeds is a very small sample and the honest (selection-stripped) statistic turns out to be
+    seed-unstable, so reporting a bare mean invites exactly the single-seed overread this harness
+    exists to prevent. t(0.975, df=2) = 4.303 -- the interval is wide, and it should look wide.
+    """
+    m, s = mean_sd(xs)
+    n = len(xs)
+    if n < 2 or not np.isfinite(s):
+        return m, s, float("nan"), float("nan")
+    from scipy import stats as _st
+    half = float(_st.t.ppf(0.5 + conf / 2, n - 1) * s / np.sqrt(n))
+    return m, s, m - half, m + half
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -137,14 +153,29 @@ def main() -> int:
     if complete:
         print("\nPooled over %d complete seed(s)%s" % (len(complete),
               " -- SINGLE SEED, spread not yet measurable" if len(complete) == 1 else ""))
+        print("  %-28s %8s %8s   %s" % ("", "mean", "sd", "95% CI on the mean"))
         for key, label in [("selected", "test-selected (their rule)"),
                            ("late_median", "late-median (honest)"),
                            ("final", "final epoch"),
                            ("selection_effect", "selection effect"),
                            ("selection_effect_pct", "selection effect (%)")]:
-            m, s = mean_sd([r[key] for r in complete])
-            summary[key] = {"mean": m, "sd": s, "values": [r[key] for r in complete]}
-            print("  %-28s %7.3f +/- %.3f" % (label, m, s))
+            m, s, lo, hi = mean_ci([r[key] for r in complete])
+            summary[key] = {"mean": m, "sd": s, "ci95": [lo, hi],
+                            "values": [r[key] for r in complete]}
+            print("  %-28s %8.3f %8.3f   [%7.3f, %7.3f]" % (label, m, s, lo, hi))
+
+        # The comparison the paper actually cares about: does their selection-stripped number sit
+        # where ours does? With n=3 this is answerable only if the CI excludes our value.
+        ours = 6.42
+        lo, hi = summary["late_median"]["ci95"]
+        verdict = ("EXCLUDES" if (ours < lo or ours > hi) else "CONTAINS")
+        summary["ours_single_exercise_honest"] = ours
+        summary["late_median_ci_vs_ours"] = verdict
+        print("\n  our single-exercise honest MAD is %.2f; their late-median 95%% CI %s it"
+              % (ours, verdict))
+        if verdict == "CONTAINS":
+            print("  -> too seed-unstable to claim their honest number either matches or differs "
+                  "from ours")
 
         sel = [r["selected"] for r in complete]
         print("\n  test-selected range across seeds: %.3f - %.3f (spread %.3f)"
