@@ -131,9 +131,12 @@ Rehab-Pile~\cite{rehabpile2026} (aggregating KIMORE, UI-PRMD~\cite{vakanski2018u
 uniformly in-distribution (same sensor, same placement, no simulated failure), and to our knowledge no
 prior work reports a mean-predictor floor, without which a degradation curve cannot be interpreted.
 We do not enter these papers' published numbers into \cref{tab:accuracy} because none is protocol-comparable:
-Kuang et al.~\cite{kuang2026} report MAD $0.10$--$0.16$ on a $0$--$100$ scale ($\sim\!2$ orders of
-magnitude below our subject-disjoint $6.3$--$6.7$ on a $0$--$50$ scale, even after rescaling) under an
-explicit $8{:}1{:}1$ \emph{sample-level} stratified split, not a subject-disjoint one; Karlov et
+Kuang et al.~\cite{kuang2026} report MAD $0.10$--$0.16$ in the \emph{same} $0$--$50$ clinical-score
+units as our subject-disjoint $6.3$--$6.7$ --- a factor of $39$--$67$, with no rescaling in between. We
+recover those units from the published tables rather than assuming them (supplement): the
+reference implementation standardises its targets, so the reading is not self-evident, and getting it
+wrong would move the comparison by $8.5\times$. Their split is an explicit $8{:}1{:}1$
+\emph{sample-level} stratified one, not a subject-disjoint one; Karlov et
 al.~\cite{karlov2024} report a Spearman correlation rather than MAD --- we now report $\rho$ too
 (\cref{tab:accuracy}), which makes the non-comparability legible rather than asserted: our pooled
 $\rho\!\approx\!0.6$ sits below the $0.74$--$0.965$ band that literature spans, on a protocol whose

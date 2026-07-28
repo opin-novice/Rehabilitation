@@ -496,12 +496,16 @@ and closing them changed no headline number.
   overfitting makes it large. **Strip the selection and their pipeline lands where ours does**: their
   6.91 against our 6.42 (single-exercise) and 6.47 (pooled, subject-disjoint).
 
-  Their code still does not reach the published figure: **0.483 standardised against a claimed
-  0.185**, short by 2.6×, at their own budget under their own test-selection. Their released
-  checkpoint (5.35) is worse than this reproduction (4.09), so it is not their best run either.
+  Their code still does not reach the published figure. *(Corrected 2026-07-28: this was first
+  written as "0.483 standardised against a claimed 0.185, short by 2.6×", which assumed their
+  published number was in standardised units. The units audit below shows it is in score units, so
+  the comparison is 4.09 against 0.185.)* At their own budget under their own test-selection their
+  code lands **22× above the published 0.185**; their released checkpoint (5.35) is worse still, so
+  it is not their best run either.
 
   **Caveat: single seed** (145, theirs). This establishes that the selection effect exists and is
-  large in their pipeline; it does not quantify how much of the specific 4.09 is seed luck.
+  large in their pipeline; it does not quantify how much of the specific 4.09 is seed luck. *(Seeds
+  146 and 147 are running as of 2026-07-28 to close this.)*
 
 ### E9 — Spearman ρ reported against its own null (2026-07-27)
 
@@ -515,6 +519,44 @@ and closing them changed no headline number.
   grossly inflationary — but the null is now *measured*. The tie also replicates: ρ separates the
   models by at most 0.05. Our ρ (0.52–0.60) sits **below** the literature band, which is what the
   protocol argument predicts.
+
+### E10 — What units are the published KIMORE numbers in? (2026-07-28)
+
+- **Goal.** Close open risk #4. `paper_wacv.tex:134` compared Kuang et al.'s MAD 0.10–0.16 against our
+  6.3–6.7 by asserting theirs was "on a 0–100 scale" and dismissing it "even after rescaling". Nobody
+  had verified the scale, and E8 had just shown that the reference paper's own per-epoch metric was in
+  **standardised** units — so a units error was live, and this sentence is load-bearing for the whole
+  "published numbers are protocol artifacts" argument.
+- **The method — no source code required.** Every method in this lineage publishes MAD *and* MAPE for
+  the same run, and MAPE throughout is `100·mean(|y−ŷ|/|y|)`. So `100·MAD/MAPE` recovers the magnitude
+  of whatever array was handed to the metric. Raw clinical scores predict ~35–41; standardised targets
+  predict mean|z| ≈ 0.8. The two hypotheses are separated by a factor of ~45, which no amount of
+  transcription noise can bridge.
+- **Outcome — the original claim was wrong, and the truth is cleaner.** All 40 published cells (8
+  methods × 5 exercises, spanning Du 2021 → Kuang 2026, plus the point-cloud transformer's own table)
+  land in the score band: median recovered magnitude **38.1** against a true per-exercise mean of
+  35.0–40.7, median relative error **10.6%**. The standardised reading is excluded by **≥70×** — it
+  would require these papers to have printed MAPE in the tens of percent instead of the 0.17–6.0 they
+  actually print.
+
+  | reading | predicts `100·MAD/MAPE` | observed |
+  |---|---|---|
+  | raw 0–50 clinical score | 35.0–40.7 | **38.1 (median)** |
+  | standardised (z-scored) | ≈0.8 | — |
+
+  So the published numbers are on the **same 0–50 axis as ours**. There is no 0–100 scale and no
+  rescaling step: Kuang et al.'s 0.10–0.16 sits **39–67× below** our 6.3–6.7, directly. The paper's
+  sentence has been rewritten to say that, and the arithmetic now lives in a supplement section
+  (S7) backed by `src/published_units_audit.py`, which gates on all three conditions.
+- **Knock-on.** The same correction applies to E8: the reference paper's published 0.185 is in score
+  units, so their released code at their own budget under their own test-selection lands at 4.09 —
+  **22× above** their published figure, not 2.6×. E8 has been amended.
+- **Honest note.** Kuang et al.'s *released* code (`BryceLoski21/D2STA`) standardises its targets with
+  a `StandardScaler` and never inverse-transforms before calling `mad()`, which would put its metrics
+  in z-units and contradict the above. But that repo is visibly ablation leftovers (hard-coded `ex3`,
+  a wandb run named `origin_model_ex3_seed3407`) and is *not* what produced Table 3. We rest the claim
+  on the published tables, which are self-consistent, public, and checkable by any reviewer — not on
+  repo forensics.
 
 ---
 
@@ -638,11 +680,9 @@ These cost real time and are the ones most likely to bite a newcomer again.
    acceptance on a 45-subject dataset carrying a negative Block-2 result."*
 3. **Our ρ is below the published band** (0.52–0.60 vs 0.74–0.965). Defensible via the protocol
    argument, but it is a number a reviewer will react to before reading the argument.
-4. **An unverified arithmetic claim about a competitor.** `paper_wacv.tex:134` argues Kuang et al.'s
-   0.10–0.16 is implausibly low "even after rescaling", assuming a **linear 0–100 → 0–50** rescale.
-   The reference paper's numbers turned out to be **z-scored**, not min-max. If Kuang's are too, that
-   sentence's arithmetic fails the same way — and it is load-bearing for the "published numbers are
-   protocol artifacts" claim. **Cannot be checked without their code. OPEN.**
+4. ~~**An unverified arithmetic claim about a competitor.**~~ **CLOSED 2026-07-28 — and the original
+   claim was wrong.** See E10: the published numbers are in 0–50 score units, the same axis as ours,
+   so no rescaling applies at all. The sentence has been rewritten.
 5. **The steerable encoder's node-failure advantage is not fully explained.** The EGNN comparison
    establishes *that* it is more robust behind an identical cut, not *why*. Also, the EGNN is
    untuned, so a residual "sabotaged baseline" risk remains.

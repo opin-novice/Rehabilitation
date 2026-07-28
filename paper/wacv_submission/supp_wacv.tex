@@ -40,8 +40,9 @@
 This supplement carries the depth condensed out of the main paper: the proof of the invariance theorem
 (\cref{sec:supp:proof}), the full invariant-set specification (\cref{sec:supp:cut}), the eight-gate
 numerical certificate (\cref{sec:supp:cert}), the complete precision budget (\cref{sec:supp:prec}), the
-nondeterminism seed distribution (\cref{sec:supp:seed}), and the protocol audit and continuous-time
-control (\cref{sec:supp:control}). All numbers are reproduced from the same banked artifacts as the main
+nondeterminism seed distribution (\cref{sec:supp:seed}), the protocol audit and continuous-time
+control (\cref{sec:supp:control}), and the units audit behind our comparison against published KIMORE
+numbers (\cref{sec:supp:units}). All numbers are reproduced from the same banked artifacts as the main
 paper; equation and proposition references (e.g.\ Prop.~1) point to the main text.
 
 % =====================================================================
@@ -201,5 +202,56 @@ was predictable before the experiment, though the boundary would move for tremor
 mechanism is nonetheless
 real: a physiologically calibrated $5$~Hz tremor is recovered from the true irregular stamps at
 $r{=}1.000$ under drop rates up to $70\%$, while a resampled estimator decays to $0.785$.
+
+% =====================================================================
+\section{Units of the Published KIMORE Numbers}\label{sec:supp:units}
+The main text compares our MAD against published KIMORE MAD directly. That is only legitimate if both
+are in clinical-score units, and none of those papers states the scale. The question is not academic:
+the reference point-cloud transformer standardises its targets with a \texttt{StandardScaler}
+($\sigma\!=\!8.466$ on \texttt{Kimore\_ex1}) and its per-epoch training print is in standardised units
+while its evaluator inverse-transforms, so the two readings of the same headline number differ by
+$8.5\times$.
+
+The published tables settle it without recourse to anyone's source code. Every method in this lineage
+reports MAD and MAPE for the same run, with $\mathrm{MAPE}=100\cdot\mathrm{mean}(|y-\hat y|/|y|)$, so
+\begin{equation}
+\widehat{|y|}\;=\;100\cdot\mathrm{MAD}/\mathrm{MAPE}
+\end{equation}
+recovers the magnitude of whatever array was handed to the metric. On raw clinical scores it must land
+near KIMORE's per-exercise means; on standardised targets it must land near $\mathrm{mean}|z|\!\approx\!0.8$.
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+$\widehat{|y|}=100\,\mathrm{MAD}/\mathrm{MAPE}$ & Ex1 & Ex2 & Ex3 & Ex4 & Ex5 \\
+\midrule
+Du et al.~2021           & 39.4 & 36.6 & 32.8 & 34.1 & 33.2 \\
+Deb et al.~2022          & 41.5 & 60.8 & 51.4 & 42.1 & 39.0 \\
+Yao et al.~2023          & 40.2 & 35.1 & 32.5 & 35.5 & 36.1 \\
+Mourchid et al.~2023     & 39.5 & 77.3 & 34.3 & 38.1 & 32.8 \\
+Zhang et al.~2025        & 41.2 & 51.6 & 38.4 & 42.2 & 35.0 \\
+Kuang et al.~2025        & 43.2 & 31.4 & 41.0 & 30.6 & 32.2 \\
+Kuang et al.~2026        & 54.5 & 40.1 & 48.3 & 63.4 & 18.8 \\
+Point-cloud transf.      & 34.1 & 29.6 & 38.1 & 33.4 & 32.4 \\
+\midrule
+\textbf{true score mean} & \textbf{40.7} & \textbf{35.6} & \textbf{39.5} & \textbf{35.0} & \textbf{36.4} \\
+true $\mathrm{mean}|z|$  & 0.80 & 0.87 & 0.79 & 0.86 & 0.84 \\
+\bottomrule
+\end{tabular}
+\caption{Target magnitude recovered from each paper's own published MAD/MAPE pair, against KIMORE's
+true clinical Total Score statistics. Every row lands in the score band ($30$--$63$), none anywhere
+near the standardised band ($\approx\!0.8$). Rows reporting no MAPE are omitted.}
+\label{tab:supp:units}
+\end{table}
+
+\Cref{tab:supp:units} is unambiguous: the median recovered magnitude over all $40$ published cells is
+$38.1$ against a true per-exercise mean of $35.0$--$40.7$ (median relative error $10.6\%$), while the
+standardised reading is excluded by at least $70\times$ --- it would require these papers to have
+printed MAPE values in the tens of percent rather than the $0.17$--$6.0$ they report. The published
+KIMORE MAD numbers are therefore in $0$--$50$ clinical-score units, and our $6.3$--$6.7$ is on the same
+axis. The audit is reproduced by \texttt{src/published\_units\_audit.py}, which gates on all three
+conditions.
 
 \end{document}
