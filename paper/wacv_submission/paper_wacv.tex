@@ -555,7 +555,8 @@ accuracy benchmark; we do not draw a clean-accuracy conclusion from it beyond th
 \caption{REHAB24-6 second-corpus replication ($3$ seeds, subject-disjoint CV). AUROC@$90^\circ$ is the
 same model evaluated under a $90^\circ$ camera rotation: EGRU is invariant by theorem (logit drift
 $\le1.5\times10^{-4}$); the transformer falls to chance (drift $23.2$). Node-fail: AUROC lost over $8$
-frozen nodes.}
+frozen nodes; the two models \emph{cross} between $4$ and $8$ frozen joints --- full curve, and the
+fold-level spread ($\approx\!0.06$, versus the $\pm$ here, which is across seeds), in the supplement.}
 \label{tab:rehab246}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
