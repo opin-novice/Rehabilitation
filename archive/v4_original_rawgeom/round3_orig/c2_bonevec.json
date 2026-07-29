@@ -1,0 +1,24 @@
+{
+  "input": "relative_joint_vectors",
+  "n_folds": 77,
+  "REHAB246": {
+    "n_folds": 77,
+    "mean_auroc": 0.5341663637287142,
+    "std_auroc": 0.01680704135243352,
+    "ci95_auroc": 0.003754066637364422,
+    "mean_rank_spearman": 0.053290147320224274,
+    "mean_pred_sd": 0.2439432961430836,
+    "degenerate": false,
+    "naive_auroc_rawcoords": 0.5540866679595751
+  },
+  "UIPRMD": {
+    "n_folds": 77,
+    "mean_auroc": 0.5198569220779221,
+    "std_auroc": 0.015366008153659943,
+    "ci95_auroc": 0.0034321935282661848,
+    "mean_rank_spearman": 0.017763173005019353,
+    "mean_pred_sd": 0.05219328145847305,
+    "degenerate": true,
+    "naive_auroc_rawcoords": 0.537979
+  }
+}

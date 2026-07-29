@@ -1,0 +1,22 @@
+{
+  "normalization": "per_sequence_zscore",
+  "n_folds": 77,
+  "REHAB246": {
+    "mean_auroc": 0.5392798117764178,
+    "std_auroc": 0.0225235888108879,
+    "ci95_auroc": 0.005030930283064127,
+    "mean_rank_spearman": 0.06092537405336727,
+    "mean_pred_sd": 1.1404061913490295,
+    "degenerate": false,
+    "naive_auroc_perseq": 0.510264256110788
+  },
+  "UIPRMD": {
+    "mean_auroc": 0.5344725129870129,
+    "std_auroc": 0.027492283111359744,
+    "ci95_auroc": 0.006140751405861764,
+    "mean_rank_spearman": 0.012627562978515154,
+    "mean_pred_sd": 0.6135545636636096,
+    "degenerate": false,
+    "naive_auroc_perseq": 0.542259
+  }
+}

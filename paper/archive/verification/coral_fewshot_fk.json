@@ -1,0 +1,77 @@
+{
+  "REHAB246": {
+    "coral": {
+      "mean_auroc": 0.5216587296456714,
+      "std_auroc": 0.011853725523887105,
+      "n_folds_evaluated": 10
+    },
+    "fewshot": {
+      "n1": {
+        "mean_auroc": null,
+        "std_auroc": null
+      },
+      "n5": {
+        "mean_auroc": 0.5128555972782545,
+        "std_auroc": 0.009570602204213624
+      },
+      "n10": {
+        "mean_auroc": 0.5168284899902235,
+        "std_auroc": 0.012881875702283309
+      },
+      "n20": {
+        "mean_auroc": 0.5284532050552029,
+        "std_auroc": 0.015511958606730568
+      }
+    }
+  },
+  "UIPRMD::raw (paper)": {
+    "coral": {
+      "mean_auroc": 0.5125061000000001,
+      "std_auroc": 0.013104446844106022,
+      "n_folds_evaluated": 10
+    },
+    "fewshot": {
+      "n1": {
+        "mean_auroc": null,
+        "std_auroc": null
+      },
+      "n5": {
+        "mean_auroc": 0.5314808395879806,
+        "std_auroc": 0.014880065020744005
+      },
+      "n10": {
+        "mean_auroc": 0.529105287946915,
+        "std_auroc": 0.02133891578121384
+      },
+      "n20": {
+        "mean_auroc": 0.5282197004925107,
+        "std_auroc": 0.0046958826829341885
+      }
+    }
+  },
+  "UIPRMD::fk": {
+    "coral": {
+      "mean_auroc": 0.5158412,
+      "std_auroc": 0.018073412735562695,
+      "n_folds_evaluated": 10
+    },
+    "fewshot": {
+      "n1": {
+        "mean_auroc": null,
+        "std_auroc": null
+      },
+      "n5": {
+        "mean_auroc": 0.5251814765816052,
+        "std_auroc": 0.012913731247591344
+      },
+      "n10": {
+        "mean_auroc": 0.5398670480760586,
+        "std_auroc": 0.005328702505342787
+      },
+      "n20": {
+        "mean_auroc": 0.5416157755417863,
+        "std_auroc": 0.023339792283799933
+      }
+    }
+  }
+}

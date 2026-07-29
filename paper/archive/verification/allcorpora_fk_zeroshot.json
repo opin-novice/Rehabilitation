@@ -1,0 +1,62 @@
+{
+  "ssl_results/A_scratch/UIPRMD": {
+    "auroc": 0.526676,
+    "pred_sd": 0.03293602503836155,
+    "degenerate": true,
+    "naive": 0.5269950000000001
+  },
+  "ssl_results/A_scratch/REHAB246": {
+    "auroc": 0.5147894355018281,
+    "pred_sd": 0.6769434154033661,
+    "degenerate": false,
+    "naive": 0.5540866679595751
+  },
+  "ssl_results/B_contrastive_lp/UIPRMD": {
+    "auroc": 0.5303787,
+    "pred_sd": 0.017871449701488018,
+    "degenerate": true,
+    "naive": 0.5269950000000001
+  },
+  "ssl_results/B_contrastive_lp/REHAB246": {
+    "auroc": 0.5153274290516517,
+    "pred_sd": 0.21767072528600692,
+    "degenerate": false,
+    "naive": 0.5540866679595751
+  },
+  "ssl_results/C_contrastive_ft/UIPRMD": {
+    "auroc": 0.5189802,
+    "pred_sd": 0.037437211163342,
+    "degenerate": true,
+    "naive": 0.5269950000000001
+  },
+  "ssl_results/C_contrastive_ft/REHAB246": {
+    "auroc": 0.5151184088607322,
+    "pred_sd": 0.4940527260303497,
+    "degenerate": false,
+    "naive": 0.5540866679595751
+  },
+  "ssl_results/D_masked_lp/UIPRMD": {
+    "auroc": 0.5158986999999999,
+    "pred_sd": 0.0646111860871315,
+    "degenerate": true,
+    "naive": 0.5269950000000001
+  },
+  "ssl_results/D_masked_lp/REHAB246": {
+    "auroc": 0.512850791188111,
+    "pred_sd": 0.07964669005014002,
+    "degenerate": true,
+    "naive": 0.5540866679595751
+  },
+  "ssl_results/E_masked_ft/UIPRMD": {
+    "auroc": 0.5085725000000001,
+    "pred_sd": 0.09905355423688889,
+    "degenerate": true,
+    "naive": 0.5269950000000001
+  },
+  "ssl_results/E_masked_ft/REHAB246": {
+    "auroc": 0.5178435724495587,
+    "pred_sd": 0.1692093789577484,
+    "degenerate": false,
+    "naive": 0.5540866679595751
+  }
+}

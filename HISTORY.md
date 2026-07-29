@@ -92,6 +92,11 @@ literature reporting 0.95. It also found a **zero-shot validity failure**: the b
 AUROC 0.58 on REHAB24-6 and 0.53 on UI-PRMD, while a *naive* feature (total joint path length +
 mean speed) reached 0.71 and 0.65 — beating trained deep models.
 
+> **Superseded 2026-07-29 (UI-PRMD only).** Those UI-PRMD figures were computed on a broken
+> reading of the corpus (see *The UI-PRMD geometry episode* below). On corrected geometry the
+> best model is **0.578** and the naive feature **0.659**. The finding is unchanged — naive still
+> beats the trained models — and the REHAB24-6 figures are unaffected.
+
 *Publication venue and status: **Unknown** — not recorded in this repository.*
 
 #### Generation 1 — Paper 2: does SSL rescue cross-sensor transfer? (2026-07-03 → 07-05)
@@ -809,6 +814,7 @@ reconstructions of stated intent, not commitments.**
 | ~07-13 | **Neural CDE fails the mean-predictor floor** → architecture pivots to the discrete EGRU; CDE retained as certified control |
 | ~07-13 → 07-22 | Block 2 (irregular sampling) returns **null**; converted into the derived **bandwidth law** |
 | 2026-07-16 | `d922082` — live webcam demo branch (`capstone-showcase`); Camo support, video fallback |
+| **2026-07-29/30** | **UI-PRMD geometry episode.** `Positions` files found to be bone offsets, not world coordinates (57.3% constant); Paper 2's whole UI-PRMD column re-run on forward kinematics. Null and sensor-identity mechanism survive; naive-beats-model significance goes 2/10 → 0/10; five claims rewritten. See the dedicated section below |
 | 2026-07-17 | NTU RGB+D Cross-View harness |
 | **2026-07-18** | `dd875b3` — **int8 precision budget (F7c)** + **causal streaming EGRU / TTFS (F8)** |
 | 2026-07-19 | `6a03d3b` — paper source with edge-deployment section |
@@ -824,6 +830,62 @@ reconstructions of stated intent, not commitments.**
 | 2026-07-27 | `3486f79` — `num_exercises` regression swept across every load and train site |
 | 2026-07-27 | `0326d5b` — **Spearman ρ reported against its own null**; param count corrected to 4.91M |
 | 2026-07-27 | `8ae820c` — budget-symmetry (**EGRU@60 passes**), steelman and reference-reproduction harnesses; **35.8× gap shown to be a units artifact — we reproduce the reference at 5.21 vs 5.35** |
+
+---
+
+## The UI-PRMD geometry episode (2026-07-29/30)
+
+The clearest instance in this project of a belief that survived a long time because nothing tested
+it, and of how much downstream work one unexamined premise can contaminate.
+
+**What was believed.** That UI-PRMD's Kinect `Positions/*.txt` were world joint coordinates. Two
+loaders said so in their headers. Everything built on them inherited it.
+
+**What was true.** They are per-frame *parent-relative bone offsets*, with joint 0 carrying the
+absolute root translation. Read as coordinates, 57.3% of the resulting values never change over
+time (REHAB24-6: 0.0%) — the model sees a near-rigid skeleton dragged along a root trajectory. The
+pose lives in the companion `Angles/` files and requires forward kinematics to recover.
+
+**How far it reached.** Not just the V4 validity result: the *entire* UI-PRMD column of Paper 2 —
+main zero-shot table, ten-subject bootstrap, per-exercise breakdown, naive-sensitivity and
+robustness tables — plus the `all_corpora` pretraining pool, of which UI-PRMD is 2,000 of 4,057
+sequences. The proof was reproduction, not inference: the broken cache returns the published naive
+baseline **0.538 exactly**; the corrected one returns 0.527.
+
+**A second false blocker.** An earlier session concluded the binary task was impossible because the
+incorrect half had "no `Angles/`, no Vicon … anywhere on disk." That was true of the *directory*
+and false of the *dataset* — only one of four subfolders had ever been unpacked. The archive was
+re-fetched from the Wayback capture (the UI site now 301s to a 404) and had carried all four all
+along.
+
+**What the evidence forced.** The FK convention was taken from the authors' own `Animation.m`
+rather than guessed, and validated against the corpus's Vicon recordings (reconstructed body height
+tracks Vicon at *r* = 0.78; a neutral standing frame lands within 3 cm of the Vicon head marker).
+Then everything was re-run on both geometries so every delta was auditable.
+
+**What survived, and what didn't.** The null survived: every condition stays at chance, and the
+sensor-identity mechanism — the paper's central causal claim — is untouched (3-way probe 1.0000 →
+0.9998 on TCN, 1.0000 → 1.0000 on ST-GCN). One claim got *stronger*: the naive baseline's advantage
+over learned models was significant in 2 of 10 comparisons and is now significant in **0 of 10**.
+Five claims had to be withdrawn or rewritten, including two that no amount of renumbering would
+have caught — the naive baseline no longer leads on UI-PRMD at all, and per-sequence z-scoring
+*raises* the naive baseline (0.542 → 0.609) instead of leaving it flat.
+
+**Three lessons worth keeping.**
+
+1. *The control is the instrument.* REHAB24-6 is untouched by this bug, so it had to reproduce
+   exactly. It did — and when it briefly didn't, that was how two bugs in the new verification
+   harness were caught (a joint mask borrowed from the wrong corpus; two robustness rows fed raw
+   coordinates to models trained on transformed inputs). Without a quantity that must not move,
+   both would have shipped.
+2. *Updating numbers is not updating claims.* The first editing pass corrected every figure and
+   left four sentences asserting a ranking the new figures contradicted. Prose has to be re-read
+   against the numbers, not merely around them.
+3. *Check the artifact, not the directory.* A missing folder was read as missing data for weeks.
+
+Paper 2's tables are still typed by hand — it has no equivalent of `src/aggregate_final.py`, which
+is exactly the discipline that would have made this a one-command re-run. The verification JSONs
+now ship in `paper/archive/verification/`.
 
 ---
 

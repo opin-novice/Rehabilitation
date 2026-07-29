@@ -1,0 +1,101 @@
+{
+  "degeneracy_pred_sd_threshold": 0.1,
+  "per_model": [
+    {
+      "model": "TCN",
+      "auroc": 0.533,
+      "point_biserial": 0.069,
+      "n_exercises_scored": 10,
+      "kendall_w": 0.211,
+      "pred_SD": 0.33,
+      "degenerate": false
+    },
+    {
+      "model": "Exp E (Transformer)",
+      "auroc": 0.509,
+      "point_biserial": 0.006,
+      "n_exercises_scored": 10,
+      "kendall_w": 0.501,
+      "pred_SD": 0.2,
+      "degenerate": false
+    },
+    {
+      "model": "SCT",
+      "auroc": 0.508,
+      "point_biserial": 0.008,
+      "n_exercises_scored": 10,
+      "kendall_w": 0.479,
+      "pred_SD": 0.43,
+      "degenerate": false
+    },
+    {
+      "model": "GraphTransformer",
+      "auroc": 0.504,
+      "point_biserial": 0.008,
+      "n_exercises_scored": 10,
+      "kendall_w": 0.533,
+      "pred_SD": 0.03,
+      "degenerate": true
+    },
+    {
+      "model": "GraphTransformer (no bias)",
+      "auroc": 0.503,
+      "point_biserial": 0.009,
+      "n_exercises_scored": 10,
+      "kendall_w": 0.608,
+      "pred_SD": 0.31,
+      "degenerate": false
+    },
+    {
+      "model": "ST-GCN",
+      "auroc": 0.46,
+      "point_biserial": -0.079,
+      "n_exercises_scored": 10,
+      "kendall_w": 0.375,
+      "pred_SD": 0.97,
+      "degenerate": false
+    },
+    {
+      "model": "LSTM baseline",
+      "auroc": 0.452,
+      "point_biserial": -0.08,
+      "n_exercises_scored": 10,
+      "kendall_w": 0.047,
+      "pred_SD": 0.16,
+      "degenerate": false
+    }
+  ],
+  "hypothesis_a_degenerate_AUROC_near_0.5": true,
+  "hypothesis_b_kendallW_predicts_AUROC": {
+    "spearman_rho": 0.257,
+    "p": 0.623,
+    "n_models": 6
+  },
+  "interpretation": "If (a) holds, the degeneracy gate is necessary: a 'reliable' degenerate model cannot discriminate correct from incorrect movement. If (b) holds, cross-exercise rank consistency (Kendall W) is a usable validity proxy. Together they upgrade the reliability rubric from self-consistency to a validated deployment screen.",
+  "external_transfer": {
+    "naive_kinematic_baseline_meanAUROC": {
+      "total_path": 0.625,
+      "mean_speed": 0.622,
+      "bbox_vol": 0.695
+    },
+    "naive_baseline_overall_meanAUROC": 0.647,
+    "model_best_AUROC_over_embeddings": {
+      "LSTM baseline": 0.49,
+      "ST-GCN": 0.472,
+      "GraphTransformer": 0.522,
+      "GraphTransformer (no bias)": 0.503,
+      "TCN": 0.533,
+      "SCT": 0.511,
+      "Exp E (Transformer)": 0.512
+    },
+    "best_model_AUROC": 0.533,
+    "embeddings_swept": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "interpretation": "KIMORE-trained scorers do NOT transfer zero-shot to correct/incorrect discrimination: best per-exercise AUROC over all models x all 5 exercise embeddings = 0.533. Naive movement-magnitude features on the SAME joint-mapped sequences reach mean|AUROC| = 0.647, so the label signal is present and the joint mapping is sound -- the failure is model transfer, not the testbed. The reliability/degeneracy diagnostic is thus validated as a NECESSARY screen-out (degenerate -> chance) but is NOT sufficient for validity: high zero-shot reliability does not imply a model can flag movement errors on an external labeled set."
+  }
+}

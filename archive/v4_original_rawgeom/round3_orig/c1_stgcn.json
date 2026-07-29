@@ -1,0 +1,43 @@
+{
+  "backbone": "stgcn",
+  "REHAB246": {
+    "n_folds": 77,
+    "mean_auroc": 0.5223167556543987,
+    "std_auroc": 0.007795987286247924,
+    "ci95_auroc": 0.0017413330022171308,
+    "mean_rank_spearman": -0.03626485682040516,
+    "mean_pred_sd": 0.49612841068754915,
+    "degenerate": false,
+    "naive_auroc": 0.5540866679595751
+  },
+  "UIPRMD": {
+    "n_folds": 77,
+    "mean_auroc": 0.5135404155844154,
+    "std_auroc": 0.010362422478021424,
+    "ci95_auroc": 0.0023145789726627176,
+    "mean_rank_spearman": -0.0020321232432436998,
+    "mean_pred_sd": 0.019942773279262246,
+    "degenerate": true,
+    "naive_auroc": 0.537979
+  },
+  "REHAB246_adabn": {
+    "n_folds": 77,
+    "mean_auroc": 0.5186668080843528,
+    "std_auroc": 0.00898354726333569,
+    "ci95_auroc": 0.0020065896405729905,
+    "mean_pred_sd": 0.8770400417315496
+  },
+  "UIPRMD_adabn": {
+    "n_folds": 77,
+    "mean_auroc": 0.5140199675324676,
+    "std_auroc": 0.009903892625884526,
+    "ci95_auroc": 0.002212160493166709,
+    "mean_pred_sd": 0.4339859477885358
+  },
+  "sensor_id_probe": {
+    "mean_3way_balanced_acc": 1.0,
+    "std_3way_balanced_acc": 0.0,
+    "chance_3way": 0.3333333333333333,
+    "n_models": 5
+  }
+}

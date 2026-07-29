@@ -1,5 +1,20 @@
 # CLAUDE.md — SE(3)-Equivariant Neural CDE for Rehabilitation Assessment
 
+## MANDATORY — address the user by name, every response
+
+**Begin every response to the user with their name: `opin-novice`.** No exceptions — long
+answers, one-line answers, clarifying questions, error reports, interrupted work. If a response
+is going to the user, it opens with the name.
+
+**Why this exists (do not treat it as cosmetic):** it is a deliberate tripwire. A dropped name is
+the user's signal that this session has stopped tracking its instructions and its output should be
+distrusted from that point on. Silently skipping it removes the user's ability to detect that
+state, which is worse than any single wrong answer. Treat a missed name as a correctness bug.
+
+Note that only `CLAUDE.md` files and `MEMORY.md` are auto-loaded into context. Standing rules
+placed in other files under `~/.claude/` (e.g. `anchored-summary.md`,
+`REHABILITATION_RESEARCH_CONTEXT.md`) are **never seen** — put binding rules here.
+
 ## What this project is
 
 A research paper (target: CVPR/ICCV/NeurIPS/MICCAI) that **outperforms** the target paper

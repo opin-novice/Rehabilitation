@@ -1,0 +1,18 @@
+{
+  "REHAB246": {
+    "n": 1057,
+    "n_pos": 558,
+    "n_valid_joints": 21,
+    "raw_all25": 0.5540866679595751,
+    "shared_only": 0.5481069666214149,
+    "zscored_all25": 0.510264256110788
+  },
+  "UI-PRMD": {
+    "n": 2000,
+    "n_pos": 1000,
+    "n_valid_joints": 22,
+    "raw_all25": 0.537979,
+    "shared_only": 0.537979,
+    "zscored_all25": 0.542259
+  }
+}

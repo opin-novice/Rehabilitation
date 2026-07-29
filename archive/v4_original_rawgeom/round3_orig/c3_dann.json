@@ -1,0 +1,15 @@
+{
+  "method": "DANN",
+  "epochs": 60,
+  "device": "cuda",
+  "REHAB246": {
+    "dann_auroc": 0.5286558780643724,
+    "pred_sd": 0.32581838965415955,
+    "naive_auroc": 0.5540866679595751
+  },
+  "UIPRMD": {
+    "dann_auroc": 0.5088969999999999,
+    "pred_sd": 0.03319104015827179,
+    "naive_auroc": 0.537979
+  }
+}

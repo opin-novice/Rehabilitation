@@ -1,0 +1,18 @@
+{
+  "method": "SWAD",
+  "device": "cuda",
+  "n_swa_updates": 840,
+  "val_best": 0.8691697120666504,
+  "val_best_epoch": 15,
+  "epochs": 90,
+  "REHAB246": {
+    "swad_auroc": 0.507006845231682,
+    "pred_sd": 0.4669041037559509,
+    "naive_auroc": 0.5540866679595751
+  },
+  "UIPRMD": {
+    "swad_auroc": 0.50204,
+    "pred_sd": 0.13274848461151123,
+    "naive_auroc": 0.537979
+  }
+}

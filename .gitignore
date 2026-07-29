@@ -38,3 +38,8 @@ outputs/
 
 # OS
 .DS_Store
+
+# FK-repair reruns (51MB of checkpoints; summary ships in paper/archive/verification/)
+outputs_fkrepair/
+# scratch figure output; canonical copy lives in paper/archive/figures/
+/figures/

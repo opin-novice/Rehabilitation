@@ -1,0 +1,14 @@
+{
+  "REHAB246": {
+    "n_folds": 77,
+    "mean_auroc_raw": 0.515702890209969,
+    "mean_auroc_isotonic": 0.5165039850216656,
+    "max_abs_diff": 0.03653004934600379
+  },
+  "UIPRMD": {
+    "n_folds": 77,
+    "mean_auroc_raw": 0.5240267532467533,
+    "mean_auroc_isotonic": 0.5042415194805194,
+    "max_abs_diff": 0.07417949999999995
+  }
+}

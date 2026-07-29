@@ -1,0 +1,24 @@
+### Subject-clustered AUROC significance (10-subject bootstrap, orientation fixed)
+
+**REHAB246** (10 subjects, N=1057, 2000 boots)
+
+| Condition | AUROC | 95% CI (subject) | p vs 0.5 | > chance? | naive−model | p(naive>model) |
+|---|---|---|---|---|---|---|
+| Scratch | 0.515 | [0.467, 0.558] | 0.553 | no | +0.040 | 0.238 |
+| Contrastive LP | 0.515 | [0.450, 0.581] | 0.631 | no | +0.037 | 0.536 |
+| Contrastive FT | 0.506 | [0.459, 0.556] | 0.840 | no | +0.048 | 0.253 |
+| Masked LP | 0.529 | [0.470, 0.592] | 0.336 | no | +0.022 | 0.706 |
+| Masked FT | 0.522 | [0.467, 0.573] | 0.444 | no | +0.032 | 0.356 |
+| Naive baseline | 0.554 | [0.506, 0.605] | 0.035 | yes | — | — |
+
+**UI-PRMD** (10 subjects, N=2000, 2000 boots)
+
+| Condition | AUROC | 95% CI (subject) | p vs 0.5 | > chance? | naive−model | p(naive>model) |
+|---|---|---|---|---|---|---|
+| Scratch | 0.510 | [0.489, 0.536] | 0.305 | no | +0.015 | 0.319 |
+| Contrastive LP | 0.514 | [0.480, 0.553] | 0.451 | no | +0.012 | 0.601 |
+| Contrastive FT | 0.537 | [0.518, 0.561] | 0.000 | yes | -0.011 | 0.429 |
+| Masked LP | 0.525 | [0.509, 0.542] | 0.002 | yes | +0.002 | 0.861 |
+| Masked FT | 0.513 | [0.497, 0.527] | 0.112 | no | +0.015 | 0.150 |
+| Naive baseline | 0.527 | [0.515, 0.543] | 0.000 | yes | — | — |
+

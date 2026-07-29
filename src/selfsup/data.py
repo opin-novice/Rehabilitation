@@ -98,8 +98,15 @@ def load_rehab246_labeled():
 
 
 def load_uiprmd_labeled():
-    return _load_cached_corpus("outputs/validity_uiprmd/*seq*.npy",
-                               "outputs/validity_uiprmd/*manifest*.csv", "UIPRMD")
+    """UI-PRMD cache. Geometry is selectable so raw-vs-FK reruns are reproducible.
+
+    The default cache (outputs/validity_uiprmd) is the forward-kinematics build. The
+    original published numbers were produced from parent-relative bone offsets read as
+    world coordinates (57.3% of coordinates constant); set UIPRMD_CACHE=
+    outputs/validity_uiprmd_raw to reproduce them. See docs/worklog_2026-07-29.md §4-5.
+    """
+    base = os.environ.get("UIPRMD_CACHE", "outputs/validity_uiprmd")
+    return _load_cached_corpus(f"{base}/*seq*.npy", f"{base}/*manifest*.csv", "UIPRMD")
 
 
 def load_irds_unlabeled():

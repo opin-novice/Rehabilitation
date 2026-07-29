@@ -1,0 +1,373 @@
+{
+  "note": "Frozen-checkpoint inference only. The all-corpora rows re-score models whose PRETRAINING pool contained the degenerate UI-PRMD sequences; re-pretraining is required to fully clear that row.",
+  "results": {
+    "raw": {
+      "cache": "outputs/validity_uiprmd_raw",
+      "const_coord_fraction": 0.5733,
+      "naive": {
+        "naive_auroc": 0.538,
+        "naive_shared_joints": 0.538,
+        "naive_zscored": 0.5423
+      },
+      "conditions": {
+        "Scratch": {
+          "n_folds": 77,
+          "mean_auroc": 0.5240266558441558,
+          "sd_auroc": 0.01704953137362221,
+          "mean_rank_spearman": 0.02583809610891421,
+          "mean_pred_sd": 0.033440713522738065,
+          "degenerate": true
+        },
+        "Contrastive LP": {
+          "n_folds": 77,
+          "mean_auroc": 0.5179499999999999,
+          "sd_auroc": 0.014967663555318011,
+          "mean_rank_spearman": -0.014088480538584292,
+          "mean_pred_sd": 0.03002315792315579,
+          "degenerate": true
+        },
+        "Contrastive FT": {
+          "n_folds": 77,
+          "mean_auroc": 0.5138842402597402,
+          "sd_auroc": 0.012583803661388678,
+          "mean_rank_spearman": 0.013244870463556982,
+          "mean_pred_sd": 0.1187251265971111,
+          "degenerate": false
+        },
+        "Masked LP": {
+          "n_folds": 77,
+          "mean_auroc": 0.5119308506493506,
+          "sd_auroc": 0.008652486523126706,
+          "mean_rank_spearman": 0.015634875948160005,
+          "mean_pred_sd": 0.01533202211941024,
+          "degenerate": true
+        },
+        "Masked FT": {
+          "n_folds": 77,
+          "mean_auroc": 0.5138384285714286,
+          "sd_auroc": 0.009298792400550428,
+          "mean_rank_spearman": 0.020385273320488895,
+          "mean_pred_sd": 0.018331778477635476,
+          "degenerate": true
+        }
+      },
+      "allcorpora": {
+        "Scratch": {
+          "n_folds": 5,
+          "mean_auroc": 0.5170165999999999,
+          "sd_auroc": 0.010029499820030914,
+          "mean_rank_spearman": 0.01652827008649018,
+          "mean_pred_sd": 0.05182883478701115,
+          "degenerate": true
+        },
+        "Contrastive LP": {
+          "n_folds": 5,
+          "mean_auroc": 0.532055,
+          "sd_auroc": 0.019226721759051886,
+          "mean_rank_spearman": -0.015220225163179724,
+          "mean_pred_sd": 0.0145037230104208,
+          "degenerate": true
+        },
+        "Contrastive FT": {
+          "n_folds": 5,
+          "mean_auroc": 0.5128907,
+          "sd_auroc": 0.008754553835576074,
+          "mean_rank_spearman": 0.012599805171022266,
+          "mean_pred_sd": 0.01706742737442255,
+          "degenerate": true
+        },
+        "Masked LP": {
+          "n_folds": 5,
+          "mean_auroc": 0.5320397,
+          "sd_auroc": 0.01591513259951047,
+          "mean_rank_spearman": 0.02837012980848057,
+          "mean_pred_sd": 0.019073534291237593,
+          "degenerate": true
+        },
+        "Masked FT": {
+          "n_folds": 5,
+          "mean_auroc": 0.5200605000000001,
+          "sd_auroc": 0.015726055815111443,
+          "mean_rank_spearman": 0.012396116012570488,
+          "mean_pred_sd": 0.029527352191507816,
+          "degenerate": true
+        }
+      },
+      "robustness": {
+        "ST-GCN backbone": {
+          "n_folds": 77,
+          "mean_auroc": 0.5135415064935066,
+          "sd_auroc": 0.010361590227477896,
+          "mean_rank_spearman": -0.0020376568052274204,
+          "mean_pred_sd": 0.019941895338404295,
+          "degenerate": true,
+          "input_transform": "raw_coords"
+        },
+        "Rel.-joint input": {
+          "n_folds": 77,
+          "mean_auroc": 0.5198568311688313,
+          "sd_auroc": 0.01536611963890723,
+          "mean_rank_spearman": 0.01776315051138595,
+          "mean_pred_sd": 0.05219328134961716,
+          "degenerate": true,
+          "input_transform": "bonevec"
+        },
+        "Per-seq. z-score": {
+          "n_folds": 77,
+          "mean_auroc": 0.5344725194805195,
+          "sd_auroc": 0.027492320353363377,
+          "mean_rank_spearman": 0.012627484250215423,
+          "mean_pred_sd": 0.6135545617283938,
+          "degenerate": false,
+          "input_transform": "perseq"
+        }
+      },
+      "per_exercise": {
+        "Scratch": {
+          "1": 0.8639,
+          "2": 0.5695,
+          "3": 0.5082,
+          "4": 0.6704,
+          "5": 0.5826,
+          "6": 0.5097,
+          "7": 0.5359,
+          "8": 0.6349,
+          "9": 0.5197,
+          "10": 0.5197
+        },
+        "Contrastive LP": {
+          "1": 0.6715,
+          "2": 0.514,
+          "3": 0.6058,
+          "4": 0.6161,
+          "5": 0.5205,
+          "6": 0.5328,
+          "7": 0.5045,
+          "8": 0.5412,
+          "9": 0.5341,
+          "10": 0.546
+        },
+        "Contrastive FT": {
+          "1": 0.7384,
+          "2": 0.5965,
+          "3": 0.5272,
+          "4": 0.6357,
+          "5": 0.5297,
+          "6": 0.5282,
+          "7": 0.5412,
+          "8": 0.5039,
+          "9": 0.5088,
+          "10": 0.5291
+        },
+        "Masked LP": {
+          "1": 0.6275,
+          "2": 0.5636,
+          "3": 0.5678,
+          "4": 0.5344,
+          "5": 0.5188,
+          "6": 0.5438,
+          "7": 0.5226,
+          "8": 0.5502,
+          "9": 0.5662,
+          "10": 0.6043
+        },
+        "Masked FT": {
+          "1": 0.575,
+          "2": 0.5897,
+          "3": 0.5004,
+          "4": 0.577,
+          "5": 0.5307,
+          "6": 0.5889,
+          "7": 0.5262,
+          "8": 0.5103,
+          "9": 0.5629,
+          "10": 0.5481
+        }
+      }
+    },
+    "fk": {
+      "cache": "outputs/validity_uiprmd",
+      "const_coord_fraction": 0.12,
+      "naive": {
+        "naive_auroc": 0.527,
+        "naive_shared_joints": 0.527,
+        "naive_zscored": 0.6088
+      },
+      "conditions": {
+        "Scratch": {
+          "n_folds": 77,
+          "mean_auroc": 0.5293014805194806,
+          "sd_auroc": 0.019592602736986233,
+          "mean_rank_spearman": -0.008029293685892879,
+          "mean_pred_sd": 0.03617589882054886,
+          "degenerate": true
+        },
+        "Contrastive LP": {
+          "n_folds": 77,
+          "mean_auroc": 0.5203814350649352,
+          "sd_auroc": 0.015052500224937955,
+          "mean_rank_spearman": 0.012608128029854612,
+          "mean_pred_sd": 0.006265769404201925,
+          "degenerate": true
+        },
+        "Contrastive FT": {
+          "n_folds": 77,
+          "mean_auroc": 0.5321817207792208,
+          "sd_auroc": 0.014262929749604943,
+          "mean_rank_spearman": 0.05249091975944586,
+          "mean_pred_sd": 0.04812226384309689,
+          "degenerate": true
+        },
+        "Masked LP": {
+          "n_folds": 77,
+          "mean_auroc": 0.5273169155844155,
+          "sd_auroc": 0.017505259972659826,
+          "mean_rank_spearman": -0.026254238236023773,
+          "mean_pred_sd": 0.014755047567479022,
+          "degenerate": true
+        },
+        "Masked FT": {
+          "n_folds": 77,
+          "mean_auroc": 0.5245411363636363,
+          "sd_auroc": 0.01733843390028412,
+          "mean_rank_spearman": -0.006634463988258579,
+          "mean_pred_sd": 0.03252470521135377,
+          "degenerate": true
+        }
+      },
+      "allcorpora": {
+        "Scratch": {
+          "n_folds": 5,
+          "mean_auroc": 0.5266759,
+          "sd_auroc": 0.015580534693648965,
+          "mean_rank_spearman": 0.008784789589209686,
+          "mean_pred_sd": 0.03293602354824543,
+          "degenerate": true
+        },
+        "Contrastive LP": {
+          "n_folds": 5,
+          "mean_auroc": 0.506823,
+          "sd_auroc": 0.006093303045147168,
+          "mean_rank_spearman": 0.010863770433824152,
+          "mean_pred_sd": 0.009415315371006728,
+          "degenerate": true
+        },
+        "Contrastive FT": {
+          "n_folds": 5,
+          "mean_auroc": 0.5219450999999999,
+          "sd_auroc": 0.012991462367262573,
+          "mean_rank_spearman": 0.03569047021259501,
+          "mean_pred_sd": 0.027429846301674842,
+          "degenerate": true
+        },
+        "Masked LP": {
+          "n_folds": 5,
+          "mean_auroc": 0.5207067000000001,
+          "sd_auroc": 0.009726592587335,
+          "mean_rank_spearman": -0.010863597234355482,
+          "mean_pred_sd": 0.0207974873483181,
+          "degenerate": true
+        },
+        "Masked FT": {
+          "n_folds": 5,
+          "mean_auroc": 0.5292811000000001,
+          "sd_auroc": 0.00854662051573604,
+          "mean_rank_spearman": 0.030519258663119653,
+          "mean_pred_sd": 0.0658123230561614,
+          "degenerate": true
+        }
+      },
+      "robustness": {
+        "ST-GCN backbone": {
+          "n_folds": 77,
+          "mean_auroc": 0.5169722922077921,
+          "sd_auroc": 0.010055482755061629,
+          "mean_rank_spearman": 0.001714404348480009,
+          "mean_pred_sd": 0.022868290794529504,
+          "degenerate": true,
+          "input_transform": "raw_coords"
+        },
+        "Rel.-joint input": {
+          "n_folds": 77,
+          "mean_auroc": 0.5301187922077923,
+          "sd_auroc": 0.0216351445392917,
+          "mean_rank_spearman": -0.00686378079542932,
+          "mean_pred_sd": 0.14047176272354342,
+          "degenerate": false,
+          "input_transform": "bonevec"
+        },
+        "Per-seq. z-score": {
+          "n_folds": 77,
+          "mean_auroc": 0.5484629740259742,
+          "sd_auroc": 0.03534842193127994,
+          "mean_rank_spearman": -0.007515909255025222,
+          "mean_pred_sd": 1.0173043875725238,
+          "degenerate": false,
+          "input_transform": "perseq"
+        }
+      },
+      "per_exercise": {
+        "Scratch": {
+          "1": 0.5745,
+          "2": 0.5821,
+          "3": 0.5318,
+          "4": 0.6052,
+          "5": 0.6745,
+          "6": 0.6519,
+          "7": 0.6095,
+          "8": 0.6469,
+          "9": 0.6012,
+          "10": 0.543
+        },
+        "Contrastive LP": {
+          "1": 0.6083,
+          "2": 0.6603,
+          "3": 0.5273,
+          "4": 0.5812,
+          "5": 0.5628,
+          "6": 0.5578,
+          "7": 0.5322,
+          "8": 0.6132,
+          "9": 0.508,
+          "10": 0.5953
+        },
+        "Contrastive FT": {
+          "1": 0.5425,
+          "2": 0.635,
+          "3": 0.5166,
+          "4": 0.613,
+          "5": 0.5712,
+          "6": 0.589,
+          "7": 0.5514,
+          "8": 0.5311,
+          "9": 0.5513,
+          "10": 0.5962
+        },
+        "Masked LP": {
+          "1": 0.5864,
+          "2": 0.6329,
+          "3": 0.6699,
+          "4": 0.6388,
+          "5": 0.7945,
+          "6": 0.5731,
+          "7": 0.5731,
+          "8": 0.6186,
+          "9": 0.5134,
+          "10": 0.5204
+        },
+        "Masked FT": {
+          "1": 0.5435,
+          "2": 0.5515,
+          "3": 0.6026,
+          "4": 0.6246,
+          "5": 0.7899,
+          "6": 0.5324,
+          "7": 0.5434,
+          "8": 0.6263,
+          "9": 0.5115,
+          "10": 0.5173
+        }
+      }
+    }
+  }
+}
