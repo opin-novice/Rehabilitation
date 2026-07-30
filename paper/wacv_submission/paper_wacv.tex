@@ -45,10 +45,12 @@ data no model separates from another --- ours, a point-cloud-transformer baselin
 hand-crafted-invariant GRU tie within a $0.33$~MAD nondeterminism floor --- so the benchmark's aggregate
 metric is saturated and the decisive axis lies elsewhere: the augmented baseline
 matches us in aggregate accuracy while still swinging an individual patient's score by up to $20.1$ MAD
-(of $50$) under camera rotation, against our $9\times10^{-6}$. We isolate what the steerable encoder
-buys with a hostile stress suite: under sensor-node failure the graph-pooled equivariant model degrades
-gracefully where a hand-crafted-invariant control collapses through the mean-predictor floor, and a
-lighter $E(n)$-equivariant encoder behind the identical invariant cut is measurably more brittle. We
+(of $50$) under camera rotation, against our $9\times10^{-6}$. We then map the
+accuracy--exactness--robustness--cost frontier and find that \emph{no model on it dominates}: the
+point-cloud baseline is both the most accurate and the most node-robust, a hand-crafted-invariant
+control is the cheapest and exactly invariant yet collapses under sensor-node failure, and a lighter
+$E(n)$ encoder behind the identical invariant cut is measurably more brittle. Ours is the only point
+that is exact \emph{by theorem} while clearing every stress, at $7.4\times$ fewer parameters. We
 replicate the viewpoint and node-failure properties on a second corpus (REHAB24-6), and measure what
 the theorem costs on the edge: an int8 activation-quantization cliff of only $0.05$ MAD --- one to two
 orders of magnitude below MCID thresholds on comparable rehabilitation scales (\cref{sec:results})
@@ -115,9 +117,11 @@ a restored parity channel that is principled but unrewarded on healthy-form exer
 inflation, a $0.33$~MAD nondeterminism floor below which no accuracy gap is interpretable, and a gated
 pooled protocol. (ii) Exact viewpoint invariance, \emph{certified} by eight numerical gates (E1--E8)
 over Haar-random $SO(3)$ rather than a single azimuth sweep, against a baseline that crosses
-the floor by $45^\circ$. (iii) A measured justification for the steerable encoder --- sensor-node
-failure --- and, behind the identical invariant cut, evidence that lighter $E(n)$ equivariance is more
-node-fail brittle. (iv) A second-corpus replication (REHAB24-6) of the viewpoint and node-failure
+the floor by $45^\circ$. (iii) A Pareto characterisation of the
+accuracy--exactness--robustness--cost frontier on which no model dominates: the baseline wins clean
+accuracy \emph{and} node robustness, while ours is alone in being exact by theorem at $7.4\times$ fewer
+parameters --- including, behind the identical invariant cut, evidence that lighter $E(n)$ equivariance
+is more node-fail brittle. (iv) A second-corpus replication (REHAB24-6) of the viewpoint and node-failure
 properties. (v) A co-designed deployment path: an int8 precision-budget audit and a causal streaming
 read-out with an honest time-to-first-score. We also report two negative results, one of them derived.
 
@@ -456,9 +460,14 @@ axis/depth noise   & $6.77/7.20\,({+}0.47)$  & $6.70/8.24\,({+}1.93)$   & $6.48/
 \end{tabular}}
 \end{table}
 
-\textbf{The whole thesis in one grid} (\cref{tab:pareto}). We do not claim to be the only survivor:
-rotation-augmented PCT also clears the floor under both a $90^\circ$ move and two dead nodes. What
-separates the two survivors is the last column (\cref{fig:guarantee}a) --- both flat in aggregate, but the augmented baseline's
+\textbf{The whole thesis in one grid} (\cref{tab:pareto}). \emph{No model wins all five columns}, and
+that --- not any single stress --- is the claim. PCT is both the most accurate clean model ($6.47$) and
+the most node-robust ($7.10$); InvariantGRU is the cheapest at exactly zero degradation yet collapses at
+two dead nodes ($11.64$); and three models clear every stress --- ours, Canon-PCA$+$PCT, and
+rotation-augmented PCT --- so we are not the only survivor. Among those three, ours is the only one at
+$0.66$M rather than $4.91$M parameters and the only one whose invariance is a theorem rather than an
+estimated frame or an augmentation tolerance. What
+separates the survivors is the last column (\cref{fig:guarantee}a) --- all flat in aggregate, but the augmented baseline's
 mean per-sequence degradation is $3.01$~MAD (worst sequence $20.12$) against our $9\times10^{-6}$
 ($3.0\times10^{-4}$ worst), at $7.4\times$ more parameters. This is the only column where the
 difference is categorical rather than a trade: $3.01$ is a tolerance that happens to be small on this
