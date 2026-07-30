@@ -390,14 +390,15 @@ cannot be trusted to make; that is the practical content of the guarantee.
 Both are plausibility bounds from adjacent instruments, not KIMORE-specific thresholds, and should be
 read as such.
 
-\textbf{What the steerable encoder buys: sensor-node failure} (\cref{tab:nodefail}). Freezing $k$
-tracking nodes at their first-frame pose, the hand-crafted arm collapses through the floor at a
-\emph{single} dead joint ($6.31\!\to\!9.78$) because its features name their joints; EGRU pools learned
-graph messages and loses only $+3.76$~MAD over $8$ dead joints. Honestly, PCT is the most node-robust of
-the three ($+2.27$) --- robustness to node failure is not a property of equivariance and we do not claim
-it is. The correct reading: \emph{among models with an exact viewpoint guarantee}, only the
-graph-structured one survives a broken sensor up to $k{=}4$ dead nodes ($k{=}8$ crosses the floor for
-every model, EGRU included). Both models see identically corrupted joints with no imputation; we
+\textbf{Does the guarantee cost robustness? Sensor-node failure} (\cref{tab:nodefail}). This is a tax
+check, not a selling point. Freezing $k$ tracking nodes at their first-frame pose, the hand-crafted arm
+collapses through the floor at a \emph{single} dead joint ($6.31\!\to\!9.78$) because its features name
+their joints; EGRU pools learned graph messages and loses $+3.76$~MAD over $8$ dead joints.
+\textbf{PCT wins this axis outright} ($+2.27$): it leads on KIMORE and, on REHAB24-6, overtakes us
+between $k{=}2$ and $k{=}4$ and finishes $0.021$~AUROC ahead at $k{=}8$ (supplement). Node robustness is
+not a property of equivariance; we neither claim it nor define a subset of models within which we win
+it. The table supports something narrower and sufficient: the guarantee is not paid for with a
+robustness collapse ($k{=}8$ crosses the floor for every model, EGRU included). Both models see identically corrupted joints with no imputation; we
 measured, rather than assumed, the fairness objection: granting the hand-crafted features an
 \emph{oracle} liveness mask (told exactly which joint died, no retraining) closes only $\sim\!25\%$ of
 the gap to EGRU ($+12.05\!\to\!+10.02$~MAD lost; \cref{tab:nodefail}, right column) --- the graph encoder
@@ -459,7 +460,10 @@ axis/depth noise   & $6.77/7.20\,({+}0.47)$  & $6.70/8.24\,({+}1.93)$   & $6.48/
 rotation-augmented PCT also clears the floor under both a $90^\circ$ move and two dead nodes. What
 separates the two survivors is the last column (\cref{fig:guarantee}a) --- both flat in aggregate, but the augmented baseline's
 mean per-sequence degradation is $3.01$~MAD (worst sequence $20.12$) against our $9\times10^{-6}$
-($3.0\times10^{-4}$ worst), at $7.4\times$ more parameters. Behind the \emph{identical} invariant cut, a lighter $E(n)$-equivariant (EGNN) encoder ties
+($3.0\times10^{-4}$ worst), at $7.4\times$ more parameters. This is the only column where the
+difference is categorical rather than a trade: $3.01$ is a tolerance that happens to be small on this
+data and has a $20$~MAD tail, whereas $9\times10^{-6}$ is roundoff around a value the theorem fixes at
+zero. Every other column is an axis we may lose, and on node failure we do lose it. Behind the \emph{identical} invariant cut, a lighter $E(n)$-equivariant (EGNN) encoder ties
 clean accuracy and viewpoint (exact by construction) but is measurably more node-fail brittle: tuned
 across depth, width, and coordinate-clamp over three seeds it still loses $+6.4\pm1.3$~MAD over eight
 dead joints (vs.\ EGRU's $+3.76$) and crosses the floor already at two dead joints ($8.44$ vs.\ EGRU's
