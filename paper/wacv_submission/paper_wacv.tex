@@ -103,10 +103,13 @@ report degradation and accuracy side by side throughout.
 
 The tie with the hand-crafted model leaves an obligation elegance cannot discharge: if a plain GRU on
 named features is exactly as accurate \emph{and} as viewpoint-invariant, the steerable machinery is
-unjustified. We discharge it by measurement. When Kinect nodes freeze --- the characteristic
-consumer-depth failure --- the hand-crafted model fails outright: a \emph{single} dead joint drives it
-from $6.31$ to $9.78$~MAD, through the floor, because its features \emph{name} the joints they depend
-on; the graph encoder pools learned messages and dilutes the failure across $25$ joints. We also treat
+unjustified. We discharge it against \emph{that} model specifically. When Kinect nodes freeze --- the
+characteristic consumer-depth failure --- the hand-crafted model fails outright: a \emph{single} dead
+joint drives it from $6.31$ to $9.78$~MAD, through the floor, because its features \emph{name} the
+joints they depend on; the graph encoder pools learned messages and dilutes the failure across $25$
+joints. That is one pairwise comparison, not an axis we own: the point-cloud baseline is more
+node-robust than either of us, and our case rests on \emph{where} we sit on the
+accuracy--exactness--robustness--cost frontier (\cref{tab:pareto}). We also treat
 the guarantee as a \emph{systems} property: it survives to int8 (only activation-, not weight-rounding
 perturbs it) and converts to strictly causal streaming at $8.9$~ms/frame. Finally we report, in full,
 the two places the structural story does not pay --- a continuous-time variant that fails the floor, and
