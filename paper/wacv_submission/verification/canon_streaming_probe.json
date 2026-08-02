@@ -1,0 +1,37 @@
+{
+  "experiment": "canon_streaming_probe",
+  "baseline_under_test": "canonicalize.pca_canonicalize (per-frame spatial PCA, causal)",
+  "part_a_frame_jitter_and_degeneracy": {
+    "n_sequences": 380,
+    "n_frame_transitions": 56538,
+    "frame_jitter_deg": {
+      "median": 4.387206765576864,
+      "p95": 178.88881457642546,
+      "p99": 179.8325958482371,
+      "max": 179.99999146226352
+    },
+    "flip_rate_gt_45deg": 0.2100003537443843,
+    "degenerate_frame_fraction": {
+      "min_gap<0.02": 0.041023929161249514,
+      "min_gap<0.05": 0.1786078217786992,
+      "min_gap<0.1": 0.4468182297340033
+    }
+  },
+  "part_b_coord_shift_azimuth_vs_so3": {
+    "body_scale": 0.888817493826754,
+    "n_so3_rotations": 32,
+    "azimuth_subgroup": {
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 1.4551915228366852e-13,
+      "frac_seq_shift_gt_1pct_bodyscale": 0.0
+    },
+    "arbitrary_SO3": {
+      "median": 0.0,
+      "p95": 0.0,
+      "max": 3.725290298461914e-11,
+      "frac_seq_shift_gt_1pct_bodyscale": 0.0
+    },
+    "note": "coord shift is EXACTLY 0 unless the eigenvalue order / sign convention swaps; any nonzero value is a frame discontinuity, i.e. a per-sequence score shift a certified-invariant model cannot have."
+  }
+}

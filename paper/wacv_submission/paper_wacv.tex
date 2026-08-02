@@ -526,13 +526,32 @@ same place for less. It does, here: a per-frame PCA principal-axis frame feeding
 joints, and a viewpoint invariance that is empirically exact not merely for the azimuth subgroup a
 clinician sweeps but for arbitrary $SO(3)$ (worst per-sequence canonical-coordinate shift
 $3.7\times10^{-11}$ over $32$ random rotations). We report it as a first-class baseline rather than bury
-it. The distinction is not accuracy but \emph{provenance of the invariance}: PCA canonicalization is a
-point estimate of a frame, exact only where the pose covariance is well-conditioned --- and on KIMORE it
-often is not. $18\%$ of frames sit within an eigen-gap of $0.05$ of degeneracy, and the estimated frame
-rotates by more than $45^\circ$ across $21\%$ of frame transitions (sign flips to $180^\circ$;
-\cref{fig:guarantee}b); the
-downstream network learns to absorb this jitter on this corpus, but no theorem bounds it off
-distribution. Our cut estimates \emph{no} frame: it is $SE(3)$-invariant for arbitrary weights by
+it. This baseline is not the naive form of the method: its axes are sign-disambiguated by a
+deterministic rule (each axis oriented so its dominant joint projection is positive) and the frame is
+forced right-handed, so the discrete $\pm$ ambiguity of the eigenvectors is already resolved before any
+of the numbers below are measured. The distinction is not accuracy but \emph{provenance of the
+invariance}, and the mechanism is \emph{conditioning}, not exactness. Under a clean rotation the PCA
+frame is exactly equivariant --- rotating the input sends the covariance to $RCR^{\!\top}$, whose
+eigenvectors are exactly $RV$ --- and we measure that residual at $3\times10^{-6}$ degrees. But by
+Davis--Kahan~\cite{daviskahan1970} an estimated eigenvector subspace moves by $O(\lVert E\rVert/\gamma)$
+under a perturbation $E$, with $\gamma$ the eigen-gap, and a depth sensor supplies $E\neq0$ at every
+frame. On KIMORE $\gamma$ is small far more often than not --- $18\%$ of frames within $0.05$ of
+degeneracy and $45\%$ within $0.10$, a standing body being nearly axially symmetric --- so the
+amplification is the common case, not a corner. Injecting camera-frame noise at $2\%$ of body scale and
+comparing the frame recovered at two camera poses, the residual rotation grows from $1.2^\circ$ where
+$\gamma>0.25$ to $11.1^\circ$ where $\gamma<0.02$, a $9\times$ amplification, with $14.5\%$ of frames past
+$45^\circ$. \emph{This is not an artefact of a weak sign rule.} Our baseline already sign-disambiguates;
+replacing its dominant-joint convention with a third-moment rule leaves the amplification intact
+($12.1^\circ$, trimming only catastrophic flips to $11.1\%$), because a sign rule resolves a
+\emph{discrete} ambiguity whereas degeneracy is a \emph{continuous} one. Temporal smoothing is worse
+($28.8^\circ$; $31.6\%$ past $45^\circ$): a frame locked onto the wrong branch persists, and the frame
+becomes history-dependent, trading per-frame equivariance for lag. A learned point-estimate frame
+inherits the same obstruction --- no canonicalizer is simultaneously exactly equivariant and continuous
+where the configuration's stabilizer is non-trivial~\cite{kaba2023canon}. We deliberately report this
+at the level of the frame rather than the score: the frame measurement is model-free and therefore
+binds any spectral canonicalizer, whereas how much of the wobble survives to the output depends on the
+corpus and on how much jitter the downstream network has learned to absorb --- a dataset-dependent
+question, and secondary to whether the mechanism exists. Our cut estimates \emph{no} frame: it is $SE(3)$-invariant for arbitrary weights by
 construction (\cref{prop:invariance}), certified to roundoff over the full rotation group --- so the
 \emph{same} certificate covers, with no retraining, the genuinely displaced $45^\circ$ camera of
 NTU~RGB+D Cross-View. A frame estimator offers neither the worst-case bound nor that transfer. We do
@@ -718,6 +737,8 @@ an anonymized copy is available to reviewers on request through the program chai
 \bibitem{satorras2021egnn} V.~G.~Satorras, E.~Hoogeboom, and M.~Welling, ``E(n) equivariant graph neural networks,'' in \textit{Proc. ICML}, 2021.
 \bibitem{deng2021vectorneurons} C.~Deng et al., ``Vector neurons: A general framework for SO(3)-equivariant networks,'' in \textit{Proc. ICCV}, 2021.
 \bibitem{puny2022frameaveraging} O.~Puny et al., ``Frame averaging for invariant and equivariant network design,'' in \textit{Proc. ICLR}, 2022.
+\bibitem{daviskahan1970} C.~Davis and W.~M.~Kahan, ``The rotation of eigenvectors by a perturbation. III,'' \textit{SIAM J. Numer. Anal.}, vol.~7, no.~1, pp.~1--46, 1970.
+\bibitem{kaba2023canon} S.-O.~Kaba et al., ``Equivariance with learned canonicalization functions,'' in \textit{Proc. ICML}, 2023.
 \bibitem{chen2018neuralode} R.~T.~Q.~Chen et al., ``Neural ordinary differential equations,'' in \textit{Proc. NeurIPS}, 2018.
 \bibitem{rubanova2019odernn} Y.~Rubanova, R.~T.~Q.~Chen, and D.~Duvenaud, ``Latent ODEs for irregularly-sampled time series,'' in \textit{Proc. NeurIPS}, 2019.
 \bibitem{kidger2020neuralcde} P.~Kidger et al., ``Neural controlled differential equations for irregular time series,'' in \textit{Proc. NeurIPS}, 2020.
