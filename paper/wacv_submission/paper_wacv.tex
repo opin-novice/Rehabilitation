@@ -99,14 +99,16 @@ projection onto a generating set of invariants discharges the symmetry, and a re
 invariant code with the sensor's actual inter-arrival times (a capability KIMORE does not reward,
 \cref{sec:results}; kept because it is free and demonstrably real off this corpus). Invariance of the score under any rigid
 camera motion is then a \emph{theorem} (\cref{prop:invariance}), true for arbitrary weights, not a
-behaviour induced by augmentation. The theorem itself is standard --- a function built from scalar
-contractions of Wigner-$D$-covariant features is invariant by the representation theory the
-\texttt{e3nn}/tensor-field-network family already
-formalizes~\cite{geiger2022e3nn,thomas2018tfn,fuchs2020se3transformer}; our contribution is not new
-invariance theory but the discipline of certifying it end to end (eight numerical gates surviving the
-real steerable layers, the adaptive solver, and int8 quantization) and the evaluation protocol --- the
-floor, the audit, the per-sequence degradation curve --- that makes a guarantee's practical value legible
-rather than assumed. The distinction bites: a rotation-augmented baseline has a flat
+behaviour induced by augmentation.
+
+We contribute three things, none of them new invariance theory
+(scalar contractions of Wigner-$D$-covariant features are invariant by
+construction~\cite{geiger2022e3nn,thomas2018tfn,fuchs2020se3transformer}). An \emph{end-to-end
+certification} protocol: eight numerical gates that survive the real steerable layers, the adaptive
+solver and int8 quantization. An \emph{evaluation methodology} the field lacks: a mean-predictor floor
+below which no gap is interpretable, and per-sequence degradation reported as a distribution rather
+than a mean. And a \emph{deployment} analysis: a precision budget and a causal streaming read-out.
+The distinction bites: a rotation-augmented baseline has a flat
 \emph{aggregate} accuracy curve across azimuth --- by the field's metric it has solved viewpoint --- yet
 its \emph{per-sequence} degradation averages $3.0$~MAD and reaches $20.1$ in the tail, individual scores
 swinging up to two fifths of the fifty-point scale as the camera moves, the errors merely cancelling in
@@ -150,42 +152,48 @@ networks~\cite{kuang2026}, and point-cloud transformers~\cite{pct2026}, with
 Rehab-Pile~\cite{rehabpile2026} (aggregating KIMORE, UI-PRMD~\cite{vakanski2018uiprmd} and IRDS) the closest antecedent of our protocol discipline. Evaluation is
 uniformly in-distribution (same sensor, same placement, no simulated failure), and to our knowledge no
 prior work reports a mean-predictor floor, without which a degradation curve cannot be interpreted.
-We do not enter these papers' published numbers into \cref{tab:accuracy} because none is protocol-comparable:
-Kuang et al.~\cite{kuang2026} report MAD $0.10$--$0.16$ in the \emph{same} $0$--$50$ clinical-score
-units as our subject-disjoint $6.3$--$6.7$ --- lower by a factor of $39$--$67$, with no rescaling in between. We
-recover those units from the published tables rather than assuming them (supplement): the
-reference implementation standardises its targets, so the reading is not self-evident, and getting it
-wrong would move the comparison by $8.5\times$. Their split is an explicit $8{:}1{:}1$
-\emph{sample-level} stratified one, not a subject-disjoint one; Karlov et
-al.~\cite{karlov2024} report a Spearman correlation rather than MAD --- we now report $\rho$ too
-(\cref{tab:accuracy}), which makes the non-comparability legible rather than asserted: our pooled
-$\rho\!\approx\!0.6$ sits below the $0.74$--$0.965$ band that literature spans, on a protocol whose
-mean-predictor null we also state; Abedi et al.~\cite{abedi2023} report
-only a relative MAD reduction with no absolute baseline recoverable. We do not attribute these
-differences: we have neither their preprocessed data nor a subject-disjoint rerun of their pipelines,
-so we report the protocols as incomparable rather than diagnose their numbers, and treat the field's
-published values as measured under a different protocol rather than as an external accuracy ceiling
-to beat.
+
+Published numbers do not enter \cref{tab:accuracy}, because no protocol matches ours. Kuang et
+al.~\cite{kuang2026} report MAD $0.10$--$0.16$ in the \emph{same} $0$--$50$ clinical-score units as our
+subject-disjoint $6.3$--$6.7$, lower by a factor of $39$--$67$; their split is an explicit $8{:}1{:}1$
+\emph{sample-level} stratified one. We recover those units from the published tables (supplement)
+because the reference implementation standardises its targets and reading it wrong would move the
+comparison by $8.5\times$. Karlov et al.~\cite{karlov2024} report Spearman $\rho$ rather than MAD, so we
+report $\rho$ too: our pooled $\rho\!\approx\!0.6$ sits below the $0.74$--$0.965$ band the literature
+spans, on a protocol whose mean-predictor null we also state. Abedi et al.~\cite{abedi2023} report only
+a relative MAD reduction with no recoverable absolute baseline. Lacking their preprocessed data and a
+subject-disjoint rerun, we treat these as measured under a different protocol, not as an accuracy
+ceiling.
+
 Group-equivariant networks impose symmetry as a constraint on the hypothesis class~\cite{cohen2016gconv};
 the steerable family --- tensor-field networks~\cite{thomas2018tfn}, $SE(3)$-Transformers~\cite{fuchs2020se3transformer},
 \texttt{e3nn}~\cite{geiger2022e3nn} --- guarantees equivariance for arbitrary weights, while lighter
 constructions reach $E(n)$-equivariance without spherical harmonics~\cite{satorras2021egnn} or via
-vector neurons~\cite{deng2021vectorneurons}. We build on~\cite{geiger2022e3nn} but our claim is
-deliberately \emph{not} about steerable machinery: a GRU on hand-crafted invariants attains the same
-accuracy and viewpoint guarantee at a third of the parameters, and we isolate the one axis on which they
-differ (\cref{tab:nodefail}).
+vector neurons~\cite{deng2021vectorneurons}. We build on~\cite{geiger2022e3nn}, but the claim is
+\emph{not} about steerable machinery: a GRU on hand-crafted invariants attains the same accuracy and
+viewpoint guarantee at a third of the parameters, and we isolate the one axis on which they differ
+(\cref{tab:nodefail}).
 
 \textbf{Invariance by canonicalization, augmentation, and corruption robustness.} A non-equivariant
 backbone can be made invariant by canonicalization or frame averaging~\cite{puny2022frameaveraging},
-exact only in so far as the frame estimate is --- a point estimate that turns discontinuous near
-covariance degeneracy, which we measure and confront directly (\cref{sec:results}); our cut estimates no
-frame, being an explicit projection exact for arbitrary weights (\cref{prop:invariance}). Training-time augmentation flattens
+exact only in so far as the frame estimate is --- a point estimate whose \emph{conditioning} degrades
+near covariance degeneracy, which we measure directly (\cref{sec:results}); our cut estimates no frame,
+being an explicit projection exact for arbitrary weights (\cref{prop:invariance}). Training-time augmentation flattens
 \emph{aggregate} error but makes per-prediction errors cancel, not vanish --- expressible only if
 degradation is reported per sequence. For irregular sampling, the standard alternatives are
 resampling or continuous-time models~\cite{chen2018neuralode,rubanova2019odernn,kidger2020neuralcde,che2018grud};
 we implement the Neural CDE variant (adaptive Dormand--Prince solver~\cite{dormand1980prince}) as a certified \emph{control} that fails the floor. Occlusion and
 tracking failure are usually met with masking or attention~\cite{yan2018stgcn}; we adopt the failure
 literally and use it as the discriminating experiment between two otherwise-indistinguishable models.
+
+\begin{figure*}[t]\centering
+  \includegraphics[width=\textwidth]{fig_method}
+  \caption{\textbf{The invariant cut is the method.} Top: the pipeline. Bottom: the same pose at two
+  camera poses --- the encoder's type-1 features rotate (equivariance), the cut's output does not
+  (invariance, Prop.~\ref{prop:invariance}). Bar heights are schematic; the annotated quantities are
+  measured (\texttt{certify\_egru.json}, \texttt{final\_tables.json}).}
+  \label{fig:method}
+\end{figure*}
 
 % =====================================================================
 \section{Method}\label{sec:method}
@@ -236,11 +244,10 @@ mean-predictor floor and is reported only as a control (supplement).
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}
 \caption{\textbf{The viewpoint guarantee is falsifiable.} Eight numerical gates on the deployed
-read-out --- E1--E5 that the invariance is \emph{present}, E6--E8 that it is the \emph{intended} one
-(chirality live, laterality preserved). All pass; any reviewer can rerun. Roundoff-floor quantities are
-regime-stable, not bit-reproducible (representative fp64 run); E6--E7 are model-dependent
-\emph{modelling} quantities, not roundoff, and are reported for seed~0 of the released
-\texttt{certify\_egru.json}; the parity/laterality gates report the
+read-out: E1--E5 that the invariance is \emph{present}, E6--E8 that it is the \emph{intended} one
+(chirality live, laterality preserved). Roundoff-floor quantities are regime-stable, not
+bit-reproducible (representative fp64 run); E6--E7 are \emph{modelling} quantities, not roundoff,
+reported for seed~0 of \texttt{certify\_egru.json}. Parity/laterality gates report the
 even\,/\,chiral cut.}
 \label{tab:certificate}
 \begin{tabular}{clc}
@@ -325,18 +332,12 @@ an artefact of withholding exercise identity; we report the unconditioned arm th
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}
-\caption{Clean-data accuracy (pooled, subject-disjoint, mean$\pm$std over 3 seeds). Every pairwise gap
-is inside the $0.33$~MAD \emph{fixed-configuration} floor (seed-to-seed std $0.48$; the wider
-seed-variation table is in the supplement). $\Delta$ vs.\ floor is the SAME paired subject-cluster bootstrap statistic used in
-\cref{tab:protocol3seed} ($n{=}77$ held-out subjects, pooled over 3 seeds $\times$ 5 folds, checkpoints
-re-evaluated with no retraining --- see \texttt{pooled\_bootstrap\_eval.py}): every model's interval is
-entirely below $0$, so the tie \emph{among} models coexists with each one genuinely beating the floor.
-Spearman $\rho$ is reported per seed on that seed's complete out-of-fold vector (never per fold), pooled
-over the five exercises and again \emph{within} each exercise and averaged --- the latter being the
-like-for-like comparison to a literature of single-exercise models. The floor row is why both are given:
-a predictor that ignores its input still attains pooled $\rho=0.17$ purely from between-exercise score
-differences, and exactly $0$ within exercise. Every $\rho$ above it should be read as an increment over
-that null, not as an absolute.}
+\caption{Clean-data accuracy (pooled, subject-disjoint, mean$\pm$std over 3 seeds). The $0.33$~MAD floor
+is the \emph{fixed-configuration} one; the wider seed-to-seed spread ($0.48$) is in the supplement.
+$\Delta$ vs.\ floor is the paired subject-cluster bootstrap of \cref{tab:protocol3seed} ($n{=}77$
+subjects, checkpoints re-evaluated without retraining; \texttt{pooled\_bootstrap\_eval.py}). Spearman
+$\rho$ is computed per seed on that seed's complete out-of-fold vector, pooled over exercises and again
+within each exercise.}
 \label{tab:accuracy}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{llccccc}
@@ -361,8 +362,8 @@ $9\times10^{-6}$~MAD, worst single sequence $3\times10^{-4}$; InvariantGRU exact
 roundoff floor, $10^{-14}$ --- both invariant by construction, so these two curves are a
 positive control, not independent evidence),
 while all non-equivariant baselines degrade catastrophically: PCT crosses the mean-predictor floor between
-$30^\circ$ and $45^\circ$ (mean per-sequence shift $9.33$~MAD at its worst angle); TCN $13.17$~MAD; ST-GCN
-$9.18$~MAD. This pattern holds across three independently-designed non-equivariant architectures (temporal-conv,
+$30^\circ$ and $45^\circ$ (mean per-sequence shift $9.33$~MAD at its worst angle, worst sequence
+$33.96$ of fifty); TCN $13.17$~MAD; ST-GCN $9.18$~MAD. This pattern holds across three independently-designed non-equivariant architectures (temporal-conv,
 graph-conv, attention), indicating viewpoint fragility is a generic property of non-equivariance, not
 PCT-specific. Rotation augmentation flattens PCT's aggregate curve but leaves a \emph{per-sequence}
 score shift averaging $3.01$~MAD --- and the average is the wrong statistic for a clinical claim: the
@@ -410,14 +411,13 @@ threshold on cognate instruments --- at the tail, above it --- and our own score
 ($9\times10^{-6}$), int8 and streaming ($0.05$ and lower, \cref{sec:edge}) orders of magnitude below it.
 A camera relocation that moves a patient's score by more than an MCID is a measurement the instrument
 cannot be trusted to make; that is the practical content of the guarantee.
-Both are plausibility bounds from adjacent instruments, not KIMORE-specific thresholds, and should be
-read as such. The sharper, in-dataset question --- does a $3.01$-point swing cross KIMORE's clinical
+The sharper, in-dataset question --- does a $3.01$-point swing cross KIMORE's clinical
 bands? --- has no answer: those bands do not exist, the five groups being recruitment categories, with
 a control scoring below a patient on every exercise (Es5: Expert $25.0$, Parkinson $50.0$). Measured
 against the score's actual resolution, the mean swing is $0.30$ between-subject SD and the worst
 sequence $2.01$ SD, and it exceeds the gap separating $20.2\%$ of subject pairs, $83.0\%$ at the tail
---- pairs a camera can reorder (supplement). The MCID band then reads as corroboration, not the
-load-bearing claim.
+--- pairs a camera can reorder (supplement). The MCID band then reads as corroboration from adjacent
+instruments, not as a KIMORE-specific threshold and not as the load-bearing claim.
 
 \textbf{Does the guarantee cost robustness? Sensor-node failure} (\cref{tab:nodefail}). This is a tax
 check, not a selling point. Freezing $k$ tracking nodes at their first-frame pose, the hand-crafted arm
@@ -425,10 +425,10 @@ collapses through the floor at a \emph{single} dead joint ($6.31\!\to\!9.78$) be
 their joints; EGRU pools learned graph messages and loses $+3.76$~MAD over $8$ dead joints.
 \textbf{PCT wins this axis outright} ($+2.27$): it leads on KIMORE and, on REHAB24-6, overtakes us
 between $k{=}2$ and $k{=}4$ and finishes $0.021$~AUROC ahead at $k{=}8$ (supplement). Node robustness is
-not a property of equivariance; we neither claim it nor define a subset of models within which we win
-it. The table supports something narrower and sufficient: the guarantee is not paid for with a
-robustness collapse ($k{=}8$ crosses the floor for every model, EGRU included). Both models see identically corrupted joints with no imputation; we
-measured, rather than assumed, the fairness objection: granting the hand-crafted features an
+not a property of equivariance and we do not claim it. The table supports something narrower: the
+guarantee is not paid for with a robustness collapse ($k{=}8$ crosses the floor for every model, EGRU
+included). Both models see identically corrupted joints with no imputation, and we measured the
+fairness objection rather than assuming it: granting the hand-crafted features an
 \emph{oracle} liveness mask (told exactly which joint died, no retraining) closes only $\sim\!25\%$ of
 the gap to EGRU ($+12.05\!\to\!+10.02$~MAD lost; \cref{tab:nodefail}, right column) --- the graph encoder
 needs no such signal and still loses far less, so the residual gap is architectural, not a
@@ -506,11 +506,9 @@ $7.55$) --- so the steerable encoder is the more robust of the two equivariant o
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}
 \caption{Does each model clear the floor ($8.31$~MAD) under each stress? Last column: \emph{mean}
-per-sequence score shift at the worst camera azimuth. The mean understates what a patient experiences:
-for PCT $+$ rot the $95$th percentile is $8.65$ and the worst held-out sequence $20.12$, against
-$2.8\times10^{-5}$ and $3.0\times10^{-4}$ for EGRU. EGNN shares the identical cut (viewpoint exact
-by construction). $^{\dagger}$Canon-PCA's near-zero is \emph{empirical} --- a frame estimate that
-happens to be stable on KIMORE --- not a certificate; see text.}
+per-sequence score shift at the worst camera azimuth; the tail it conceals is in the text. EGNN shares
+the identical cut (viewpoint exact by construction). $^{\dagger}$Canon-PCA's near-zero is
+\emph{empirical}, a frame estimate stable on KIMORE, not a certificate.}
 \label{tab:pareto}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccccc}
@@ -530,14 +528,10 @@ PCT $+$ rot   & $4.91$M & $7.47$ & $7.68$\checkmark & $7.76$\checkmark & $3.01$ 
 \begin{figure}[t]\centering
   \includegraphics[width=\linewidth]{fig_guarantee}
   \caption{\textbf{The axis that separates the survivors.} (a)~Per-patient score shift under
-  camera rotation (log scale); bar is the mean over held-out sequences at the worst azimuth, whisker
-  runs $95$th percentile to worst sequence --- the tail the mean conceals, and the reason we report
-  both. EGNN has no measured tail and so carries no whisker. The certified models (EGRU, EGNN) hold a
-  patient's score to $\sim\!10^{-5}$~MAD, five to six orders of magnitude below the augmented and
-  unaugmented transformers, whose worst sequences move $20.12$ and $33.96$ points of fifty.
-  InvariantGRU is exactly $0$ and Canon-PCA empirically $\approx0$, but unbounded off distribution.
-  (b)~Why the cheap canonicalization alternative is not a guarantee: its PCA frame flips by $>45^\circ$
-  on $21\%$ of frame transitions and sits within an eigen-gap of $0.05$ of degeneracy on $18\%$ of frames.}
+  camera rotation (log scale). Bar is the mean over held-out sequences at the worst azimuth; whisker
+  runs $95$th percentile to worst sequence. EGNN has no measured tail and carries no whisker.
+  (b)~PCA frame instability: frame transitions flipping $>45^\circ$ ($21\%$), and frames within an
+  eigen-gap of $0.05$ of degeneracy ($18\%$).}
   \label{fig:guarantee}
 \end{figure}
 
@@ -545,29 +539,28 @@ PCT $+$ rot   & $4.91$M & $7.47$ & $7.68$\checkmark & $7.76$\checkmark & $3.01$ 
 objection to an equivariant model is that a non-equivariant backbone fed a canonical frame reaches the
 same place for less. It does, here: a per-frame PCA principal-axis frame feeding the transformer
 (Canon-PCA$+$PCT, \cref{tab:pareto}) matches every offline axis --- clean $6.85$~MAD, $7.79$ at two dead
-joints, and a viewpoint invariance that is empirically exact not merely for the azimuth subgroup a
-clinician sweeps but for arbitrary $SO(3)$ (worst per-sequence canonical-coordinate shift
-$3.7\times10^{-11}$ over $32$ random rotations). We report it as a first-class baseline rather than bury
-it. This baseline is not the naive form of the method: its axes are sign-disambiguated by a
-deterministic rule (each axis oriented so its dominant joint projection is positive) and the frame is
-forced right-handed, so the discrete $\pm$ ambiguity of the eigenvectors is already resolved before any
-of the numbers below are measured. The distinction is not accuracy but \emph{provenance of the
-invariance}, and the mechanism is \emph{conditioning}, not exactness. Under a clean rotation the PCA
-frame is exactly equivariant --- rotating the input sends the covariance to $RCR^{\!\top}$, whose
-eigenvectors are exactly $RV$ --- and we measure that residual at $3\times10^{-6}$ degrees. But by
+joints, and a viewpoint invariance empirically exact for arbitrary $SO(3)$, not merely the azimuth
+subgroup a clinician sweeps (worst canonical-coordinate shift $3.7\times10^{-11}$ over $32$ random
+rotations). This is the strong form of the baseline: its axes are sign-disambiguated by a deterministic
+rule (each oriented so its dominant joint projection is positive) and the frame forced right-handed, so
+the discrete $\pm$ ambiguity is resolved before any number below is measured.
+
+The difference is not accuracy but \emph{conditioning}. Under a clean rotation the PCA frame is exactly
+equivariant --- rotating the input sends the covariance to $RCR^{\!\top}$, whose eigenvectors are
+exactly $RV$ --- and we measure that residual at $3\times10^{-6}$ degrees. But by
 Davis--Kahan~\cite{daviskahan1970} an estimated eigenvector subspace moves by $O(\lVert E\rVert/\gamma)$
-under a perturbation $E$, with $\gamma$ the eigen-gap, and a depth sensor supplies $E\neq0$ at every
-frame. On KIMORE $\gamma$ is small far more often than not --- $18\%$ of frames within $0.05$ of
-degeneracy and $45\%$ within $0.10$, a standing body being nearly axially symmetric --- so the
-amplification is the common case, not a corner. Injecting camera-frame noise at $2\%$ of body scale and
-comparing the frame recovered at two camera poses, the residual rotation grows from $1.2^\circ$ where
-$\gamma>0.25$ to $11.1^\circ$ where $\gamma<0.02$, a $9\times$ amplification, with $14.5\%$ of frames past
-$45^\circ$. \emph{This is not an artefact of a weak sign rule.} Our baseline already sign-disambiguates;
-replacing its dominant-joint convention with a third-moment rule leaves the amplification intact
-($12.1^\circ$, trimming only catastrophic flips to $11.1\%$), because a sign rule resolves a
-\emph{discrete} ambiguity whereas degeneracy is a \emph{continuous} one. Temporal smoothing is worse
-($28.8^\circ$; $31.6\%$ past $45^\circ$): a frame locked onto the wrong branch persists, and the frame
-becomes history-dependent, trading per-frame equivariance for lag. A learned point-estimate frame
+under a perturbation $E$ with eigen-gap $\gamma$, and a depth sensor supplies $E\neq0$ at every frame.
+On KIMORE $\gamma$ is small far more often than not --- $18\%$ of frames within $0.05$ of degeneracy and
+$45\%$ within $0.10$, a standing body being nearly axially symmetric --- so amplification is the common
+case, not a corner. Injecting camera-frame noise at $2\%$ of body scale and comparing the frame
+recovered at two camera poses, the residual rotation grows from $1.2^\circ$ where $\gamma>0.25$ to
+$11.1^\circ$ where $\gamma<0.02$: a $9\times$ amplification, with $14.5\%$ of frames past $45^\circ$.
+
+A better sign rule does not fix it. Replacing the dominant-joint convention with a third-moment rule
+leaves the amplification intact ($12.1^\circ$, trimming only catastrophic flips to $11.1\%$), because a
+sign rule resolves a \emph{discrete} ambiguity whereas degeneracy is a \emph{continuous} one. Temporal
+smoothing is worse ($28.8^\circ$; $31.6\%$ past $45^\circ$): a frame locked onto the wrong branch
+persists, and the frame becomes history-dependent, trading per-frame equivariance for lag. A learned point-estimate frame
 inherits the same obstruction --- no canonicalizer is simultaneously exactly equivariant and continuous
 where the configuration's stabilizer is non-trivial~\cite{kaba2023canon}. We deliberately report this
 at the level of the frame rather than the score: the frame measurement is model-free and therefore
@@ -604,16 +597,15 @@ identical $0.66$M model as a BCE logit), an AUROC task over $3$ seeds and subjec
 $0.707\pm0.02$ --- and, decisively, the viewpoint theorem transfers: under a $90^\circ$ camera rotation
 EGRU's AUROC is \emph{unchanged} (logit drift $\le1.5\times10^{-4}$), while the transformer collapses to
 chance ($0.52$). Node failure degrades both gracefully. The guarantee is thus not a KIMORE artifact ---
-though at $10$ subjects this corpus is sized to replicate the \emph{structural} properties (a certified
-invariance either transfers exactly or it does not) and should not be read as an independent
-accuracy benchmark; we do not draw a clean-accuracy conclusion from it beyond the tie already stated.
+though at $10$ subjects this corpus replicates \emph{structural} properties, not accuracy: a certified
+invariance either transfers exactly or it does not, and we draw no accuracy conclusion from it.
 
 \begin{table}[t]\centering\small
 \caption{REHAB24-6 second-corpus replication ($3$ seeds, subject-disjoint CV). AUROC@$90^\circ$ is the
 same model evaluated under a $90^\circ$ camera rotation: EGRU is invariant by theorem (logit drift
 $\le1.5\times10^{-4}$); the transformer falls to chance (drift $23.2$). Node-fail: AUROC lost over $8$
-frozen nodes; the two models \emph{cross} between $4$ and $8$ frozen joints --- full curve, and the
-fold-level spread ($\approx\!0.06$, versus the $\pm$ here, which is across seeds), in the supplement.}
+frozen nodes. The two models \emph{cross} between $4$ and $8$ frozen joints; full curve and fold-level
+spread in the supplement.}
 \label{tab:rehab246}
 \resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
