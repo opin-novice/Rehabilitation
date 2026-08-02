@@ -65,7 +65,7 @@ the theorem costs on the edge: an int8 activation-quantization cliff of only $0.
 between-subject SD on this corpus, and one to two
 orders of magnitude below MCID thresholds on comparable rehabilitation scales (\cref{sec:results})
 --- and a causal streaming variant at $112$~fps (GPU, batch~1). We report our negative results --- a
-non-working continuous-time variant and a null irregular-sampling regime --- with equal prominence.
+null irregular-sampling regime and an unrewarded parity restoration --- with equal prominence.
 \end{abstract}
 
 % =====================================================================
@@ -96,7 +96,8 @@ With clean accuracy neutralized, the question becomes what a structural guarante
 assessment as an \emph{invariant read-out of an equivariant representation}: a steerable
 message-passing encoder produces per-joint features in $O(3)$ irreducible representations, an explicit
 projection onto a generating set of invariants discharges the symmetry, and a recurrence consumes the
-invariant code with the sensor's actual inter-arrival times. Invariance of the score under any rigid
+invariant code with the sensor's actual inter-arrival times (a capability KIMORE does not reward,
+\cref{sec:results}; kept because it is free and demonstrably real off this corpus). Invariance of the score under any rigid
 camera motion is then a \emph{theorem} (\cref{prop:invariance}), true for arbitrary weights, not a
 behaviour induced by augmentation. The theorem itself is standard --- a function built from scalar
 contractions of Wigner-$D$-covariant features is invariant by the representation theory the
@@ -123,8 +124,9 @@ node-robust than either of us, and our case rests on \emph{where} we sit on the
 accuracy--exactness--robustness--cost frontier (\cref{tab:pareto}). We also treat
 the guarantee as a \emph{systems} property: it survives to int8 (only activation-, not weight-rounding
 perturbs it) and converts to strictly causal streaming at $8.9$~ms/frame. Finally we report, in full,
-the two places the structural story does not pay --- a continuous-time variant that fails the floor, and
-a restored parity channel that is principled but unrewarded on healthy-form exercises.
+the two places the structural story does not pay --- native consumption of irregular arrivals, which a
+fixed grid beats at every drop level here, and a restored parity channel that is principled but
+unrewarded on healthy-form exercises.
 
 \noindent\textbf{Contributions.}
 (i) A protocol audit that establishes what the benchmark can measure --- an $18.6\%$ epoch-selection
