@@ -42,7 +42,9 @@ This supplement carries the depth condensed out of the main paper: the proof of 
 numerical certificate (\cref{sec:supp:cert}), the complete precision budget (\cref{sec:supp:prec}), the
 nondeterminism seed distribution (\cref{sec:supp:seed}), the protocol audit and continuous-time
 control (\cref{sec:supp:control}), the units audit behind our comparison against published KIMORE
-numbers (\cref{sec:supp:units}), and the full second-corpus node-failure curve
+numbers (\cref{sec:supp:units}), the per-family ablation of the invariant cut
+(\cref{sec:supp:ablation}), the in-dataset score-resolution analysis behind the clinical-magnitude
+claim (\cref{sec:supp:resolution}), and the full second-corpus node-failure curve
 (\cref{sec:supp:nodefail}). All numbers are reproduced from the same banked artifacts as the main
 paper; equation and proposition references (e.g.\ Prop.~1) point to the main text.
 
@@ -179,12 +181,15 @@ fold & seed 0 & seed 1 & seed 2 & std & gap \\
 
 % =====================================================================
 \section{Protocol Audit and Continuous-Time Control}\label{sec:supp:control}
-\textbf{Protocol audit.} The single-exercise audit --- selection bias $+1.2\pm0.4$~MAD ($18.6\%$ over
-three seeds), paired subject-cluster bootstrap $\Delta=-0.44$ (per-seed $[-1.07,+0.20]$, clearing zero
-in only one of three seeds) --- is reported per-seed in the main paper. It is \emph{not} subject leakage
+\textbf{Protocol audit.} The single-exercise audit of the reference point-cloud transformer ---
+selection bias $+1.2\pm0.4$~MAD ($18.6\%$ over three seeds), paired subject-cluster bootstrap
+$\Delta=-0.44$ (per-seed $[-1.07,+0.20]$, clearing zero in only one of three seeds) --- is reported
+per-seed in the main paper. It is \emph{not} subject leakage
 (each subject contributes one recording on that slice, so a random split is already subject-disjoint);
 the slice simply carries no robust subject-level signal, so we pool the five exercises and gate every
-experiment on a per-exercise mean-predictor floor.
+experiment on a per-exercise mean-predictor floor. Pooled, every model clears that floor with its
+bootstrap interval entirely below zero, so the fragility is a property of the slice and not of any
+architecture evaluated on it.
 
 \textbf{Continuous-time control.} We implement the Neural CDE variant and certify it to the same E1--E8
 standard; it satisfies an exact equivariance certificate and \emph{fails} its own measured floor
@@ -263,6 +268,109 @@ Total Scores. The reporting convention is therefore fixed upstream of any indivi
 \cref{tab:supp:units} confirms it independently, from published numbers alone.
 The audit is reproduced by \texttt{src/published\_units\_audit.py}, which gates on all three
 conditions.
+
+% =====================================================================
+\section{Per-Family Ablation of the Invariant Cut}\label{sec:supp:ablation}
+Each family of the invariant cut (\cref{sec:supp:cut}) is zeroed at inference on the deployed chiral
+model, dimension preserved and with no retraining, resolving the mechanism to family granularity. The
+main paper summarises the result; \cref{tab:supp:ablation} is the full table.
+
+\begin{table}[h]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+Family removed & Parity & Clean & $\Delta$Acc & nf lost \\
+\midrule
+--- (full cut)  & ---  & $6.73$ & ---   & $+3.76$ \\
+cosines         & even & $8.56$ & $\mathbf{+1.83}$ & $\mathbf{+7.29}$ \\
+triple products & odd  & $9.48$ & $\mathbf{+2.75}$ & $-0.16$ \\
+bone lengths    & even & $7.40$ & $+0.67$ & $+2.36$ \\
+scalars         & even & $6.98$ & $+0.25$ & $+3.46$ \\
+vector norms    & even & $6.89$ & $+0.16$ & $+3.51$ \\
+anat.\ volumes  & odd  & $6.93$ & $+0.19$ & $+3.43$ \\
+\bottomrule
+\end{tabular}
+\caption{Per-family ablation of the cut (each family zeroed at inference; 3 seeds $\times$ 5 folds).
+$\Delta$Acc below the $0.33$ floor is a tie; ``nf lost'' is worst MAD over $8$ dead joints
+(full cut $+3.76$).}
+\label{tab:supp:ablation}
+\end{table}
+
+% =====================================================================
+\section{Score Resolution, and Why Not Clinical Bands}\label{sec:supp:resolution}
+The natural way to give the MAD scale an in-dataset meaning is to ask whether a score swing moves a
+patient across KIMORE's clinical bands. We do not do this, because KIMORE has no such bands. The five
+group labels record how a subject was \emph{recruited}, not what score range they occupy, and on every
+one of the five exercises the lowest-scoring control sits below the highest-scoring patient
+(\cref{tab:supp:inversion}). Assigning bands to these groups would require inventing the boundaries,
+which is the same fabrication we decline elsewhere in this paper.
+
+\begin{table}[h]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+ & lowest control & highest patient & margin \\
+\midrule
+Es1 & $34.00$ (NE\_ID10) & $50.00$ (P\_ID3)  & $+16.00$ \\
+Es2 & $23.00$ (NE\_ID10) & $50.00$ (B\_ID7)  & $+27.00$ \\
+Es3 & $30.00$ (NE\_ID10) & $48.00$ (P\_ID1)  & $+18.00$ \\
+Es4 & $26.00$ (NE\_ID11) & $42.33$ (B\_ID6)  & $+16.33$ \\
+Es5 & $19.67$ (NE\_ID2)  & $50.00$ (P\_ID6)  & $+30.33$ \\
+\bottomrule
+\end{tabular}
+\caption{Clinical Total Score, control vs.\ patient, per exercise. Every row is inverted, by $16$ to
+$30$ points of fifty. The group labels are not score strata.}
+\label{tab:supp:inversion}
+\end{table}
+
+We therefore measure the swing against the score's \emph{resolution}: how large it is relative to the
+differences the score is being asked to express. The between-subject sd of the Total Score is $10.01$
+(mean over the five exercises; $10.26$ pooled), so the augmented baseline's mean per-sequence swing of
+$3.01$ is $0.30$ sd, its $95$th percentile $8.65$ is $0.86$ sd, and its worst sequence $20.12$ is
+$2.01$ sd. The ordinal form of the same statement is \cref{tab:supp:reorder}: a pair of subjects
+separated by less than the swing is a pair whose ordering a camera relocation can invert, and ordinal
+comparison --- is this patient better than that one, or than they were last week --- is what these
+scores are used for.
+
+\begin{table}[h]
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccc}
+\toprule
+\% of subject pairs closer than & $n$ pairs & $3.01$ & $8.65$ & $20.12$ \\
+\midrule
+all pairs              & $14251$ & $20.2$ & $47.7$ & $83.0$ \\
+cross-group only       & $11014$ & $17.4$ & $43.1$ & $80.4$ \\
+patient vs.\ control   & $7122$  & $12.8$ & $34.3$ & $74.2$ \\
+\bottomrule
+\end{tabular}
+\caption{Fraction of within-exercise subject pairs whose Total Scores are separated by less than the
+augmented baseline's mean ($3.01$), $95$th-percentile ($8.65$) and worst-case ($20.12$) per-sequence
+viewpoint swing. These are the pairs the camera can reorder. Pairs are formed within an exercise, since
+scores are comparable only across subjects performing the same task.}
+\label{tab:supp:reorder}
+\end{table}
+
+A third, same-patient comparator avoids between-subject variation entirely. Each subject is rated on
+five exercises, and the median spread of a subject's own five scores is $4.97$ sd ($12.00$ range). The
+swing's $95$th percentile is $1.74\times$ that median within-subject sd and its worst case $4.05\times$,
+so at the tail a camera relocation perturbs the score by several times the variation a single patient
+already exhibits. This is a conservative yardstick: different exercises are different measurements, so
+the within-subject spread is an upper bound on within-subject noise, which makes the ratio a lower
+bound on the swing's severity.
+
+\textbf{Scope and census.} This measures score \emph{resolution}, not group \emph{discriminability} ---
+the claim is that a camera move perturbs the clinical output by an amount comparable to the differences
+that output expresses, not that the score classifies pathology, which \cref{tab:supp:inversion} shows it
+does not. The analysis uses the $380$ subject--exercise cells present in the released data ($77$
+subjects; $5$ of the nominal $385$ cells are absent upstream). Five subjects (B\_ID3, B\_ID4, P\_ID10,
+S\_ID5, S\_ID6) carry scores that are not multiples of $1/3$, unlike every other subject's rater
+averages; excluding them moves nothing material (mean swing $0.30$ sd, $21.3\%$ of pairs reorderable at
+$3.01$), and both readings are emitted by \texttt{src/clinical\_resolution.py}. The swing values are
+read from the banked Block-3 aggregate rather than recomputed, so this analysis cannot drift from the
+numbers quoted in the main text.
 
 % =====================================================================
 \section{Node-Failure Curve and Which Spread We Quote}\label{sec:supp:nodefail}

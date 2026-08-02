@@ -42,14 +42,15 @@ EXERCISE_NAMES = {
 SCORE_MIN, SCORE_MAX = 0.0, 50.0
 SCORE_RANGE = SCORE_MAX - SCORE_MIN
 
-# Clinical groups in KIMORE and their typical score bands
-CLINICAL_BANDS = {
-    "CG/Expert":    (38, 50, "#2ecc71"),
-    "CG/NotExpert": (25, 45, "#f39c12"),
-    "GPP/BackPain": (15, 40, "#e74c3c"),
-    "GPP/Parkinson":(5,  35, "#9b59b6"),
-    "GPP/Stroke":   (5,  35, "#3498db"),
-}
+# NOTE: a hardcoded CLINICAL_BANDS dict once lived here, mapping each KIMORE group to a
+# "typical score band" (Expert 38-50, Parkinson 5-35, ...). It was removed because the data
+# falsifies it: KIMORE's groups are recruitment categories, not score strata. On Es5 an
+# Expert (E_ID14) scores 25.0 while a Parkinson patient (P_ID6) scores a perfect 50.0, and
+# every one of the five exercises contains such an inversion (see
+# outputs/clinical_resolution/summary.json -> band_premise_check). Do not reintroduce score
+# bands for these groups; there is no boundary in the data for them to describe. For the
+# clinical-magnitude argument use src/clinical_resolution.py, which measures score
+# resolution -- between-subject SD and pair-reordering rates -- with no invented constant.
 
 
 def load_results(results_dir: str) ->dict:
