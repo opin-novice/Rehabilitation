@@ -363,31 +363,30 @@ roundoff floor, $10^{-14}$ --- both invariant by construction, so these two curv
 positive control, not independent evidence),
 while all non-equivariant baselines degrade catastrophically: PCT crosses the mean-predictor floor between
 $30^\circ$ and $45^\circ$ (mean per-sequence shift $9.33$~MAD at its worst angle, worst sequence
-$33.96$ of fifty); TCN $13.17$~MAD; ST-GCN $9.18$~MAD. This pattern holds across three independently-designed non-equivariant architectures (temporal-conv,
-graph-conv, attention), indicating viewpoint fragility is a generic property of non-equivariance, not
-PCT-specific. Rotation augmentation flattens PCT's aggregate curve but leaves a \emph{per-sequence}
+$33.96$ of fifty); TCN $13.17$~MAD; ST-GCN $9.18$~MAD. The pattern holds across three
+independently-designed non-equivariant architectures (temporal-conv, graph-conv, attention):
+viewpoint fragility is generic to non-equivariance, not PCT-specific. Rotation augmentation flattens PCT's aggregate curve but leaves a \emph{per-sequence}
 score shift averaging $3.01$~MAD --- and the average is the wrong statistic for a clinical claim: the
 $95$th percentile is $8.65$~MAD and the worst single held-out sequence moves $20.12$, two fifths of the
 scale and $2.01$ between-subject SD, purely because the camera moved. This is the difference between a guarantee and a fit. It is not
 an undertraining artefact: re-training the augmented arm at $3\times$ and $9\times$ the epoch budget
 leaves the shift flat ($3.01$/$3.27$/$2.94$~MAD mean at $60$/$180$/$540$ epochs, worst sequence
 $20.1$/$21.4$/$19.9$), so the residual swing is what augmentation converges to, not what it has yet
-to learn. The certificate is over Haar-random
-$SO(3)$, so the $45^\circ$ NTU~RGB+D~$60$ Cross-View camera displacement is one instance of the group
-it covers: invariance there is \emph{inherited} from \cref{prop:invariance}, not separately measured.
-What NTU contributes independently is generalisation, not invariance --- trained \emph{without}
-rotation augmentation on cameras $2$--$3$ and tested on the displaced camera $1$, the identical encoder
-reaches $82.98\%$ Top-1 against a faithful ST-GCN control's $80.38\%$.
+to learn. The certificate is over Haar-random $SO(3)$, so NTU~RGB+D~$60$ Cross-View's $45^\circ$
+displacement is one instance of the group it covers: invariance there is \emph{inherited} from
+\cref{prop:invariance}, not separately measured. NTU contributes generalisation, not invariance ---
+trained \emph{without} rotation augmentation on cameras $2$--$3$ and tested on the displaced camera
+$1$, the identical encoder reaches $82.98\%$ Top-1 against a faithful ST-GCN control's $80.38\%$.
 
 \begin{figure}[t]\centering
   \includegraphics[width=\linewidth]{fig_viewpoint}
   \caption{MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge)
   are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at
-  extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures.
-  Augmentation flattens PCT's aggregate but not its per-sequence swing (mean $3.01$~MAD, worst
-  sequence $20.12$). Azimuth here is a
-  rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint
-  and does not model per-view tracker degradation.}
+  extreme angles --- viewpoint fragility is generic to non-equivariance. Augmentation flattens PCT's
+  aggregate but not its per-sequence swing (mean $3.01$~MAD, worst sequence $20.12$). Azimuth here is
+  a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint
+  and does not model per-view tracker degradation, which we measure separately on a physically
+  relocated camera (supplement).}
   \label{fig:viewpoint}
 \end{figure}
 
@@ -396,15 +395,13 @@ $\kappa$) is reported for KIMORE's clinical Total Score~\cite{capecci2019kimore}
 targeted search, including direct attempts to retrieve the Capecci et al.\ full text (both the publisher
 record and the indexed copy returned access-blocked to automated retrieval), could not surface one, and
 we do not fabricate one --- we flag its absence as this paper's clearest open measurement gap. As
-external context, human inter-rater agreement on \emph{movement-quality rating} tasks --- the same
-construct KIMORE's clinicians perform, scoring how well an exercise was executed rather than a
-functional-recovery outcome --- typically falls in a moderate-to-good range: the Cutting Movement
-Assessment Score reports inter-rater ICC $0.58$--$0.91$, and a cross-diagnostic Movement Quality Score
-reports ICC $0.93$. We read this as a defensible band on what a KIMORE-specific coefficient would
-plausibly show, not a substitute for one. As a secondary, magnitude-of-change cross-check from a
-different construct and scale, minimal clinically important differences (MCIDs) on comparable
-$0$--$66$/$0$--$100$-point motor-\emph{recovery} scales sit in the low single digits to low teens of
-points (Fugl-Meyer upper-extremity $4$--$12.4$, lower-extremity $6$, Stroke Rehabilitation Assessment of
+external context, \emph{movement-quality rating} --- the construct KIMORE's clinicians perform, not a
+functional-recovery outcome --- shows moderate-to-good inter-rater agreement (Cutting Movement
+Assessment Score ICC $0.58$--$0.91$; cross-diagnostic Movement Quality Score $0.93$): a defensible band
+on what a KIMORE-specific coefficient would show, not a substitute for one. As a magnitude-of-change
+cross-check from a different construct and scale, minimal clinically important differences (MCIDs) on
+comparable $0$--$66$/$0$--$100$-point motor-\emph{recovery} scales sit in the low single digits to low
+teens (Fugl-Meyer upper-extremity $4$--$12.4$, lower-extremity $6$, Stroke Rehabilitation Assessment of
 Movement $1.9$--$4.8$ per subscale), putting the augmented baseline's per-sequence swing (mean $3.01$,
 worst sequence $20.12$, of $50$) in the same order of magnitude as an established change-significance
 threshold on cognate instruments --- at the tail, above it --- and our own score shifts under rotation
@@ -428,12 +425,11 @@ between $k{=}2$ and $k{=}4$ and finishes $0.021$~AUROC ahead at $k{=}8$ (supplem
 not a property of equivariance and we do not claim it. The table supports something narrower: the
 guarantee is not paid for with a robustness collapse ($k{=}8$ crosses the floor for every model, EGRU
 included). Both models see identically corrupted joints with no imputation, and we measured the
-fairness objection rather than assuming it: granting the hand-crafted features an
-\emph{oracle} liveness mask (told exactly which joint died, no retraining) closes only $\sim\!25\%$ of
-the gap to EGRU ($+12.05\!\to\!+10.02$~MAD lost; \cref{tab:nodefail}, right column) --- the graph encoder
-needs no such signal and still loses far less, so the residual gap is architectural, not a
-missing-information artifact. The mechanism is invariant to the failure
-model (five operators incl.\ lag/burst/axis/lateral; supplement).
+fairness objection rather than assuming it: an \emph{oracle} liveness mask (told which joint died, no
+retraining) closes only $\sim\!25\%$ of the gap to EGRU ($+12.05\!\to\!+10.02$~MAD; \cref{tab:nodefail},
+right) --- the graph encoder needs no such signal and loses far less, so the gap is architectural, not
+a missing-information artifact. The mechanism is invariant to the failure model (five operators incl.\
+lag/burst/axis/lateral; supplement).
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}
@@ -457,13 +453,12 @@ MAD lost & $+3.76$ & $+12.05$ & $+10.02$ & $\mathbf{+2.27}$ \\
 \end{table}
 
 \textbf{The mechanism is not an artifact of the freeze model.} Under four further operators ---
-stuck-at-lag, sporadic bursts, single-axis depth noise, and a left-limb-only variant --- the ordering
-is invariant: the hand-crafted arm degrades most and the graph-pooled encoder least among the two
-exact-invariance models (\cref{tab:nodefail_modes}). \emph{Persistent} faults (freeze, lag) are far
-more destructive to naming features ($+12.05$, $+8.88$) than \emph{transient} ones (burst $+2.83$,
-axis $+1.93$) --- a length-masked temporal mean dilutes an intermittent spike but not a permanently
-corrupted coordinate --- and unilateral (left-only) failure does not break the parity channels
-(InvariantGRU $+8.73$, EGRU $+3.43$).
+stuck-at-lag, bursts, single-axis depth noise, left-limb-only --- the ordering is invariant: the
+hand-crafted arm degrades most and the graph-pooled encoder least among the two exact-invariance
+models (\cref{tab:nodefail_modes}). \emph{Persistent} faults (freeze, lag) hurt naming features far
+more ($+12.05$, $+8.88$) than \emph{transient} ones (burst $+2.83$, axis $+1.93$) --- a length-masked
+temporal mean dilutes an intermittent spike but not a permanently corrupted coordinate --- and
+unilateral failure does not break the parity channels (InvariantGRU $+8.73$, EGRU $+3.43$).
 
 \begin{table}[t]\centering\scriptsize
 \setlength{\tabcolsep}{3pt}
@@ -489,19 +484,18 @@ axis/depth noise   & $6.77/7.20\,({+}0.47)$  & $6.70/8.24\,({+}1.93)$   & $6.48/
 that --- not any single stress --- is the claim. PCT is both the most accurate clean model ($6.47$) and
 the most node-robust ($7.10$); InvariantGRU is the cheapest at exactly zero degradation yet collapses at
 two dead nodes ($11.64$); and three models clear every stress --- ours, Canon-PCA$+$PCT, and
-rotation-augmented PCT --- so we are not the only survivor. Among those three, ours is the only one at
-$0.66$M rather than $4.91$M parameters and the only one whose invariance is a theorem rather than an
-estimated frame or an augmentation tolerance. What
-separates the survivors is the last column (\cref{fig:guarantee}a) --- all flat in aggregate, but the augmented baseline's
-mean per-sequence degradation is $3.01$~MAD (worst sequence $20.12$) against our $9\times10^{-6}$
-($3.0\times10^{-4}$ worst), at $7.4\times$ more parameters. This is the only column where the
-difference is categorical rather than a trade: $3.01$ is a tolerance that happens to be small on this
-data and has a $20$~MAD tail, whereas $9\times10^{-6}$ is roundoff around a value the theorem fixes at
-zero. Every other column is an axis we may lose, and on node failure we do lose it. Behind the \emph{identical} invariant cut, a lighter $E(n)$-equivariant (EGNN) encoder ties
-clean accuracy and viewpoint (exact by construction) but is measurably more node-fail brittle: tuned
-across depth, width, and coordinate-clamp over three seeds it still loses $+6.4\pm1.3$~MAD over eight
-dead joints (vs.\ EGRU's $+3.76$) and crosses the floor already at two dead joints ($8.44$ vs.\ EGRU's
-$7.55$) --- so the steerable encoder is the more robust of the two equivariant options here.
+rotation-augmented PCT --- so we are not the only survivor. Among those three, ours alone runs at
+$0.66$M rather than $4.91$M parameters and alone rests on a theorem rather than an estimated frame or
+an augmentation tolerance. What separates the survivors is the last column (\cref{fig:guarantee}a):
+all flat in aggregate, but the augmented baseline's mean per-sequence degradation is $3.01$~MAD (worst
+sequence $20.12$) against our $9\times10^{-6}$ ($3.0\times10^{-4}$ worst), at $7.4\times$ more
+parameters. This is the only categorical difference rather than a trade: $3.01$ is a tolerance that
+happens to be small on this data and has a $20$~MAD tail; $9\times10^{-6}$ is roundoff around a value
+the theorem fixes at zero. Every other column is an axis we may lose, and on node failure we do.
+Behind the \emph{identical} cut, a lighter $E(n)$ (EGNN) encoder ties clean accuracy and viewpoint
+(exact by construction) but is more node-fail brittle: tuned across depth, width, and coordinate-clamp
+over three seeds it loses $+6.4\pm1.3$~MAD over eight dead joints (vs.\ $+3.76$) and crosses the floor
+already at two ($8.44$ vs.\ $7.55$) --- the steerable encoder is the more robust equivariant option.
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}
@@ -539,20 +533,20 @@ PCT $+$ rot   & $4.91$M & $7.47$ & $7.68$\checkmark & $7.76$\checkmark & $3.01$ 
 objection to an equivariant model is that a non-equivariant backbone fed a canonical frame reaches the
 same place for less. It does, here: a per-frame PCA principal-axis frame feeding the transformer
 (Canon-PCA$+$PCT, \cref{tab:pareto}) matches every offline axis --- clean $6.85$~MAD, $7.79$ at two dead
-joints, and a viewpoint invariance empirically exact for arbitrary $SO(3)$, not merely the azimuth
-subgroup a clinician sweeps (worst canonical-coordinate shift $3.7\times10^{-11}$ over $32$ random
-rotations). This is the strong form of the baseline: its axes are sign-disambiguated by a deterministic
-rule (each oriented so its dominant joint projection is positive) and the frame forced right-handed, so
-the discrete $\pm$ ambiguity is resolved before any number below is measured.
+joints, and a viewpoint invariance empirically exact for arbitrary $SO(3)$, not merely the azimuth a
+clinician sweeps (worst canonical-coordinate shift $3.7\times10^{-11}$ over $32$ random rotations).
+This is the baseline's strong form: axes sign-disambiguated by a deterministic rule (each oriented so
+its dominant joint projection is positive) and the frame forced right-handed, so the discrete $\pm$
+ambiguity is resolved before any number below is measured.
 
 The difference is not accuracy but \emph{conditioning}. Under a clean rotation the PCA frame is exactly
 equivariant --- rotating the input sends the covariance to $RCR^{\!\top}$, whose eigenvectors are
 exactly $RV$ --- and we measure that residual at $3\times10^{-6}$ degrees. But by
 Davis--Kahan~\cite{daviskahan1970} an estimated eigenvector subspace moves by $O(\lVert E\rVert/\gamma)$
 under a perturbation $E$ with eigen-gap $\gamma$, and a depth sensor supplies $E\neq0$ at every frame.
-On KIMORE $\gamma$ is small far more often than not --- $18\%$ of frames within $0.05$ of degeneracy and
-$45\%$ within $0.10$, a standing body being nearly axially symmetric --- so amplification is the common
-case, not a corner. Injecting camera-frame noise at $2\%$ of body scale and comparing the frame
+On KIMORE $\gamma$ is small far more often than not --- $18\%$ of frames within $0.05$ of degeneracy,
+$45\%$ within $0.10$, a standing body being nearly axially symmetric --- so amplification is the
+common case, not a corner. Injecting camera-frame noise at $2\%$ of body scale and comparing the frame
 recovered at two camera poses, the residual rotation grows from $1.2^\circ$ where $\gamma>0.25$ to
 $11.1^\circ$ where $\gamma<0.02$: a $9\times$ amplification, with $14.5\%$ of frames past $45^\circ$.
 
@@ -660,7 +654,14 @@ $3.2$ points of NTU accuracy vs.\ the bidirectional model (NTU-60 X-View SOTA is
 backbone is deliberately untuned --- we measure the streaming \emph{delta}, not absolute accuracy). A
 canonicalization front-end would instead add a per-frame eigendecomposition to the hot path and
 re-open the invariance question after quantization; here the guarantee is a fixed property of the
-read-out and survives both int8 and causal streaming without re-certification.
+read-out and survives both int8 and causal streaming without re-certification. \emph{A real camera
+move:} \cref{fig:viewpoint} rotates ground-truth skeletons and excludes per-view tracker degradation,
+so we replayed one clip to a webcam from seven physical camera poses and scored end-to-end. At fixed
+motion phase our score moves $0.74$ of fifty on average (worst $1.41$) against PCT's $2.16$ (worst
+$3.25$), a gap above $2\times$ under lag and frame-rate perturbation. One subject, one exercise, and it
+bounds \emph{shift}, not accuracy: webcam skeletons are off-distribution for both, so only
+within-model movement is meaningful. Ours is not zero --- the theorem removes a camera move's
+geometric component, not the tracker's (supplement).
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}

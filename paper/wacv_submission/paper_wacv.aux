@@ -428,8 +428,8 @@
 \@LN{354}{4}
 \@LN{355}{4}
 \def\@LN@column{2}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge) are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures. Augmentation flattens PCT's aggregate but not its per-sequence swing (mean $3.01$~MAD, worst sequence $20.12$). Azimuth here is a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint and does not model per-view tracker degradation.}}{5}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:viewpoint}{{2}{5}{MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge) are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at extreme angles, indicating viewpoint fragility is a generic property of non-equivariant architectures. Augmentation flattens PCT's aggregate but not its per-sequence swing (mean $3.01$~MAD, worst sequence $20.12$). Azimuth here is a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint and does not model per-view tracker degradation}{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge) are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at extreme angles --- viewpoint fragility is generic to non-equivariance. Augmentation flattens PCT's aggregate but not its per-sequence swing (mean $3.01$~MAD, worst sequence $20.12$). Azimuth here is a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint and does not model per-view tracker degradation, which we measure separately on a physically relocated camera (supplement).}}{5}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:viewpoint}{{2}{5}{MAD vs.\ camera azimuth. Certified-invariant models (EGRU, InvariantGRU, hand-crafted Ridge) are flat by theorem; all non-equivariant baselines (PCT, TCN, ST-GCN) degrade $9$--$13$~MAD at extreme angles --- viewpoint fragility is generic to non-equivariance. Augmentation flattens PCT's aggregate but not its per-sequence swing (mean $3.01$~MAD, worst sequence $20.12$). Azimuth here is a rigid rotation of the ground-truth Kinect skeletons; it isolates the geometric effect of viewpoint and does not model per-view tracker degradation, which we measure separately on a physically relocated camera (supplement)}{figure.caption.5}{}}
 \newlabel{fig:viewpoint@cref}{{[figure][2][]2}{[1][5][]5}{}{}{}}
 \@LN{356}{4}
 \@LN{357}{4}
@@ -459,10 +459,14 @@
 \@LN{381}{4}
 \@LN{382}{4}
 \@LN{383}{4}
+\citation{daviskahan1970}
 \def\@LN@column{1}
 \@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Sensor-node failure: MAD as $k$ nodes freeze (mean over 3 seeds $\times $ 5 folds; identical hash-locked inputs; no retraining). \underline  {Underline}: past the floor ($8.31$). ``+oracle'': InvariantGRU given an oracle liveness mask (same checkpoint; features touching the dead joint zeroed at inference) --- the measured fairness control.}}{6}{table.caption.6}\protected@file@percent }
 \newlabel{tab:nodefail}{{4}{6}{Sensor-node failure: MAD as $k$ nodes freeze (mean over 3 seeds $\times $ 5 folds; identical hash-locked inputs; no retraining). \underline {Underline}: past the floor ($8.31$). ``+oracle'': InvariantGRU given an oracle liveness mask (same checkpoint; features touching the dead joint zeroed at inference) --- the measured fairness control}{table.caption.6}{}}
 \newlabel{tab:nodefail@cref}{{[table][4][]4}{[1][6][]6}{}{}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Node failure under five operators (chiral models, 3 seeds $\times $ 5 folds, hash-locked). Each cell: MAD at $k{=}1$ / $k{=}8$ and total lost. The freeze/random row reproduces \cref  {tab:nodefail}.}}{6}{table.caption.7}\protected@file@percent }
+\newlabel{tab:nodefail_modes}{{5}{6}{Node failure under five operators (chiral models, 3 seeds $\times $ 5 folds, hash-locked). Each cell: MAD at $k{=}1$ / $k{=}8$ and total lost. The freeze/random row reproduces \cref {tab:nodefail}}{table.caption.7}{}}
+\newlabel{tab:nodefail_modes@cref}{{[table][5][]5}{[1][6][]6}{}{}{}}
 \@LN{384}{5}
 \@LN{385}{5}
 \@LN{386}{5}
@@ -497,6 +501,10 @@
 \@LN{415}{5}
 \@LN{416}{5}
 \@LN{417}{5}
+\def\@LN@column{2}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Does each model clear the floor ($8.31$~MAD) under each stress? Last column: \emph  {mean} per-sequence score shift at the worst camera azimuth; the tail it conceals is in the text. EGNN shares the identical cut (viewpoint exact by construction). $^{\dagger }$Canon-PCA's near-zero is \emph  {empirical}, a frame estimate stable on KIMORE, not a certificate.}}{6}{table.caption.8}\protected@file@percent }
+\newlabel{tab:pareto}{{6}{6}{Does each model clear the floor ($8.31$~MAD) under each stress? Last column: \emph {mean} per-sequence score shift at the worst camera azimuth; the tail it conceals is in the text. EGNN shares the identical cut (viewpoint exact by construction). $^{\dagger }$Canon-PCA's near-zero is \emph {empirical}, a frame estimate stable on KIMORE, not a certificate}{table.caption.8}{}}
+\newlabel{tab:pareto@cref}{{[table][6][]6}{[1][6][]6}{}{}{}}
 \@LN{418}{5}
 \@LN{419}{5}
 \@LN{420}{5}
@@ -505,13 +513,6 @@
 \@LN{423}{5}
 \@LN{424}{5}
 \@LN{425}{5}
-\def\@LN@column{2}
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Node failure under five operators (chiral models, 3 seeds $\times $ 5 folds, hash-locked). Each cell: MAD at $k{=}1$ / $k{=}8$ and total lost. The freeze/random row reproduces \cref  {tab:nodefail}.}}{6}{table.caption.7}\protected@file@percent }
-\newlabel{tab:nodefail_modes}{{5}{6}{Node failure under five operators (chiral models, 3 seeds $\times $ 5 folds, hash-locked). Each cell: MAD at $k{=}1$ / $k{=}8$ and total lost. The freeze/random row reproduces \cref {tab:nodefail}}{table.caption.7}{}}
-\newlabel{tab:nodefail_modes@cref}{{[table][5][]5}{[1][6][]6}{}{}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Does each model clear the floor ($8.31$~MAD) under each stress? Last column: \emph  {mean} per-sequence score shift at the worst camera azimuth; the tail it conceals is in the text. EGNN shares the identical cut (viewpoint exact by construction). $^{\dagger }$Canon-PCA's near-zero is \emph  {empirical}, a frame estimate stable on KIMORE, not a certificate.}}{6}{table.caption.8}\protected@file@percent }
-\newlabel{tab:pareto}{{6}{6}{Does each model clear the floor ($8.31$~MAD) under each stress? Last column: \emph {mean} per-sequence score shift at the worst camera azimuth; the tail it conceals is in the text. EGNN shares the identical cut (viewpoint exact by construction). $^{\dagger }$Canon-PCA's near-zero is \emph {empirical}, a frame estimate stable on KIMORE, not a certificate}{table.caption.8}{}}
-\newlabel{tab:pareto@cref}{{[table][6][]6}{[1][6][]6}{}{}{}}
 \@LN{426}{5}
 \@LN{427}{5}
 \@LN{428}{5}
@@ -544,7 +545,6 @@
 \@LN{455}{5}
 \@LN{456}{5}
 \@LN{457}{5}
-\citation{daviskahan1970}
 \citation{kaba2023canon}
 \def\@LN@column{1}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {The axis that separates the survivors.} (a)~Per-patient score shift under camera rotation (log scale). Bar is the mean over held-out sequences at the worst azimuth; whisker runs $95$th percentile to worst sequence. EGNN has no measured tail and carries no whisker. (b)~PCA frame instability: frame transitions flipping $>45^\circ $ ($21\%$), and frames within an eigen-gap of $0.05$ of degeneracy ($18\%$).}}{7}{figure.caption.9}\protected@file@percent }
@@ -638,7 +638,7 @@
 \def\@LN@column{1}
 \@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces REHAB24-6 second-corpus replication ($3$ seeds, subject-disjoint CV). AUROC@$90^\circ $ is the same model evaluated under a $90^\circ $ camera rotation: EGRU is invariant by theorem (logit drift $\le 1.5\times 10^{-4}$); the transformer falls to chance (drift $23.2$). Node-fail: AUROC lost over $8$ frozen nodes. The two models \emph  {cross} between $4$ and $8$ frozen joints; full curve and fold-level spread in the supplement.}}{8}{table.caption.10}\protected@file@percent }
 \newlabel{tab:rehab246}{{7}{8}{REHAB24-6 second-corpus replication ($3$ seeds, subject-disjoint CV). AUROC@$90^\circ $ is the same model evaluated under a $90^\circ $ camera rotation: EGRU is invariant by theorem (logit drift $\le 1.5\times 10^{-4}$); the transformer falls to chance (drift $23.2$). Node-fail: AUROC lost over $8$ frozen nodes. The two models \emph {cross} between $4$ and $8$ frozen joints; full curve and fold-level spread in the supplement}{table.caption.10}{}}
-\newlabel{tab:rehab246@cref}{{[table][7][]7}{[1][8][]8}{}{}{}}
+\newlabel{tab:rehab246@cref}{{[table][7][]7}{[1][7][]8}{}{}{}}
 \@LN{541}{7}
 \@LN{542}{7}
 \@LN{543}{7}
@@ -673,6 +673,9 @@
 \@LN{572}{7}
 \@LN{573}{7}
 \@LN{574}{7}
+\@writefile{toc}{\contentsline {section}{\numberline {5}\hskip -1em.~Deployment Analysis}{8}{section.5}\protected@file@percent }
+\newlabel{sec:edge}{{5}{8}{\texorpdfstring {\hskip -1em.~}{}Deployment Analysis}{section.5}{}}
+\newlabel{sec:edge@cref}{{[section][5][]5}{[1][8][]8}{}{}{}}
 \@LN{575}{7}
 \@LN{576}{7}
 \@LN{577}{7}
@@ -680,16 +683,13 @@
 \@LN{579}{7}
 \@LN{580}{7}
 \@LN{581}{7}
-\@LN{582}{7}
 \def\@LN@column{2}
 \@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Deployment audit. Top: the \emph  {full} equivariance precision budget of the deployed pooled EGRU (INV floor = relative violation of the $160$-d parity-even projection; score shift in MAD of $50$). fp16 is $3.2\times $ tighter than bf16 --- equivariance pays in mantissa bits, which bf16 trades for exponent range --- and the int8 cliff is \emph  {solely} activation grid-rounding (weight-only quant preserves the theorem). Bottom: causal streaming vs.\ bidirectional read-out.}}{8}{table.caption.11}\protected@file@percent }
 \newlabel{tab:deploy}{{8}{8}{Deployment audit. Top: the \emph {full} equivariance precision budget of the deployed pooled EGRU (INV floor = relative violation of the $160$-d parity-even projection; score shift in MAD of $50$). fp16 is $3.2\times $ tighter than bf16 --- equivariance pays in mantissa bits, which bf16 trades for exponent range --- and the int8 cliff is \emph {solely} activation grid-rounding (weight-only quant preserves the theorem). Bottom: causal streaming vs.\ bidirectional read-out}{table.caption.11}{}}
 \newlabel{tab:deploy@cref}{{[table][8][]8}{[1][8][]8}{}{}{}}
+\@LN{582}{7}
 \@LN{583}{7}
 \@LN{584}{7}
-\@writefile{toc}{\contentsline {section}{\numberline {5}\hskip -1em.~Deployment Analysis}{8}{section.5}\protected@file@percent }
-\newlabel{sec:edge}{{5}{8}{\texorpdfstring {\hskip -1em.~}{}Deployment Analysis}{section.5}{}}
-\newlabel{sec:edge@cref}{{[section][5][]5}{[1][8][]8}{}{}{}}
 \@LN{585}{7}
 \@LN{586}{7}
 \@LN{587}{7}
@@ -719,12 +719,13 @@
 \@LN{611}{7}
 \@LN{612}{7}
 \@LN{613}{7}
+\@LN{614}{7}
 \@writefile{toc}{\contentsline {section}{\numberline {6}\hskip -1em.~Conclusion}{8}{section.6}\protected@file@percent }
 \newlabel{sec:conclusion}{{6}{8}{\texorpdfstring {\hskip -1em.~}{}Conclusion}{section.6}{}}
 \newlabel{sec:conclusion@cref}{{[section][6][]6}{[1][8][]8}{}{}{}}
-\@LN{614}{7}
 \@LN{615}{7}
 \@LN{616}{7}
+\@LN{617}{7}
 \citation{capecci2019kimore}
 \bibcite{capecci2019kimore}{{1}{}{{}}{{}}}
 \bibcite{pct2026}{{2}{}{{}}{{}}}
@@ -751,7 +752,6 @@
 \bibcite{vanderplas2018lombscargle}{{23}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers
 \def\@LN@column{1}
-\@LN{617}{8}
 \@LN{618}{8}
 \@LN{619}{8}
 \@LN{620}{8}
@@ -803,8 +803,8 @@
 \@LN{666}{8}
 \@LN{667}{8}
 \@LN{668}{8}
-\def\@LN@column{2}
 \@LN{669}{8}
+\def\@LN@column{2}
 \@LN{670}{8}
 \@LN{671}{8}
 \@LN{672}{8}
@@ -842,4 +842,5 @@
 \@LN{704}{8}
 \@LN{705}{8}
 \@LN{706}{8}
+\@LN{707}{8}
 \gdef \@abspage@last{9}
