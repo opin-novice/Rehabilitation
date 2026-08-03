@@ -1081,12 +1081,14 @@ the $45^\circ$ camera displacement that defines this split, nor to azimuthal mot
 $\pi$, and the cross-view displacement is one instance of that group. Logit invariance is therefore
 exact under \emph{arbitrary} proper rotations of the input, of which the benchmark's inter-camera
 geometry is a special case. We state plainly what this is and
-is not. It is \textbf{not} an accuracy win: $82.98\%$ is only $2.6$ points above our own faithful
-ST-GCN control trained under the identical protocol ($80.38\%$), and still some five points below the
-published $\approx\!88\%$ for a fully tuned ST-GCN on this split~\cite{yan2018stgcn}, under a recipe (causal sampling,
-root-relative coordinates, AdamW) that we did not tune to the published leaderboard --- entirely
-consistent with the clean-data tie of Section~\ref{sec:results:accuracy}, where accuracy was never
-the axis. What it \emph{is} is the KIMORE result reproduced on real hardware: a model whose viewpoint
+is not. It is \textbf{not} an accuracy win, and we do not offer it as a comparison at all: our ST-GCN
+runs are not recipe-matched to this one --- they differ in temporal sampling, view-normalisation,
+optimiser and node-dropout augmentation --- so no delta between them would be interpretable, and we
+therefore report none. $82.98\%$ also sits some five points below the published $\approx\!88\%$ for a
+fully tuned ST-GCN on this split~\cite{yan2018stgcn}, under a single-clip $T{=}100$ recipe (causal
+sampling, root-relative coordinates, AdamW) that we did not tune to the published leaderboard ---
+entirely consistent with the clean-data tie of Section~\ref{sec:results:accuracy}, where accuracy was
+never the axis. What it \emph{is} is the KIMORE result reproduced on real hardware: a model whose viewpoint
 invariance must be \emph{learned} either sees the test camera's pose in its training distribution or
 degrades, whereas ours carries the held-out $45^\circ$ camera \emph{for free and per prediction},
 because the invariance is a property of the architecture and not of the training views. The
