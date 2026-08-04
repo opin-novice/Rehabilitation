@@ -198,7 +198,7 @@ def _angle_between(v1, v2):
     return float(np.arccos(np.clip(np.dot(v1 / n1, v2 / n2), -1.0, 1.0)))
 
 
-def view_normalize(kp, zaxis=(0, 1), xaxis=(8, 4)):
+def view_normalize(kp, zaxis=(0, 1), xaxis=(8, 4), dtype=np.float32):
     """PreNormalize3D (pyskl): ONE rigid transform for the whole clip -- translate body-0 frame-0
     SpineMid to the origin, rotate the frame-0 spine (SpineBase->SpineMid) onto +z, then the
     frame-0 shoulder line (ShoulderRight->ShoulderLeft) onto +x.
@@ -209,8 +209,13 @@ def view_normalize(kp, zaxis=(0, 1), xaxis=(8, 4)):
       * it applies a single transform, so the body's motion TRAJECTORY across frames survives
         (per-frame root subtraction deletes it).
     It is a preprocessing canonicalisation, NOT equivariance -- and the baseline is entitled to it.
+
+    `dtype` exists only for the equivariance diagnostics, which need the WHOLE input path in fp64 --
+    an fp32 stage anywhere caps the measurable drift at fp32 roundoff and turns a precision-scaling
+    test into a no-op. It defaults to float32, which is what every training and evaluation caller
+    uses; do not change that default.
     """
-    kp = np.asarray(kp, dtype=np.float32).copy()
+    kp = np.asarray(kp, dtype=dtype).copy()
     present = [i for i in range(kp.shape[1]) if np.any(kp[0, i])]
     if not present:
         return kp
@@ -224,7 +229,7 @@ def view_normalize(kp, zaxis=(0, 1), xaxis=(8, 4)):
     jr, jl = kp[0, f0, xaxis[0]], kp[0, f0, xaxis[1]]
     kp = np.einsum("mtvd,kd->mtvk", kp,
                    _rotation_matrix(np.cross(jr - jl, [1, 0, 0]), _angle_between(jr - jl, [1, 0, 0])))
-    return (kp * mask).astype(np.float32)
+    return (kp * mask).astype(dtype)
 
 
 def _rot3d(theta):
@@ -281,7 +286,7 @@ def _cyclic_indices(L, t_target, rng, train):
 
 
 def preprocess(kp, t_target, sample="causal", scale_norm=False, view_norm=False,
-               train=False, clip_seed=None, rot_aug=0.0):
+               train=False, clip_seed=None, rot_aug=0.0, dtype=np.float32):
     """(M?,T,V,3) -> x (MAX_BODIES, t_target, V, 3), body_len (MAX_BODIES,), body_present (MAX_BODIES,).
 
     * root-relative (subtract SpineBase per frame per body) -> translation invariance, exactly as
@@ -289,16 +294,21 @@ def preprocess(kp, t_target, sample="causal", scale_norm=False, view_norm=False,
     * causal length fit: len>=T keep the FIRST T frames (causal, matches O(1) streaming); len<T
       zero-pad the tail and record the true length so pooling ignores the pad. sample='uniform'
       offers the accuracy-oriented alternative (index subsample) for ablations.
+
+    `dtype` controls the precision of the ENTIRE input path, root subtraction included. It defaults
+    to float32 (every training and evaluation caller) and exists for the equivariance diagnostics:
+    upcasting the tensor after this function returns is too late, because the rounding that limits
+    measurable drift happens at the root subtraction below.
     """
-    kp = _fit_bodies(np.asarray(kp, dtype=np.float32))          # (Mb,T,V,3)
+    kp = _fit_bodies(np.asarray(kp, dtype=dtype))               # (Mb,T,V,3)
     if view_norm:
-        kp = view_normalize(kp)                                 # canonical camera frame, once
+        kp = view_normalize(kp, dtype=dtype)                    # canonical camera frame, once
     if rot_aug > 0 and train:                                   # pyskl order: PreNormalize3D->RandomRot
         kp = random_rot(kp, rot_aug,
                         np.random.default_rng(clip_seed) if clip_seed is not None
                         else np.random.default_rng())
     Mb, T, V, _ = kp.shape
-    out = np.zeros((Mb, t_target, V, 3), dtype=np.float32)
+    out = np.zeros((Mb, t_target, V, 3), dtype=dtype)
     blen = np.zeros(Mb, dtype=np.int64)
     present = np.zeros(Mb, dtype=np.float32)
 

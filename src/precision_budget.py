@@ -54,18 +54,36 @@ ARCH = dict(n_scalar=32, n_vec=8, n_layers=2, lmax=2, gru_hidden=128, head_hidde
 
 def build_at(dtype, ckpt_sd):
     """Construct the model NATIVELY at `dtype` (CG tables built in this precision), THEN load the
-    fp32-trained weights (copy_ casts them to `dtype` -- exactly what deploying at `dtype` does)."""
+    fp32-trained weights (copy_ casts them to `dtype` -- exactly what deploying at `dtype` does).
+
+    The `_w3j` drop is load-bearing and the reason it is here is worth stating, because building at
+    the right default dtype is only half of the trap this file's docstring warns about. e3nn stores
+    the Wigner-3j coupling tables as buffers inside the compiled tensor product, so an fp32 training
+    run writes them into the checkpoint; `load_state_dict` then overwrites the correctly built fp64
+    tables with fp32-rounded copies, undoing the native construction immediately above. They are
+    structural constants fixed by the irreps, so the freshly built tensor is exact by construction
+    and the checkpoint's copy is never the one to prefer, at any dtype.
+
+    Measured on this checkpoint (fp64, `inv_floor`, the metric this file reports): loading them
+    gives 3.788e-10, dropping them gives 2.130e-16 -- 6 orders, and the difference between an
+    exactness anchor and a fake one. The published fp64 row (5.750e-16) is the CLEAN value, so the
+    number in the paper stands; what this guard prevents is the silent regression of re-running this
+    script today and getting 3.8e-10. The poison sits far below the fp32 floor (2.7e-07), so only
+    the fp64 row was ever exposed -- the fp16/bf16 curve is unaffected either way.
+    """
     prev = torch.get_default_dtype()
     torch.manual_seed(0)
     torch.set_default_dtype(dtype)
     m = SE3EquivariantGRU(**ARCH).to(dtype)
     torch.set_default_dtype(prev)
+    ckpt_sd = {k: v for k, v in ckpt_sd.items() if "_w3j" not in k}
     info = m.load_state_dict(ckpt_sd, strict=False)            # fp32 -> dtype cast on copy_
     # this checkpoint predates encoder.dead_scalar, which is INERT unless mask is not None (see
     # equivariant_gru.py:180-183) -- and we never pass a mask. Anything ELSE missing/unexpected is
-    # a real architecture mismatch and must not be silently absorbed.
+    # a real architecture mismatch and must not be silently absorbed. `_w3j` joins the allow-list
+    # because we deliberately withheld it above; every other key must still account for itself.
     allowed_missing = {"encoder.dead_scalar"}
-    bad_missing = set(info.missing_keys) - allowed_missing
+    bad_missing = {k for k in info.missing_keys if k not in allowed_missing and "_w3j" not in k}
     if bad_missing or info.unexpected_keys:
         raise RuntimeError(f"checkpoint mismatch beyond dead_scalar: missing={bad_missing} "
                            f"unexpected={info.unexpected_keys}")

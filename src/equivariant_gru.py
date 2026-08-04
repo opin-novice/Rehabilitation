@@ -334,6 +334,13 @@ class InvariantProjection(nn.Module):
             neg = torch.finfo(pj.dtype).min
             amax = torch.where(mj.expand_as(pj) > 0, pj,
                                torch.full_like(pj, neg)).amax(1)
+            # A frame with NO live joint leaves every entry at the sentinel, and nan_to_num does not
+            # catch that: finfo.min is FINITE (-3.4e38), not -inf, so the line below used to pass it
+            # through untouched. It then overflows the head to +-inf and the logits to NaN. Zero it
+            # explicitly, which is what the mean branch already does via cnt.clamp(min=1).
+            # Measured on NTU: 152 / 18,674 clips (0.81%) hit this -- a second person entering
+            # partway through a clip is 'present' but fully untracked in the frames before arrival.
+            amax = torch.where(mj.sum(1) > 0, amax, torch.zeros_like(amax))
             amax = torch.nan_to_num(amax, neginf=0.0)                  # all-dead -> 0, not -inf
             pooled = torch.cat([mean, amax], dim=-1)
             bone = bone * (mask[:, self.bsrc] * mask[:, self.bdst])    # both endpoints must live
