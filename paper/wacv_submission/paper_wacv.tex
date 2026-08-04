@@ -369,18 +369,26 @@ score shift averaging $3.01$~MAD --- and the average is the wrong statistic for 
 $95$th percentile is $8.65$~MAD and the worst single held-out sequence moves $20.12$ (a global maximum
 over all $380$ held-out sequences $\times\,3$ seeds; the fold-averaged max would read a flattering
 $12.81$), two fifths of the scale and $2.01$ between-subject SD, purely because the camera moved. This is the difference between a guarantee and a fit. It is not
-an undertraining artefact: re-training the augmented arm at $3\times$ and $9\times$ the epoch budget
-leaves the shift flat ($3.01$/$3.27$/$2.94$~MAD mean at $60$/$180$/$540$ epochs, worst sequence
-$20.1$/$21.4$/$19.9$), so the residual swing is what augmentation converges to, not what it has yet
-to learn --- though we stress-tested the epoch budget, not augmentation strength or schedule, and a
-differently tuned augmentation may narrow the gap. The certificate is over Haar-random $SO(3)$, so NTU~RGB+D~$60$ Cross-View's $45^\circ$
-displacement is one instance of the group it covers: invariance there is \emph{inherited} from
-\cref{prop:invariance}, not separately measured. NTU contributes generalisation, not invariance ---
-trained \emph{without} rotation augmentation on cameras $2$--$3$ and tested on the displaced camera
-$1$, the identical encoder reaches $82.98\%$ Top-1 ($T{=}100$, single-clip, one seed). We report no
-ST-GCN control beside it: our available runs differ in sampling, view-normalisation and optimiser, so
-the pair would not be a comparison. That same single-clip protocol is why this sits below the
-$\sim\!88\%$ reported for this split.
+an undertraining artefact: at $3\times$ and $9\times$ the epoch budget the shift stays flat
+($3.01$/$3.27$/$2.94$~MAD mean at $60$/$180$/$540$ epochs, worst $20.1$/$21.4$/$19.9$), so it is what augmentation
+converges to --- though we varied the budget, not augmentation strength, and a differently tuned
+schedule may narrow the gap.
+
+\textbf{On NTU the guarantee is measured, not inherited.} A Haar-random $SO(3)$ rotation of all
+$18{,}674$ Cross-View test clips changes \emph{not one} prediction (agreement $100.00\%$, Top-1
+$82.95\%$ unchanged; drift $2.3\times10^{-13}$ in fp64, $5.7\times10^{9}$ below fp32 --- roundoff),
+where ST-GCN agrees on $91.89\%$, loses $3.03$ points, and shows a drift precision cannot move (ratio
+$1.0008$): structural, not numerical. Both are within-model. But a rotated skeleton is not a
+relocated camera: NTU films each performance at three cameras \emph{at once}, and on those
+$18{,}674$ triples --- three skeleton \emph{estimates} of one event --- our agreement falls to
+$73.03\%$ against ST-GCN's $73.86\%$. We claim no advantage there, and that cross-model figure
+inherits the protocol caveat below. The theorem removes a viewpoint change's geometry exactly and
+none of the tracker noise a relocation adds; reporting the rotation alone would overstate it.
+NTU otherwise contributes generalisation: trained \emph{without} rotation augmentation on cameras
+$2$--$3$ and tested on camera $1$, the identical encoder reaches $82.98\%$ Top-1 ($T{=}100$,
+single-clip, one seed) --- also why it sits below the $\sim\!88\%$ reported for this split. We give no
+ST-GCN accuracy control: our runs differ in sampling, view-normalisation and optimiser, so the pair
+would not be a comparison.
 
 \begin{figure}[t]\centering
   \includegraphics[width=\linewidth]{fig_viewpoint}
@@ -572,21 +580,17 @@ camera. A frame estimator offers neither the bound nor that transfer. We claim n
 --- the tie is total; we claim a \emph{certified} worst case they structurally cannot offer, and
 recommend the cheaper models where an off-distribution guarantee is not required.
 
-\textbf{When the worst case is the deployment case.} A home device is set up by the patient, not a
-technician, and left unattended --- the camera sits wherever a phone stand or laptop lid lands, and
-the consumer depth sensor is the component most likely to lose a joint (a hand behind the back, a node
-that freezes mid-repetition). Neither cheaper alternative
-is safe against \emph{both} conditions at once. Canon-PCA$+$PCT's viewpoint guarantee is only empirical:
-\cref{fig:guarantee}b shows the PCA frame sits within an eigen-gap of $0.05$ of degeneracy on $18\%$ of
-frames --- a fast or asymmetric repetition, a partially occluded limb --- and a flipped frame there is
-silent, no flag, just a wrong score. InvariantGRU's viewpoint guarantee \emph{is} exact, like ours, but
-its named-joint features make it the most node-fail-fragile model measured: one frozen tracking node
-drives it from $6.31$ to $9.78$~MAD, through the floor (\cref{tab:nodefail}), the same freeze mode a
-consumer sensor exhibits routinely. Uncontrolled placement and a tracking node that drops are exactly
-the two conditions a home device cannot rule out in advance, and EGRU is the only model measured that is
-provably safe against both at once. That is the niche: not that InvariantGRU or Canon-PCA$+$PCT are
-worse in a supervised clinic with a fixed rig, but that neither offers a bound surviving unsupervised
-deployment.
+\textbf{When the worst case is the deployment case.} A home device is set up by the patient and left
+unattended: the camera sits wherever a phone stand or laptop lid lands, and the consumer depth sensor
+is the component most likely to lose a joint. Neither cheaper alternative is safe against \emph{both}
+conditions at once. Canon-PCA$+$PCT's viewpoint guarantee is only empirical --- \cref{fig:guarantee}b
+puts the PCA frame within an eigen-gap of $0.05$ of degeneracy on $18\%$ of frames, where a flipped
+frame is silent: no flag, just a wrong score. InvariantGRU's \emph{is} exact like ours, but its
+named-joint features make it the most node-fail-fragile model measured: one frozen node drives it
+from $6.31$ to $9.78$~MAD, through the floor (\cref{tab:nodefail}), the freeze mode a consumer sensor
+exhibits routinely. Those are exactly the two conditions a home device cannot rule out in advance,
+and EGRU is the only model measured provably safe against both --- not that the others are worse in a
+fixed-rig clinic, but that neither offers a bound surviving unsupervised deployment.
 
 \textbf{Second-corpus replication (REHAB24-6).} We replicate the structural story on REHAB24-6
 (binary correct/incorrect repetitions; $1057$ reps, $10$ subjects; the
@@ -659,13 +663,11 @@ backbone is deliberately untuned --- we measure the streaming \emph{delta}, not 
 canonicalization front-end would instead add a per-frame eigendecomposition to the hot path and
 re-open the invariance question after quantization; here the guarantee is a fixed property of the
 read-out and survives both int8 and causal streaming without re-certification. \emph{A real camera
-move:} \cref{fig:viewpoint} rotates ground-truth skeletons and excludes per-view tracker degradation,
-so we replayed one clip to a webcam from seven physical camera poses and scored end-to-end. At fixed
-motion phase our score moves $0.74$ of fifty on average (worst $1.41$) against PCT's $2.16$ (worst
-$3.25$), a gap above $2\times$ under lag and frame-rate perturbation. One subject, one exercise, and it
-bounds \emph{shift}, not accuracy: webcam skeletons are off-distribution for both, so only
-within-model movement is meaningful. Ours is not zero --- the theorem removes a camera move's
-geometric component, not the tracker's (supplement).
+move:} replaying one clip to a webcam from seven physical camera poses, our score moves $0.74$ of
+fifty on average (worst $1.41$) against PCT's $2.16$ (worst $3.25$), a gap above $2\times$ under lag
+and frame-rate perturbation. One subject, one exercise, and it bounds \emph{shift}, not accuracy ---
+webcam skeletons are off-distribution for both --- and, as on NTU's three simultaneous cameras, ours
+is not zero (supplement).
 
 \begin{table}[t]\centering\small
 \setlength{\tabcolsep}{4pt}

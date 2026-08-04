@@ -865,6 +865,36 @@ where a 1e-10 perturbation is invisible. No reported number there is at risk.
 dtype is necessary and NOT sufficient — the load undoes it, and the failure is silent, plausible-looking
 (1e-10 still reads as 'exact' to a skim) and lands squarely on the number the theorem is judged by.
 
+### Into the paper: R1 and P1 together, in the body
+
+Both results go in `sec:results`, replacing the "invariance there is \emph{inherited} from
+\cref{prop:invariance}, not separately measured" framing that the cut head-to-head had left behind.
+P1 is reported beside R1 rather than sent to the supplement, because the contrast IS the result and
+R1 alone overstates the guarantee. The paragraph states plainly that we claim no advantage on P1 and
+that the cross-model figure inherits the same protocol differences that stop us reporting an accuracy
+control.
+
+**Paid for, not appended.** Adding it cost exactly one page (9 -> 10, `tab:deploy` slipping to p9).
+Reclaimed by compressing the epoch-budget sentence, the webcam passage (whose "ours is not zero"
+point P1 now makes at far greater scale, so it cross-references instead of repeating), and the
+"worst case is the deployment case" paragraph. Final: 9 pages, 0 overfull, `tab:deploy` and
+`sec:conclusion` both back on p8 — identical to HEAD. Numeric-literal diff vs HEAD shows only `45`
+and `60` dropped, both from the one replaced sentence and both still stated elsewhere.
+
+**The checker caught a hand-typed error, which is the whole point of having it.** I wrote ST-GCN's
+rotation accuracy loss as $3.02$, computed by subtracting the two ROUNDED values the run prints
+($80.46 - 77.44$). At full precision it is $80.4648 - 77.4392 = 3.0256$, i.e. **3.03**. Corrected.
+`check_paper_claims.py` now asserts the eight paired-camera prose numbers against
+`outputs/ntu_paired/*.json`, re-deriving the loss at full precision rather than trusting the tex.
+
+Two weaknesses found while writing those checks, both fixed: a bare substring search for `3.03`
+PASSED against PCT's unrelated 3.03 MAD elsewhere in the paper (a false pass, not a check), so the
+search is now scoped to the sentence reporting ST-GCN's agreement; and `18,674` never matched because
+LaTeX writes it `18{,}674`. The suite also asserts the PROPERTY behind the claim, not just the digits
+— our fp64 drift must stay below 1e-10 and the ST-GCN control's must stay above 1.0 — so a future
+`_w3j`-style regression surfaces as a failed gate rather than a quietly worse number. Self-tested
+against `git show HEAD:...paper_wacv.tex`: all 7 new checks fail there, so they bind.
+
 ## Pre-run check (PASS) — 2026-08-04 01:47:03
 - Commit: 27c463e (branch: cleanup/directory-structure)
 - Syntax-checked: src/ntu_paired_camera.py
@@ -1074,4 +1104,101 @@ dtype is necessary and NOT sufficient — the load undoes it, and the failure is
  src/ntu_dataset.py           | 24 ++++++++----
  src/precision_budget.py      | 24 ++++++++++--
  5 files changed, 92 insertions(+), 54 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 10:33:30
+- Commit: dcf934d (branch: cleanup/directory-structure)
+- Syntax-checked: nothing (no script in command)
+- Uncommitted changes: .gitignore                           |  3 ++
+ paper/archive/manuscript.aux         | 88 ++++++++++++++++++------------------
+ paper/wacv_submission/paper_wacv.tex | 25 ++++++++--
+ 3 files changed, 69 insertions(+), 47 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 10:38:35
+- Commit: dcf934d (branch: cleanup/directory-structure)
+- Syntax-checked: nothing (no script in command)
+- Uncommitted changes: .gitignore                           |   3 ++
+ RESEARCH_LOG.md                      |   9 ++++
+ paper/archive/manuscript.aux         |  88 +++++++++++++++++------------------
+ paper/wacv_submission/paper_wacv.aux |  11 ++---
+ paper/wacv_submission/paper_wacv.pdf | Bin 481743 -> 481637 bytes
+ paper/wacv_submission/paper_wacv.tex |  70 ++++++++++++++--------------
+ 6 files changed, 97 insertions(+), 84 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 10:38:46
+- Commit: dcf934d (branch: cleanup/directory-structure)
+- Syntax-checked: nothing (no script in command)
+- Uncommitted changes: .gitignore                           |   3 ++
+ RESEARCH_LOG.md                      |  21 +++++++++
+ paper/archive/manuscript.aux         |  88 +++++++++++++++++------------------
+ paper/wacv_submission/paper_wacv.aux |  11 ++---
+ paper/wacv_submission/paper_wacv.pdf | Bin 481743 -> 481637 bytes
+ paper/wacv_submission/paper_wacv.tex |  70 ++++++++++++++--------------
+ 6 files changed, 109 insertions(+), 84 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 10:39:20
+- Commit: dcf934d (branch: cleanup/directory-structure)
+- Syntax-checked: scripts/check_paper_claims.py
+- Uncommitted changes: .gitignore                           |   3 ++
+ RESEARCH_LOG.md                      |  33 +++++++++++++
+ paper/archive/manuscript.aux         |  88 +++++++++++++++++------------------
+ paper/wacv_submission/paper_wacv.aux |  11 ++---
+ paper/wacv_submission/paper_wacv.pdf | Bin 481743 -> 481637 bytes
+ paper/wacv_submission/paper_wacv.tex |  70 ++++++++++++++--------------
+ 6 files changed, 121 insertions(+), 84 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 10:40:31
+- Commit: dcf934d (branch: cleanup/directory-structure)
+- Syntax-checked: scripts/check_paper_claims.py
+- Uncommitted changes: .gitignore                           |   3 ++
+ RESEARCH_LOG.md                      |  45 ++++++++++++++++++
+ paper/archive/manuscript.aux         |  88 +++++++++++++++++------------------
+ paper/wacv_submission/paper_wacv.aux |   6 +--
+ paper/wacv_submission/paper_wacv.pdf | Bin 481743 -> 481658 bytes
+ paper/wacv_submission/paper_wacv.tex |  70 ++++++++++++++--------------
+ scripts/check_paper_claims.py        |  65 ++++++++++++++++++++++++++
+ 7 files changed, 196 insertions(+), 81 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 10:40:57
+- Commit: dcf934d (branch: cleanup/directory-structure)
+- Syntax-checked: nothing (no script in command)
+- Uncommitted changes: .gitignore                           |   3 ++
+ RESEARCH_LOG.md                      |  58 +++++++++++++++++++++++
+ paper/archive/manuscript.aux         |  88 +++++++++++++++++------------------
+ paper/wacv_submission/paper_wacv.aux |   6 +--
+ paper/wacv_submission/paper_wacv.pdf | Bin 481743 -> 481658 bytes
+ paper/wacv_submission/paper_wacv.tex |  70 ++++++++++++++--------------
+ scripts/check_paper_claims.py        |  65 ++++++++++++++++++++++++++
+ 7 files changed, 209 insertions(+), 81 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 10:41:39
+- Commit: dcf934d (branch: cleanup/directory-structure)
+- Syntax-checked: scripts/check_paper_claims.py
+- Uncommitted changes: .gitignore                           |   3 ++
+ RESEARCH_LOG.md                      |  71 ++++++++++++++++++++++++++++
+ paper/archive/manuscript.aux         |  88 +++++++++++++++++------------------
+ paper/wacv_submission/paper_wacv.aux |   6 +--
+ paper/wacv_submission/paper_wacv.pdf | Bin 481743 -> 481658 bytes
+ paper/wacv_submission/paper_wacv.tex |  70 ++++++++++++++--------------
+ scripts/check_paper_claims.py        |  73 +++++++++++++++++++++++++++++
+ 7 files changed, 230 insertions(+), 81 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 10:42:07
+- Commit: dcf934d (branch: cleanup/directory-structure)
+- Syntax-checked: scripts/check_paper_claims.py
+- Uncommitted changes: .gitignore                           |   3 ++
+ RESEARCH_LOG.md                      |  84 +++++++++++++++++++++++++++++++++
+ paper/archive/manuscript.aux         |  88 +++++++++++++++++------------------
+ paper/wacv_submission/paper_wacv.aux |   6 +--
+ paper/wacv_submission/paper_wacv.pdf | Bin 481743 -> 481657 bytes
+ paper/wacv_submission/paper_wacv.tex |  70 ++++++++++++++--------------
+ scripts/check_paper_claims.py        |  73 +++++++++++++++++++++++++++++
+ 7 files changed, 243 insertions(+), 81 deletions(-)
 - GPU: NVIDIA GeForce RTX 5070, 12227 MiB

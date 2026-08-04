@@ -168,6 +168,78 @@ def check_claims(tex, art, fails, verbose):
                          f"expected the bounded form: '{want}'")
 
 
+PAIRED = os.path.join(_ROOT, "outputs", "ntu_paired", "paired_camera.json")
+PAIRED64 = os.path.join(_ROOT, "outputs", "ntu_paired", "paired_camera_fp64.json")
+
+
+def check_paired_camera(tex, fails, verbose):
+    """The NTU rotation (R1) and paired-camera (P1) numbers are PROSE, not a table -- which is
+    exactly why they need asserting. Every one of them was typed by hand into the tex.
+
+    Silently skipped if the artifacts are absent (outputs/ is not tracked), because a missing file
+    means 'not re-run here', not 'claim disproved'. It is announced either way, so a skip can never
+    be mistaken for a pass.
+    """
+    if not (os.path.isfile(PAIRED) and os.path.isfile(PAIRED64)):
+        print("  paired-camera: artifacts absent, SKIPPED (run src/ntu_paired_camera.py)")
+        return
+    with open(PAIRED, encoding="utf-8") as fh:
+        a32 = json.load(fh)
+    with open(PAIRED64, encoding="utf-8") as fh:
+        a64 = json.load(fh)
+    # LaTeX writes thousands as 18{,}674; normalise so the artifact's 18,674 can match.
+    flat = re.sub(r"\s+", " ", tex).replace("{,}", ",")
+
+    n = a32["scope"]["n_triples"]
+    eg, sg = a32["results"]["egru"], a32["results"]["stgcn_full"]
+    eg64 = a64["results"]["egru"]
+
+    # (claimed literal in tex, truth, tolerance, label)
+    checks = [
+        (f"{n // 1000},{n % 1000:03d}", None, None, "n_triples"),
+        (f"{eg['rotation_control']['agreement'] * 100:.2f}", None, None, "R1 agreement (ours)"),
+        (f"{sg['rotation_control']['agreement'] * 100:.2f}", None, None, "R1 agreement (ST-GCN)"),
+        (f"{eg['agreement_all_three'] * 100:.2f}", None, None, "P1 all-three (ours)"),
+        (f"{sg['agreement_all_three'] * 100:.2f}", None, None, "P1 all-three (ST-GCN)"),
+        (f"{eg['top1_per_camera']['1']:.2f}" if "1" in eg["top1_per_camera"]
+         else f"{eg['top1_per_camera'][1]:.2f}", None, None, "R1 Top-1 (ours)"),
+    ]
+    for literal, _t, _tol, label in checks:
+        if literal not in flat:
+            fails.append(f"paired-camera: {label} = {literal} not found in the prose")
+        elif verbose:
+            print(f"  paired   {label:<24} {literal}")
+
+    # ST-GCN's rotation accuracy LOSS is DERIVED, so re-derive it at full precision -- subtracting
+    # the two rounded values printed by the run gives 3.02 where the truth is 3.03, and that is the
+    # error this check exists to catch. Scope the search to the sentence that reports it: a bare
+    # substring search passes on PCT's unrelated 3.03 MAD elsewhere in the paper, which is a false
+    # pass, not a check.
+    top1 = sg["top1_per_camera"].get("1", sg["top1_per_camera"].get(1))
+    drop = top1 - sg["rotation_control"]["top1_rotated"]
+    anchor = flat.find(f"{sg['rotation_control']['agreement'] * 100:.2f}")
+    window = flat[anchor:anchor + 320] if anchor >= 0 else ""
+    if f"{drop:.2f}" not in window:
+        fails.append(f"paired-camera: ST-GCN rotation accuracy loss = {drop:.2f} not found in the "
+                     f"sentence reporting its agreement (window: {window[:90]!r})")
+    elif verbose:
+        print(f"  paired   {'R1 acc loss (ST-GCN)':<24} {drop:.2f}  (exact {drop:.4f})")
+
+    # Ours must be roundoff-limited and theirs must NOT be: the contrast IS the claim, so assert the
+    # PROPERTY, not just the printed digits. A regression that poisons fp64 (see the _w3j trap in
+    # ntu_paired_camera.load_arm) shows up here as a collapsed ratio.
+    if eg64["rotation_control"]["logit_linf_max"] > 1e-10:
+        fails.append(f"paired-camera: our fp64 rotation drift "
+                     f"{eg64['rotation_control']['logit_linf_max']:.3e} exceeds 1e-10 -- the fp64 "
+                     f"certificate is no longer exact (check the _w3j load guard)")
+    if a64["results"]["stgcn_full"]["rotation_control"]["logit_linf_max"] < 1.0:
+        fails.append("paired-camera: the ST-GCN control's fp64 drift collapsed; it is supposed to "
+                     "be structural and precision-independent")
+    if verbose:
+        print(f"  paired   {'fp64 drift (ours)':<24} "
+              f"{eg64['rotation_control']['logit_linf_max']:.3e}")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Audit paper tables against the banked artifacts.")
     ap.add_argument("--verbose", action="store_true")
@@ -181,6 +253,7 @@ def main():
     check_nodefail(tex, art, fails, args.verbose)
     check_pareto_markup(tex, art, fails, args.verbose)
     check_claims(tex, art, fails, args.verbose)
+    check_paired_camera(tex, fails, args.verbose)
 
     if fails:
         print(f"\nFAIL -- {len(fails)} violation(s):")
