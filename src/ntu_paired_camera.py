@@ -282,6 +282,35 @@ def drift_stats(a, b):
     }
 
 
+def mcnemar(a, b):
+    """Paired test on two arms' per-clip binary outcomes over the SAME clips.
+
+    P1's arms are evaluated on identical triples, so they are paired and an unpaired proportion test
+    would be wrong. Only the DISCORDANT clips carry information: n10 = clips where only `a` agreed,
+    n01 = only `b`. Under the null those split 50/50, so the exact test is a two-sided binomial on
+    n10 out of (n01 + n10) at p=0.5 -- no normal approximation, valid at any count.
+
+    Reported so the P1 comparison can be stated as resolved or not, instead of left untested.
+    """
+    a, b = np.asarray(a, bool), np.asarray(b, bool)
+    assert a.shape == b.shape, "arms must be scored on the same clips to be paired"
+    n10 = int((a & ~b).sum())
+    n01 = int((~a & b).sum())
+    n = n01 + n10
+    if n == 0:
+        return {"n10": 0, "n01": 0, "n_discordant": 0, "p_value": 1.0, "method": "degenerate"}
+    try:
+        from scipy.stats import binomtest
+        p = float(binomtest(n10, n, 0.5).pvalue)
+        how = "exact binomial"
+    except Exception:                               # stay reproducible without scipy
+        from math import comb
+        k = min(n10, n01)
+        p = min(1.0, 2.0 * sum(comb(n, i) for i in range(k + 1)) / (2.0 ** n))
+        how = "exact binomial (stdlib)"
+    return {"n10": n10, "n01": n01, "n_discordant": n, "p_value": p, "method": how}
+
+
 def main():
     ap = argparse.ArgumentParser(description="NTU paired-camera + rotation-control probe.")
     ap.add_argument("--data", default=os.path.join(_ROOT, "data", "ntu60_3danno.pkl"))
@@ -313,7 +342,7 @@ def main():
     rng = np.random.default_rng(args.seed)
     rots = [haar_rotation(rng) for _ in range(len(triples))]
 
-    results = {}
+    results, per_clip = {}, {}
     for name in ARMS:
         model, cfg = load_arm(name, device, args.t_target, dtype)
         print(f"\n[{name}] {cfg['params']:,} params  sample={cfg['sample']}  "
@@ -331,8 +360,13 @@ def main():
         for i, ci in enumerate(CAMERAS):
             for cj in CAMERAS[i + 1:]:
                 pairs[f"C{ci}-C{cj}"] = drift_stats(logits[ci], logits[cj])
-        agree3 = float(np.mean([len({logits[c].argmax(1)[k] for c in CAMERAS}) == 1
-                                for k in range(len(triples))]))
+        preds = np.stack([logits[c].argmax(1) for c in CAMERAS])          # (3, N)
+        # PER-CLIP outcome, kept so the two arms can be compared with a PAIRED test. Storing only
+        # the mean makes the arms' difference untestable after the fact, which is how the 0.83pp
+        # P1 gap went unassessed on the first pass.
+        agree3_vec = (preds == preds[0]).all(axis=0)                      # (N,) bool
+        per_clip[name] = agree3_vec
+        agree3 = float(agree3_vec.mean())
 
         # --- R1: rotation control, same clip and same camera ---
         cam = args.rot_camera
@@ -359,6 +393,18 @@ def main():
         if device == "cuda":
             torch.cuda.empty_cache()
 
+    # --- P1: are the two arms actually distinguishable? paired, on identical clips ---
+    p1_test = None
+    if len(per_clip) == 2:
+        (na, va), (nb, vb) = per_clip.items()
+        p1_test = mcnemar(va, vb)
+        p1_test["arms"] = [na, nb]
+        p1_test["agreement"] = {na: float(va.mean()), nb: float(vb.mean())}
+        print(f"\n[P1 paired test] {na} {va.mean()*100:.2f}% vs {nb} {vb.mean()*100:.2f}%   "
+              f"discordant {p1_test['n_discordant']} "
+              f"({na}-only {p1_test['n10']}, {nb}-only {p1_test['n01']})   "
+              f"p = {p1_test['p_value']:.3g}  [{p1_test['method']}]")
+
     payload = {
         "what": "NTU RGB+D 60: Haar-SO(3) rotation control (R1) and paired multi-camera "
                 "consistency (P1), eval-only on the X-View checkpoints.",
@@ -377,6 +423,7 @@ def main():
                    "liveness": args.liveness,
                    "rot_camera": args.rot_camera, "data": os.path.basename(args.data)},
         "results": results,
+        "p1_paired_test": p1_test,
     }
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:

@@ -808,9 +808,38 @@ camera relocation (P1: 73.03%), because the three clips are three different skel
 one event — different tracker noise, occlusion and range — and no property of the read-out can undo
 that. Reporting R1 alone would overstate the guarantee by a wide margin. The script's docstring
 predicted P1 > R1 for us; it did not predict ST-GCN edging us at P1, and PreNormalize3D absorbing
-some tracker variation is the likely reason. Significance of the 0.83pp gap is NOT tested (the
-artifact stores aggregates, not per-clip outcomes, so no McNemar was run) — which is sufficient for
-the conservative claim we can make, that P1 shows no advantage for us.
+some tracker variation is the likely reason.
+
+### P1 significance: tested, and it resolves AGAINST us
+
+The first pass left the 0.83pp gap untested because the artifact stored only aggregate means, which
+made the arms' difference unassessable after the fact. Fixed at the source: the probe now records
+PER-CLIP agreement and runs the paired test itself, so the comparison is reproducible rather than a
+one-off.
+
+The arms are scored on identical triples, so they are paired and an unpaired proportion test would be
+wrong — only discordant clips carry information. Exact two-sided binomial on the discordant split at
+$p{=}0.5$ (stdlib fallback if scipy is absent, so the artifact reproduces either way):
+
+| | value |
+|---|---|
+| ours / ST-GCN all-three agreement | 73.03% / 73.86% |
+| discordant triples | 5,394 (ours-only 2,620, theirs-only 2,774) |
+| **p (exact binomial, two-sided)** | **0.0372** |
+
+**So it is significant, and I had pre-committed to saying so plainly if it came out this way.**
+ST-GCN is genuinely better on P1. The effect is small (0.83pp) but resolvable at $n{=}18{,}674$. The
+paper now reads "a small but resolvable deficit" with the test in parentheses, replacing the weaker
+"we claim no advantage", which the data no longer supports as the strongest honest statement.
+
+Two things this does NOT license. It does not isolate architecture: the cross-model comparison still
+inherits the protocol confounds catalogued in the previous entry, so "ST-GCN's recipe is better here"
+is supported and "a non-equivariant architecture is better here" is not. And it does not touch R1,
+which is within-model and where the actual claim lives.
+
+`check_paper_claims.py` asserts the discordant count and p-value, and adds a DIRECTION guard: when
+the test resolves against us, the prose must contain a concession word. That is the one claim a later
+editing pass would be tempted to soften, so it now fails the build instead.
 
 ### Blast radius, resolved: the paper's number is right, the script had regressed
 
@@ -1201,4 +1230,33 @@ against `git show HEAD:...paper_wacv.tex`: all 7 new checks fail there, so they 
  paper/wacv_submission/paper_wacv.tex |  70 ++++++++++++++--------------
  scripts/check_paper_claims.py        |  73 +++++++++++++++++++++++++++++
  7 files changed, 243 insertions(+), 81 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 13:17:11
+- Commit: 45186cb (branch: cleanup/directory-structure)
+- Syntax-checked: src/ntu_paired_camera.py
+- Uncommitted changes: .gitignore                   |  3 ++
+ paper/archive/manuscript.aux | 88 ++++++++++++++++++++++----------------------
+ src/ntu_paired_camera.py     | 53 ++++++++++++++++++++++++--
+ 3 files changed, 97 insertions(+), 47 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 13:18:31
+- Commit: 45186cb (branch: cleanup/directory-structure)
+- Syntax-checked: src/ntu_paired_camera.py
+- Uncommitted changes: .gitignore                   |  3 ++
+ RESEARCH_LOG.md              |  9 +++++
+ paper/archive/manuscript.aux | 88 ++++++++++++++++++++++----------------------
+ src/ntu_paired_camera.py     | 53 ++++++++++++++++++++++++--
+ 4 files changed, 106 insertions(+), 47 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-04 13:43:30
+- Commit: 45186cb (branch: cleanup/directory-structure)
+- Syntax-checked: nothing (no script in command)
+- Uncommitted changes: .gitignore                   |  3 ++
+ RESEARCH_LOG.md              | 19 ++++++++++
+ paper/archive/manuscript.aux | 88 ++++++++++++++++++++++----------------------
+ src/ntu_paired_camera.py     | 53 ++++++++++++++++++++++++--
+ 4 files changed, 116 insertions(+), 47 deletions(-)
 - GPU: NVIDIA GeForce RTX 5070, 12227 MiB

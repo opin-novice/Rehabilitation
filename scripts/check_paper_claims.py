@@ -239,6 +239,27 @@ def check_paired_camera(tex, fails, verbose):
         print(f"  paired   {'fp64 drift (ours)':<24} "
               f"{eg64['rotation_control']['logit_linf_max']:.3e}")
 
+    # P1 is the axis we LOSE, so the guard runs in that direction: if the paired test resolves
+    # against us, the prose must concede it rather than restate parity. This is the one claim a
+    # later editing pass would be tempted to soften.
+    t = a32.get("p1_paired_test")
+    if not t:
+        fails.append("paired-camera: artifact has no p1_paired_test (re-run src/ntu_paired_camera.py)")
+        return
+    nd_lit = f"{t['n_discordant'] // 1000},{t['n_discordant'] % 1000:03d}"
+    if nd_lit not in flat:
+        fails.append(f"paired-camera: discordant count {nd_lit} not in the prose")
+    if f"{t['p_value']:.3f}" not in flat:
+        fails.append(f"paired-camera: p-value {t['p_value']:.3f} not in the prose")
+    ours, theirs = t["agreement"]["egru"], t["agreement"]["stgcn_full"]
+    if t["p_value"] < 0.05 and theirs > ours:
+        if not any(w in flat for w in ("deficit", "worse", "behind", "loses to")):
+            fails.append(f"paired-camera: P1 resolves AGAINST us (p={t['p_value']:.3f}, "
+                         f"{ours * 100:.2f} vs {theirs * 100:.2f}) but the prose concedes nothing")
+    if verbose:
+        print(f"  paired   {'P1 paired test':<24} p={t['p_value']:.3f}  "
+              f"discordant {nd_lit}  ({'against us' if theirs > ours else 'for us'})")
+
 
 def main():
     ap = argparse.ArgumentParser(description="Audit paper tables against the banked artifacts.")

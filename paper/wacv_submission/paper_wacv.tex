@@ -377,18 +377,18 @@ schedule may narrow the gap.
 \textbf{On NTU the guarantee is measured, not inherited.} A Haar-random $SO(3)$ rotation of all
 $18{,}674$ Cross-View test clips changes \emph{not one} prediction (agreement $100.00\%$, Top-1
 $82.95\%$ unchanged; drift $2.3\times10^{-13}$ in fp64, $5.7\times10^{9}$ below fp32 --- roundoff),
-where ST-GCN agrees on $91.89\%$, loses $3.03$ points, and shows a drift precision cannot move (ratio
+where ST-GCN agrees on $91.89\%$, loses $3.03$ points, with a drift precision cannot move (ratio
 $1.0008$): structural, not numerical. Both are within-model. But a rotated skeleton is not a
 relocated camera: NTU films each performance at three cameras \emph{at once}, and on those
 $18{,}674$ triples --- three skeleton \emph{estimates} of one event --- our agreement falls to
-$73.03\%$ against ST-GCN's $73.86\%$. We claim no advantage there, and that cross-model figure
-inherits the protocol caveat below. The theorem removes a viewpoint change's geometry exactly and
-none of the tracker noise a relocation adds; reporting the rotation alone would overstate it.
+$73.03\%$ against ST-GCN's $73.86\%$: a small but resolvable deficit (paired exact binomial,
+$5{,}394$ discordant triples, $p{=}0.037$), still confounded by the protocol caveat below. The
+theorem removes a viewpoint change's geometry exactly and none of the tracker noise a relocation
+adds; reporting the rotation alone would overstate it.
 NTU otherwise contributes generalisation: trained \emph{without} rotation augmentation on cameras
-$2$--$3$ and tested on camera $1$, the identical encoder reaches $82.98\%$ Top-1 ($T{=}100$,
-single-clip, one seed) --- also why it sits below the $\sim\!88\%$ reported for this split. We give no
-ST-GCN accuracy control: our runs differ in sampling, view-normalisation and optimiser, so the pair
-would not be a comparison.
+$2$--$3$ and tested on camera $1$, the encoder reaches $82.98\%$ Top-1 ($T{=}100$, single-clip, one
+seed) --- also why it sits below the $\sim\!88\%$ for this split. We give no ST-GCN accuracy control:
+our runs differ in sampling, view-normalisation and optimiser, so the pair would not compare.
 
 \begin{figure}[t]\centering
   \includegraphics[width=\linewidth]{fig_viewpoint}
