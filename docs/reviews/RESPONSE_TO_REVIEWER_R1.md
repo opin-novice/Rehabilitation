@@ -60,7 +60,17 @@ zeroing them at test time starves weights that expect them) — we state this ca
 locus — zeroing them flattens degradation but at an accuracy cost that puts the model through the
 floor, the within-model echo of §IV-E.
 
-### Q3. Canonicalization baseline (frame-averaging / learned canonical frame) under viewpoint stressors — aggregate acc AND per-sequence degradation. **[FIXED-TEXT (positioning) + EXPERIMENT (baseline)]**
+### Q3. Canonicalization baseline (frame-averaging / learned canonical frame) under viewpoint stressors — aggregate acc AND per-sequence degradation. **[DONE — since run; Canon-PCA$+$PCT now in `tab:pareto` + a dedicated §IV paragraph]**
+
+> **Update (superseding the "declined" note below).** This was declined at the time of writing and has
+> since been run. A PCA-canonicalised front-end on the PCT backbone is now a row of `tab:pareto`
+> (clean $6.85$ MAD, $6.85$ at $90^\circ$, $7.79$ at two dead joints), and the reviewer's exact
+> intuition — that frame-estimation error surfaces in per-sequence degradation rather than aggregate
+> accuracy — is what the result turns on. It ties us on every *offline* axis. What separates the two
+> is that its invariance is empirical where ours is certified: `canon_streaming_probe.json` measures
+> the PCA frame directly and finds $21\%$ of frame transitions flipping $>45^\circ$ and $17.9\%$ of
+> frames within an eigen-gap of $0.05$ of degeneracy, with Davis–Kahan supplying the mechanism. The
+> "sabotaged control" worry did not materialise — the baseline is strong, and we say so.
 
 Related Work now states the structural distinction explicitly: a canonicaliser's invariance is exact
 only in so far as its *frame estimate* is, and a near-degenerate/symmetric pose reintroduces exactly
@@ -226,15 +236,27 @@ irregular-sampling null.)
 
 ## Remaining experiments (author decision; not blocking — review is already Accept)
 
-1. Canonicalization baseline (Q3) — deliberately **declined** for this revision: an under-tuned baseline
-   invites the "sabotaged control" objection the paper otherwise avoids, and the structural distinction
-   (exact-by-proof vs empirically-robust frame estimate) is already made in Related Work. Flagged as a
-   natural extension.
+**None. This list is now empty — both entries have since been run.** Kept below as a record of what was
+declined and why, since the reasoning was wrong in both cases and that is worth remembering.
 
-*(The EGNN encoder swap (Q5) was originally in this declined list; it has since been run — 3 seeds ×
-5 folds behind the identical cut — and now appears in §IV-E / Table `tab:egnn`. The measured outcome
-supports the steerable choice rather than diluting it, which is why the earlier concern no longer
-applies. See Q5 above.)*
+1. ~~Canonicalization baseline (Q3)~~ — declined on the grounds that an under-tuned baseline invites the
+   "sabotaged control" objection, and that the structural distinction (exact-by-proof vs
+   empirically-robust frame estimate) was already made in Related Work. **Since run.** The baseline was
+   not weak: Canon-PCA$+$PCT ties every offline axis (`tab:pareto`). The distinction survives anyway,
+   but as a *measured* one rather than an asserted one — the PCA frame flips $>45^\circ$ on $21\%$ of
+   transitions and sits within an eigen-gap of $0.05$ of degeneracy on $17.9\%$ of frames
+   (`canon_streaming_probe.json`), which is the per-sequence degradation channel the reviewer pointed
+   at. Declining it would have left the paper asserting a structural claim it can now measure.
+
+2. ~~EGNN encoder swap (Q5)~~ — **since run**, 3 seeds × 5 folds behind the identical cut; now in §IV-E /
+   Table `tab:egnn`. The measured outcome supports the steerable choice rather than diluting it, which
+   is why the earlier concern no longer applies.
+
+*Audited against the tree on 2026-08-12: every `[DONE]` above is backed by a banked artifact —
+`ablation_invfamily.json` (Q2: 6 families × 3 seeds × 5 folds, 1365 rows), the four
+`block4_jointfail_*_chi_s{0,1,2}.json` failure modes (Q4), `research_egnn/outputs/` (Q5: 4
+coordinate-clamp settings × 3 seeds × 5 folds), `seed_distribution.json` (Q7: 4 models × 5 folds × 3
+seeds), and the two canon probes plus `canon_pct_s0_f*.pt` (Q3).*
 
 **Done this round:** Q1, Q2 (full run + table), Q3 (positioning), Q4 (full run + table), Q5 (full run +
 table), Q6, Q7 (full run + table), parity-set schematic (Table), prose softening pass.
