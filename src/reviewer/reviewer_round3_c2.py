@@ -7,12 +7,12 @@ Two steps:
           run the bone-vector LOSO fold models in the standard zero-shot protocol.
 
 Usage:
-  python src/reviewer_round3_c2.py build
+  python src/reviewer/reviewer_round3_c2.py build
   # then train (orchestrated):
   #   python src/train_loso.py --model_type tcn --loso --resume \
   #       --pooled_dir KIMORE_pooled_bonevec --out_dir archive/legacy_results/kimore_loso_78fold_bonevec \
   #       --epochs 100 --batch_size 16 --patience 100 --d_model 128
-  python src/reviewer_round3_c2.py eval
+  python src/reviewer/reviewer_round3_c2.py eval
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ import torch
 from scipy.stats import spearmanr
 from sklearn.metrics import roc_auc_score
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from constants import SEQ_LEN, NUM_JOINTS, NUM_CHANNELS  # noqa: E402
 from rehab_dataset import _select_xyz_columns  # noqa: E402
 from selfsup.features import to_relative_joint_vectors, xyz4d_to_pooled_cols  # noqa: E402

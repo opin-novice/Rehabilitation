@@ -12,7 +12,7 @@ Orientation is fixed once on the full sample (so full-sample AUROC >= 0.5), then
 constant across bootstraps --- avoiding the upward bias of re-taking max(AUROC,1-AUROC)
 per resample.
 
-Run:  python src/reviewer_round4_stats.py [--nboot 2000]
+Run:  python src/reviewer/reviewer_round4_stats.py [--nboot 2000]
 Out:  outputs/reviewer_round4/auroc_significance.{json,md} + cached preds .npz
 """
 from __future__ import annotations
@@ -27,7 +27,7 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_auc_score
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from selfsup.zeroshot_eval import _rebuild_model, _predict  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 from selfsup.naive_baseline import compute_naive_features  # noqa: E402

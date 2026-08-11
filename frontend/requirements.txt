@@ -1,0 +1,10 @@
+# Web frontend server dependencies — install ON TOP of demo/requirements.txt
+# (torch, e3nn, mediapipe, opencv-python, numpy, scipy are pulled in there).
+#
+#   pip install -r demo/requirements.txt
+#   pip install -r frontend/requirements.txt
+
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+pillow>=10.0

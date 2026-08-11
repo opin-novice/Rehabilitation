@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RehabSense — Movement Quality Studio</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='6' r='4' fill='%233987e5'/><path d='M16 11 L16 22 M16 14 L7 19 M16 14 L25 19 M16 22 L10 30 M16 22 L22 30' stroke='%233987e5' stroke-width='3' stroke-linecap='round' fill='none'/></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand" id="brand-home" title="Home">
+    <svg viewBox="0 0 32 32" class="brand-mark" aria-hidden="true">
+      <circle cx="16" cy="6" r="4"/>
+      <path d="M16 11 L16 22 M16 14 L7 19 M16 14 L25 19 M16 22 L10 30 M16 22 L22 30"
+            stroke-width="3" stroke-linecap="round" fill="none"/>
+    </svg>
+    <span class="brand-name">RehabSense</span>
+    <span class="brand-sub">Movement Quality Studio</span>
+  </div>
+  <div class="engine-pill" id="engine-pill">
+    <span class="dot"></span><span id="engine-label">loading model…</span>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- ============================ HOME ============================ -->
+  <section class="screen" id="screen-home">
+    <div class="hero">
+      <h1>Get your movement scored,<br>right where you are.</h1>
+      <p class="hero-sub">Perform a rehabilitation exercise and receive an instant, explainable
+        report — range of motion, smoothness, symmetry, tempo and consistency, backed by a
+        viewpoint-invariant AI motion model.</p>
+    </div>
+
+    <div class="mode-grid">
+      <button class="mode-card" data-mode="live">
+        <div class="mode-icon">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <rect x="4" y="10" width="28" height="28" rx="6" fill="none" stroke-width="2.5"/>
+            <path d="M32 20 L44 13 v22 L32 28" fill="none" stroke-width="2.5" stroke-linejoin="round"/>
+            <circle cx="18" cy="21" r="3.4" fill="currentColor" stroke="none"/>
+            <path d="M18 25 v6 M18 27 l-5 3 M18 27 l5 3" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h2>Live Session</h2>
+        <p>Use your camera. A skeleton tracks you in real time, a live quality score updates as
+           you move, and a full report card appears when the session ends.</p>
+        <span class="mode-cta">Start a live session <span class="arrow">→</span></span>
+      </button>
+
+      <button class="mode-card" data-mode="upload">
+        <div class="mode-icon">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M10 32 v6 a4 4 0 0 0 4 4 h20 a4 4 0 0 0 4-4 v-6" fill="none"
+                  stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M24 6 v22 M24 6 l-8 8 M24 6 l8 8" fill="none" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2>Upload a Video</h2>
+        <p>Already recorded? Drop in a clip of the exercise. The same model analyzes every frame
+           and produces the identical report — no camera needed.</p>
+        <span class="mode-cta">Analyze a video <span class="arrow">→</span></span>
+      </button>
+    </div>
+
+    <p class="footnote">Powered by an SE(3)-equivariant, viewpoint-invariant motion model —
+      the score cannot change when the camera moves, by construction.</p>
+  </section>
+
+  <!-- ======================= EXERCISE PICKER ====================== -->
+  <section class="screen" id="screen-exercise" hidden>
+    <div class="screen-head">
+      <button class="btn ghost back" data-back="home">← Back</button>
+      <div>
+        <h1 id="exercise-title">Choose your exercise</h1>
+        <p class="screen-sub" id="exercise-sub"></p>
+      </div>
+    </div>
+    <div class="exercise-grid" id="exercise-grid"><!-- cards injected --></div>
+    <div class="actions-row">
+      <button class="btn primary big" id="exercise-continue" disabled>Continue</button>
+    </div>
+  </section>
+
+  <!-- ========================= LIVE SESSION ======================= -->
+  <section class="screen" id="screen-live" hidden>
+    <div class="screen-head">
+      <button class="btn ghost back" id="live-back">← Back</button>
+      <div>
+        <h1 id="live-ex-name">Live Session</h1>
+        <p class="screen-sub" id="live-ex-howto"></p>
+      </div>
+    </div>
+
+    <div class="live-layout">
+      <div class="stage" id="stage">
+        <div class="stage-inner">
+          <video id="cam" autoplay playsinline muted></video>
+          <canvas id="overlay"></canvas>
+          <div class="stage-veil" id="stage-veil">
+            <div class="veil-content" id="veil-content">
+              <p>Waiting for camera…</p>
+            </div>
+          </div>
+          <div class="track-chip" id="track-chip"><span class="dot"></span>
+            <span id="track-label">connecting…</span></div>
+          <div class="rec-chip" id="rec-chip" hidden><span class="rec-dot"></span>REC
+            <span id="rec-time">0.0s</span></div>
+        </div>
+      </div>
+
+      <aside class="live-panel">
+        <div class="panel-block">
+          <div class="panel-label">Movement quality <span class="live-tag">live</span></div>
+          <div class="live-score-row">
+            <span class="live-score" id="live-score">–</span>
+            <span class="live-score-unit">/ 100</span>
+          </div>
+          <div class="meter">
+            <div class="meter-track"><div class="meter-fill" id="live-meter" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="panel-block small-stats">
+          <div><span class="stat-num" id="live-reps">0</span><span class="stat-lbl">reps</span></div>
+          <div><span class="stat-num" id="live-remaining">–</span><span class="stat-lbl">seconds left</span></div>
+        </div>
+        <div class="panel-block">
+          <div class="panel-label">Session length</div>
+          <div class="seg" id="seg-length">
+            <button data-sec="15">15s</button>
+            <button data-sec="20" class="on">20s</button>
+            <button data-sec="30">30s</button>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button class="btn primary big" id="live-start">Start session</button>
+          <button class="btn danger big" id="live-stop" hidden>End session</button>
+        </div>
+        <p class="hint">Stand back so your <strong>whole body</strong> is in frame — the model
+          needs hips and shoulders to read your movement.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ========================== UPLOAD ============================ -->
+  <section class="screen" id="screen-upload" hidden>
+    <div class="screen-head">
+      <button class="btn ghost back" id="upload-back">← Back</button>
+      <div>
+        <h1 id="upload-ex-name">Upload a video</h1>
+        <p class="screen-sub" id="upload-ex-howto"></p>
+      </div>
+    </div>
+
+    <div class="upload-layout">
+      <div class="dropzone" id="dropzone" tabindex="0">
+        <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/x-matroska,.mp4,.mov,.avi,.webm,.mkv,.m4v" hidden>
+        <div class="drop-idle" id="drop-idle">
+          <svg viewBox="0 0 48 48" aria-hidden="true">
+            <path d="M10 32 v6 a4 4 0 0 0 4 4 h20 a4 4 0 0 0 4-4 v-6" fill="none"
+                  stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M24 6 v22 M24 6 l-8 8 M24 6 l8 8" fill="none" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p><strong>Drop a video here</strong> or click to browse</p>
+          <p class="drop-note">MP4 · MOV · AVI · WEBM · MKV — whole body visible, first 3 minutes analyzed</p>
+        </div>
+        <div class="drop-picked" id="drop-picked" hidden>
+          <video id="upload-preview" muted playsinline loop></video>
+          <div class="picked-meta">
+            <p id="picked-name"></p>
+            <p class="drop-note" id="picked-size"></p>
+            <button class="btn ghost" id="picked-clear">Choose a different file</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="upload-side">
+        <div class="panel-block">
+          <div class="panel-label">What happens</div>
+          <ol class="steps">
+            <li>Poses are extracted from every frame of your clip.</li>
+            <li>Biomechanics are measured: range, smoothness, symmetry, tempo, consistency.</li>
+            <li>The AI motion model scores the movement and the report card is built.</li>
+          </ol>
+        </div>
+        <div class="panel-actions">
+          <button class="btn primary big" id="upload-analyze" disabled>Analyze video</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap" hidden>
+      <div class="progress-head">
+        <span id="progress-stage">starting…</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="meter"><div class="meter-track">
+        <div class="meter-fill accent" id="progress-fill" style="width:0%"></div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ========================== REPORT ============================ -->
+  <section class="screen" id="screen-report" hidden>
+    <div class="report-card" id="report-card">
+      <div class="report-head">
+        <div>
+          <h1 id="rep-exercise">—</h1>
+          <p class="screen-sub" id="rep-meta">—</p>
+        </div>
+        <div class="rep-band" id="rep-band">—</div>
+      </div>
+
+      <div class="report-hero">
+        <div class="ring-wrap">
+          <svg viewBox="0 0 200 200" class="ring">
+            <circle class="ring-track" cx="100" cy="100" r="86"/>
+            <circle class="ring-fill" id="ring-fill" cx="100" cy="100" r="86"/>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-num" id="rep-score">0</span>
+            <span class="ring-unit">/ 100</span>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="stars" id="rep-stars" aria-label="star rating"></div>
+          <div class="chips">
+            <span class="chip ai" id="rep-ai" hidden></span>
+            <span class="chip" id="rep-reps"></span>
+            <span class="chip" id="rep-dur"></span>
+          </div>
+          <p class="hero-caption">Movement Quality — a composite of five transparent
+            biomechanical measures.</p>
+        </div>
+      </div>
+
+      <div class="metrics" id="rep-metrics"><!-- rows injected --></div>
+
+      <div class="notes-grid">
+        <div class="note-panel">
+          <h3 class="good-h">Strengths</h3>
+          <ul id="rep-strengths"></ul>
+        </div>
+        <div class="note-panel">
+          <h3 class="warn-h">What to improve</h3>
+          <ul id="rep-improvements"></ul>
+        </div>
+      </div>
+
+      <div class="report-actions">
+        <button class="btn primary big" id="rep-again">New session</button>
+        <a class="btn ghost big" id="rep-png" href="#" download hidden>Download report PNG</a>
+        <button class="btn ghost big" id="rep-home">Home</button>
+      </div>
+      <p class="footnote">Powered by an SE(3)-equivariant, viewpoint-invariant motion model.</p>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<!-- countdown overlay -->
+<div class="countdown" id="countdown" hidden><span id="countdown-num">3</span></div>
+
+<script src="app.js"></script>
+</body>
+</html>

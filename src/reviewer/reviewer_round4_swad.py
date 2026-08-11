@@ -13,7 +13,7 @@ If SWAD is *also* at chance and below the naive baseline, concern #8 turns from 
 argument into evidence: even an explicit flat-minima DG method does not bridge the
 compound cross-sensor shift.
 
-Run:  python src/reviewer_round4_swad.py [--epochs 90] [--smoke]
+Run:  python src/reviewer/reviewer_round4_swad.py [--epochs 90] [--smoke]
 Out:  outputs/reviewer_round4/swad.{json,md}
 """
 from __future__ import annotations
@@ -30,7 +30,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 from torch.optim.swa_utils import AveragedModel, update_bn
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from constants import SEQ_LEN, NUM_JOINTS, NUM_CHANNELS  # noqa: E402
 from models_stgcn import TCNRegressor  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402

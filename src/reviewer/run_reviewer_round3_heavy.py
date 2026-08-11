@@ -4,7 +4,7 @@ Waits for the ST-GCN LOSO training (launched separately) to finish, then runs ea
 GPU job sequentially. Resumable: every step is skipped when its output already exists.
 Results land in outputs/reviewer_round3/.
 
-Run (background):  python src/run_reviewer_round3_heavy.py
+Run (background):  python src/reviewer/run_reviewer_round3_heavy.py
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # repo root (file now in src/reviewer/)
 PY = sys.executable
 STGCN_DIR = "archive/legacy_results/kimore_loso_78fold_stgcn"
 BONEVEC_DIR = "archive/legacy_results/kimore_loso_78fold_bonevec"
@@ -47,21 +47,21 @@ def main():
     # --- C1: ST-GCN zero-shot + AdaBN + sensor-ID probe ---
     wait_for_stgcn()
     if not os.path.exists(os.path.join(OUT, "c1_stgcn.json")):
-        sh([PY, "src/reviewer_round3_c1_stgcn_eval.py"])
+        sh([PY, "src/reviewer/reviewer_round3_c1_stgcn_eval.py"])
 
     # --- C2: bone-vector (joint-angle) input: train TCN LOSO, then eval ---
     if not os.path.exists("KIMORE_pooled_bonevec/Train_X.csv"):
-        sh([PY, "src/reviewer_round3_c2.py", "build"])
+        sh([PY, "src/reviewer/reviewer_round3_c2.py", "build"])
     if len(glob.glob(os.path.join(BONEVEC_DIR, "fold_*", "best_model.pt"))) < 77:
         sh([PY, "src/train_loso.py", "--model_type", "tcn", "--loso", "--resume",
             "--pooled_dir", "KIMORE_pooled_bonevec", "--out_dir", BONEVEC_DIR,
             "--epochs", "100", "--batch_size", "16", "--patience", "100", "--d_model", "128"])
     if not os.path.exists(os.path.join(OUT, "c2_bonevec.json")):
-        sh([PY, "src/reviewer_round3_c2.py", "eval"])
+        sh([PY, "src/reviewer/reviewer_round3_c2.py", "eval"])
 
     # --- C3: DANN domain-adversarial baseline ---
     if not os.path.exists(os.path.join(OUT, "c3_dann.json")):
-        sh([PY, "src/reviewer_round3_c3_dann.py", "--epochs", "60"])
+        sh([PY, "src/reviewer/reviewer_round3_c3_dann.py", "--epochs", "60"])
 
     print("\n[heavy] ALL DONE -> outputs/reviewer_round3/", flush=True)
 

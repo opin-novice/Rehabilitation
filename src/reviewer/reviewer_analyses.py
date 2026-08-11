@@ -14,8 +14,8 @@ from pathlib import Path
 import numpy as np
 import torch
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
+os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # repo root
 
 from models_stgcn import TCNRegressor
 from selfsup.data import load_corpus_with_labels

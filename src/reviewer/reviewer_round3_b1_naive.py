@@ -16,7 +16,7 @@ Key analytic facts this experiment confirms numerically:
   * REHAB246 duplicated joints double-count wrist motion; dropping them is the
     honest shared-joint comparison.
 
-Run:  python src/reviewer_round3_b1_naive.py
+Run:  python src/reviewer/reviewer_round3_b1_naive.py
 Out:  outputs/reviewer_round3/b1_naive_sensitivity.{json,md}
 """
 from __future__ import annotations
@@ -28,7 +28,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from constants import NUM_JOINTS  # noqa: E402
 from selfsup.naive_baseline import naive_auroc  # noqa: E402
 from load_rehab246 import KINECT_FROM_REHAB26  # noqa: E402

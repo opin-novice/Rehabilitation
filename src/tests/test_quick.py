@@ -1,6 +1,6 @@
 """Quick k comparison: 10 epochs each."""
 import sys, time
-sys.path.insert(0, "D:/Rehabilation/src")
+import os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (portable; file now in src/tests/)
 from train_reproduce import load_kimore_exercise, seed_everything, performance_metrics
 import torch
 import torch.nn as nn

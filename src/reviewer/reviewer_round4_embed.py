@@ -6,7 +6,7 @@ Produces a 2x2 t-SNE figure of penultimate features on pooled KIMORE+REHAB246+UI
 The left column should show clean sensor separation (visual proof of the 1.00 probe);
 the right column should show NO label separation (movement quality is not encoded).
 
-Run:  python src/reviewer_round4_embed.py
+Run:  python src/reviewer/reviewer_round4_embed.py
 Out:  figures/embedding_tsne.png
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from selfsup.zeroshot_eval import _rebuild_model  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 

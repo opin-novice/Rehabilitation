@@ -10,7 +10,7 @@ If ST-GCN is also at chance AND its sensor-ID probe is also near-perfect, the nu
 architecture-independent -- the single most direct answer to the ``single-backbone''
 weakness.
 
-Run (after training completes):  python src/reviewer_round3_c1_stgcn_eval.py
+Run (after training completes):  python src/reviewer/reviewer_round3_c1_stgcn_eval.py
 Out: outputs/reviewer_round3/c1_stgcn.{json,md}
 """
 from __future__ import annotations
@@ -27,7 +27,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import cross_val_score
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from selfsup.zeroshot_eval import _rebuild_model, _predict, DEGENERACY_PRED_SD  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 from selfsup.naive_baseline import naive_auroc  # noqa: E402

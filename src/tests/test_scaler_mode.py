@@ -1,6 +1,6 @@
 """Test: train with ALL-data Y scaler (original) vs train-only Y scaler."""
 import sys, time
-sys.path.insert(0, "D:/Rehabilation/src")
+import os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (portable; file now in src/tests/)
 import numpy as np, pandas as pd, torch, torch.nn as nn
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split

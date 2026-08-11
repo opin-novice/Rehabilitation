@@ -4,7 +4,7 @@ Original repo body_parts has index_Ankle_Right (72) TWICE, missing index_Foot_Ri
 Our code has the CORRECT indices with Foot_Right.
 """
 import sys, time
-sys.path.insert(0, "D:/Rehabilation/src")
+import os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (portable; file now in src/tests/)
 import numpy as np
 import pandas as pd
 import torch

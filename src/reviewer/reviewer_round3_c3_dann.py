@@ -10,7 +10,7 @@ Inputs are standardized with a scaler fit on KIMORE (matching train_loso). The
 sensor-ID probe predicts DANN *should* help domain confusion; the scientific
 question is whether it lifts transfer AUROC above chance / the naive baseline.
 
-Usage:  python src/reviewer_round3_c3_dann.py [--smoke] [--epochs 60]
+Usage:  python src/reviewer/reviewer_round3_c3_dann.py [--smoke] [--epochs 60]
 Out:    outputs/reviewer_round3/c3_dann.{json,md}
 """
 from __future__ import annotations
@@ -26,7 +26,7 @@ import torch.nn as nn
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from constants import SEQ_LEN, NUM_JOINTS, NUM_CHANNELS  # noqa: E402
 from models_stgcn import TCNRegressor  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402

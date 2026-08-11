@@ -1,7 +1,7 @@
 """Run remaining reviewer analyses: sensor-ID, few-shot, partial FT."""
 import sys, os, json, glob
 sys.path.insert(0, "src")
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/../..")  # repo root (file now in src/reviewer/)
 from pathlib import Path
 
 import numpy as np

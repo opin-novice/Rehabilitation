@@ -8,7 +8,7 @@ distinguishing zero-pattern, then re-run the 3-way sensor-identity probe on feat
 the scratch TCN and ST-GCN fold models. If accuracy stays ~1.00, the sensor separation
 is not a padding artifact.
 
-Run:  python src/reviewer_round4_probe_sharedjoints.py
+Run:  python src/reviewer/reviewer_round4_probe_sharedjoints.py
 Out:  outputs/reviewer_round4/probe_sharedjoints.{json,md}
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ import torch
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from selfsup.zeroshot_eval import _rebuild_model  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 

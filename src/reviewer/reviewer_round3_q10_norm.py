@@ -8,11 +8,11 @@ running the same 77-fold LOSO, and (eval) applying the identical transform to th
 target corpora and evaluating zero-shot.
 
 Usage:
-  python src/reviewer_round3_q10_norm.py build
+  python src/reviewer/reviewer_round3_q10_norm.py build
   #   python src/train_loso.py --model_type tcn --loso --resume \
   #       --pooled_dir KIMORE_pooled_perseq --out_dir archive/legacy_results/kimore_loso_78fold_perseq \
   #       --epochs 100 --batch_size 16 --patience 100 --d_model 128
-  python src/reviewer_round3_q10_norm.py eval
+  python src/reviewer/reviewer_round3_q10_norm.py eval
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ import torch
 from scipy.stats import spearmanr
 from sklearn.metrics import roc_auc_score
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from constants import SEQ_LEN, NUM_JOINTS, NUM_CHANNELS  # noqa: E402
 from rehab_dataset import _select_xyz_columns  # noqa: E402
 from selfsup.features import per_sequence_zscore, xyz4d_to_pooled_cols  # noqa: E402

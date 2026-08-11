@@ -8,7 +8,7 @@ for each KIMORE LOSO fold we fit IsotonicRegression on (KIMORE prediction ->
 median-binarized KIMORE score), apply the fitted map to the target predictions, and
 recompute AUROC. The pre- and post-calibration AUROC agree to numerical precision.
 
-Run:  python src/reviewer_round3_b3_isotonic.py
+Run:  python src/reviewer/reviewer_round3_b3_isotonic.py
 Out:  outputs/reviewer_round3/b3_isotonic.{json,md}
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ import torch
 from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import roc_auc_score
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # src/
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (file now in src/reviewer/)
 from models_stgcn import TCNRegressor  # noqa: E402
 from selfsup.data import load_corpus_with_labels  # noqa: E402
 

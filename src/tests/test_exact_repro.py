@@ -4,7 +4,7 @@ Original repo fits StandardScaler on ALL data (train+test) before splitting.
 This is technically data leakage but matches the paper's reported results.
 """
 import sys, time, json, os
-sys.path.insert(0, "D:/Rehabilation/src")
+import os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # src/ root (portable; file now in src/tests/)
 import numpy as np
 import pandas as pd
 import torch
