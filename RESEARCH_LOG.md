@@ -1260,3 +1260,23 @@ against `git show HEAD:...paper_wacv.tex`: all 7 new checks fail there, so they 
  src/ntu_paired_camera.py     | 53 ++++++++++++++++++++++++--
  4 files changed, 116 insertions(+), 47 deletions(-)
 - GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 05:12:27
+- Commit: 88544cf (branch: merge/from-capstone)
+- Syntax-checked: nothing (no script in command)
+- Uncommitted changes: none
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 05:13:19
+- Commit: 88544cf (branch: merge/from-capstone)
+- Syntax-checked: nothing (no script in command)
+- Uncommitted changes: RESEARCH_LOG.md | 6 ++++++
+ 1 file changed, 6 insertions(+)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 05:13:39
+- Commit: 88544cf (branch: merge/from-capstone)
+- Syntax-checked: nothing (no script in command)
+- Uncommitted changes: RESEARCH_LOG.md | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
