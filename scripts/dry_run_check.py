@@ -3,10 +3,15 @@
 Pre-run verification for ML experiments: syntax check + CUDA smoke test +
 deterministic run metadata logged to RESEARCH_LOG.md.
 
-Wired as a PreToolUse hook (see .claude/settings.json) scoped to Bash calls
-that start with `python `, or run manually via `/dry-run` or
-`python scripts/dry_run_check.py`. Assumes it's run from the project root
-(same cwd Claude Code hooks run in by default).
+Wired as a PreToolUse hook (see .claude/settings.json), or run manually via
+`/dry-run` or `python scripts/dry_run_check.py`. Assumes it's run from the
+project root (same cwd Claude Code hooks run in by default).
+
+The hook is NOT scoped to `python ` commands, despite what the settings file
+reads like: a PreToolUse `matcher` matches the tool *name*, so "Bash" matches
+every Bash call, and the `"if": "Bash(python *)"` key beside it is not part of
+the hook schema and is ignored. Scoping is therefore this script's own job --
+see the early exit in main() for commands that run no Python file.
 
 As a hook it gets the tool call as JSON on stdin and lints the script that
 command actually invokes. Entrypoints in this repo live under src/, so the
@@ -278,6 +283,15 @@ def main() -> None:
     scripts = scripts_from_command(command)
     if command and not is_ml_project(scripts):
         # Someone else's repo, fired by the global hook. Say nothing.
+        sys.exit(0)
+
+    if command and not scripts:
+        # Fired on a command that runs no Python file -- git, ls, pip, cat.
+        # The hook sees every Bash call (see module docstring), and
+        # is_ml_project() is unconditionally true in any repo that has a
+        # RESEARCH_LOG.md, so without this guard every shell command pays for
+        # a CUDA smoke test and a `pip freeze`, and banks a log entry reading
+        # "Syntax-checked: nothing". There is nothing here to gate.
         sys.exit(0)
 
     if not scripts:
