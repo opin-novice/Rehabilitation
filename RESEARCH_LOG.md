@@ -1293,3 +1293,23 @@ against `git show HEAD:...paper_wacv.tex`: all 7 new checks fail there, so they 
 - Syntax-checked: C:/Users/USER/AppData/Local/Temp/claude/d--Rehabilation/2e75aec3-502f-4b91-a4bd-4d7c76b30bbd/scratchpad/verify_rehab246.py
 - Uncommitted changes: none
 - GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 05:43:48
+- Commit: de73386 (branch: merge/from-capstone)
+- Syntax-checked: C:/Users/USER/AppData/Local/Temp/claude/d--Rehabilation/2e75aec3-502f-4b91-a4bd-4d7c76b30bbd/scratchpad/frontend_smoke.py
+- Uncommitted changes: none
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 05:44:53
+- Commit: de73386 (branch: merge/from-capstone)
+- Syntax-checked: C:/Users/USER/AppData/Local/Temp/claude/d--Rehabilation/2e75aec3-502f-4b91-a4bd-4d7c76b30bbd/scratchpad/frontend_smoke.py
+- Uncommitted changes: RESEARCH_LOG.md | 6 ++++++
+ 1 file changed, 6 insertions(+)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 05:47:26
+- Commit: de73386 (branch: merge/from-capstone)
+- Syntax-checked: frontend/server.py
+- Uncommitted changes: RESEARCH_LOG.md | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
