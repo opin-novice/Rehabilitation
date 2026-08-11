@@ -43,3 +43,6 @@ outputs/
 outputs_fkrepair/
 # scratch figure output; canonical copy lives in paper/archive/figures/
 /figures/
+
+# pip freeze snapshot, rewritten on every dry-run check
+requirements_snapshot.txt
