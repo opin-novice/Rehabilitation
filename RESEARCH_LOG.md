@@ -1287,3 +1287,9 @@ against `git show HEAD:...paper_wacv.tex`: all 7 new checks fail there, so they 
 - Uncommitted changes: scripts/dry_run_check.py | 22 ++++++++++++++++++----
  1 file changed, 18 insertions(+), 4 deletions(-)
 - GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 05:26:28
+- Commit: b0a0da2 (branch: merge/from-capstone)
+- Syntax-checked: C:/Users/USER/AppData/Local/Temp/claude/d--Rehabilation/2e75aec3-502f-4b91-a4bd-4d7c76b30bbd/scratchpad/verify_rehab246.py
+- Uncommitted changes: none
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
