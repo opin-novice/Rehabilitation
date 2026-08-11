@@ -4,8 +4,13 @@
 System diagram for the capstone report (Figure 1).
 
 Regenerates ``system_diagram.png`` at the repo root, 300 DPI, greyscale-safe.
-Box labels are kept byte-identical to the stage names used in the METHOD section of
-``capstone-draft.md`` -- if you rename a stage there, rename it here too.
+Box labels are kept byte-identical to the pipeline stage names in the "Architecture --
+research pipeline" section of ``PROJECT_FACTS.md`` -- if you rename a stage there,
+rename it here too. (The capstone fork tied these to its ``capstone-draft.md``, which
+does not exist in this repo; PROJECT_FACTS.md is the equivalent anchor.)
+
+Needs matplotlib, which is in requirements.txt but not currently installed in .venv --
+run it with an interpreter that has it.
 
     python scripts/make_system_diagram.py
 
