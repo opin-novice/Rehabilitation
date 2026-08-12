@@ -438,7 +438,7 @@ not a property of equivariance and we do not claim it. The table supports someth
 guarantee is not paid for with a robustness collapse ($k{=}8$ crosses the floor for every model, EGRU
 included). Both models see identically corrupted joints with no imputation, and we measured the
 fairness objection rather than assuming it: an \emph{oracle} liveness mask (told which joint died, no
-retraining) closes only $\sim\!25\%$ of the gap to EGRU ($+12.05\!\to\!+10.02$~MAD; \cref{tab:nodefail},
+retraining) closes only $\sim\!25\%$ of the gap to EGRU ($+12.05\!\to\!+10.01$~MAD; \cref{tab:nodefail},
 right) --- the graph encoder needs no such signal and loses far less, so the gap is architectural, not
 a missing-information artifact. The mechanism is invariant to the failure model (five operators incl.\
 lag/burst/axis/lateral; supplement).
@@ -459,7 +459,7 @@ $1$ & $7.10$ & \underline{$9.78$}  & \underline{$9.39$}  & $6.76$ \\
 $4$ & \underline{$8.41$} & \underline{$15.96$} & \underline{$15.25$} & $7.51$ \\
 $8$ & \underline{$10.50$} & \underline{$18.37$} & \underline{$16.33$} & \underline{$8.73$} \\
 \midrule
-MAD lost & $+3.76$ & $+12.05$ & $+10.02$ & $\mathbf{+2.27}$ \\
+MAD lost & $+3.76$ & $+12.05$ & $+10.01$ & $\mathbf{+2.27}$ \\
 \bottomrule
 \end{tabular}}
 \end{table}
@@ -682,7 +682,7 @@ preserves the theorem). Bottom: causal streaming vs.\ bidirectional read-out.}
 \toprule
 Arithmetic & INV floor & Score shift & Note \\
 \midrule
-fp64 & $5.75\times10^{-16}$ & $3.3\times10^{-14}$ & exact (theorem) \\
+fp64 & $5.91\times10^{-16}$ & $2.2\times10^{-14}$ & exact (theorem) \\
 fp32 & $2.68\times10^{-7}$  & $8.9\times10^{-6}$  & $=$ main viewpoint \\
 fp16 & $2.62\times10^{-3}$  & $0.024$             & $>$ bf16 \\
 bf16 & $8.34\times10^{-3}$  & $0.195$             & mantissa cost \\
