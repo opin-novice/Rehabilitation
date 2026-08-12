@@ -28,6 +28,7 @@ import argparse
 import asyncio
 import json
 import os
+from contextlib import asynccontextmanager
 import sys
 import tempfile
 import threading
@@ -76,7 +77,20 @@ DRAW_BONES = [
     (0, 16), (16, 17), (17, 18), (18, 19),
 ]
 
-app = FastAPI(title="RehabSense")
+@asynccontextmanager
+async def _lifespan(_app):
+    """Startup work. Replaces the deprecated @app.on_event("startup") hook.
+
+    The engine load stays on a daemon thread rather than blocking here: the UI is
+    meant to come up immediately and report `engine: loading` on /api/health while
+    the five EGRU folds arrive.
+    """
+    os.makedirs(REPORTS_DIR, exist_ok=True)
+    threading.Thread(target=_load_engine, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="RehabSense", lifespan=_lifespan)
 
 # ---------------------------------------------------------------------------
 # model engine (loaded once, in the background, at startup)
@@ -96,12 +110,6 @@ def _load_engine():
     except Exception as e:                                            # pragma: no cover
         ENGINE_ERR = f"{type(e).__name__}: {e}"
         print(f"[server] ENGINE FAILED TO LOAD: {ENGINE_ERR}")
-
-
-@app.on_event("startup")
-def _startup():
-    os.makedirs(REPORTS_DIR, exist_ok=True)
-    threading.Thread(target=_load_engine, daemon=True).start()
 
 
 def _predict_ai(sample, exercise):
