@@ -1320,3 +1320,9 @@ against `git show HEAD:...paper_wacv.tex`: all 7 new checks fail there, so they 
 - Uncommitted changes: frontend/server.py | 22 +++++++++++++++-------
  1 file changed, 15 insertions(+), 7 deletions(-)
 - GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 10:03:25
+- Commit: 52fd507 (branch: merge/from-capstone)
+- Syntax-checked: src/nondeterminism_floor.py
+- Uncommitted changes: none
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
