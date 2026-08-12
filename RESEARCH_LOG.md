@@ -1313,3 +1313,10 @@ against `git show HEAD:...paper_wacv.tex`: all 7 new checks fail there, so they 
 - Uncommitted changes: RESEARCH_LOG.md | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 - GPU: NVIDIA GeForce RTX 5070, 12227 MiB
+
+## Pre-run check (PASS) — 2026-08-12 09:38:54
+- Commit: 33f3532 (branch: merge/from-capstone)
+- Syntax-checked: frontend/server.py
+- Uncommitted changes: frontend/server.py | 22 +++++++++++++++-------
+ 1 file changed, 15 insertions(+), 7 deletions(-)
+- GPU: NVIDIA GeForce RTX 5070, 12227 MiB
