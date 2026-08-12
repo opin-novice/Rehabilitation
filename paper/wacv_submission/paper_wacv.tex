@@ -303,7 +303,7 @@ mean & $6.42{\pm}0.44 / 5.21{\pm}0.19$ & $+1.22\ (18.6\%)$ & $-0.44$ \\
 \end{table}
 
 \textbf{The clean-accuracy metric is saturated.} EGRU ($6.73\pm0.30$), a GRU on hand-crafted invariants
-(InvariantGRU, $6.31\pm0.16$), and the point-cloud transformer (PCT, $6.47\pm0.20$) are mutually
+(InvariantGRU, $6.31\pm0.16$), and the point-cloud transformer (PCT, $6.46\pm0.20$) are mutually
 indistinguishable: every gap is inside the $0.33$~MAD seed floor (\cref{tab:accuracy}). This is a
 statement about the models \emph{relative to each other}, not about whether any of them carries real
 subject-level signal: unlike the fragile single-exercise slice (\cref{tab:protocol3seed}, clears zero in
@@ -324,7 +324,7 @@ model) reflects the added parity-odd capacity, not instability --- every seed st
 
 One asymmetry against the baseline is worth closing: EGRU sees a one-hot exercise id and the floor is
 per-exercise, so pooled PCT alone was scored blind to the exercise. Re-training it with identical
-conditioning (3 seeds, both arms) changes nothing: clean $6.59\pm0.07$ vs.\ $6.47\pm0.20$, augmented
+conditioning (3 seeds, both arms) changes nothing: clean $6.59\pm0.07$ vs.\ $6.46\pm0.20$, augmented
 $7.42\pm0.22$ vs.\ $7.47\pm0.23$ --- inside the floor and opposite in sign --- and the per-sequence
 swing is if anything \emph{larger} ($21.43$ vs.\ $20.12$~MAD worst sequence). Viewpoint fragility is not
 an artefact of withholding exercise identity; we report the unconditioned arm throughout.
@@ -345,7 +345,7 @@ within each exercise.}
 \cmidrule(lr){5-6}
 Model & Group & MAD $\downarrow$ & Params & pooled & within-ex. & $\Delta$ vs.\ floor (95\% CI) \\
 \midrule
-PCT (baseline)              & ---     & $\mathbf{6.47\pm0.20}$ & $4.91$M & $0.60\pm0.02$ & $0.55\pm0.02$ & $-1.87\ [-2.72,-1.06]$ \\
+PCT (baseline)              & ---     & $\mathbf{6.46\pm0.20}$ & $4.91$M & $0.60\pm0.02$ & $0.55\pm0.02$ & $-1.87\ [-2.72,-1.06]$ \\
 PCT $+$ rotation aug.       & ---     & $7.47\pm0.23$ & $4.91$M & ---           & ---           & --- \\
 InvariantGRU (hand-crafted) & $SO(3)$ & $\mathbf{6.31\pm0.16}$ & $0.21$M & $0.59\pm0.01$ & $\mathbf{0.56\pm0.01}$ & $-2.03\ [-2.89,-1.23]$ \\
 \textbf{EGRU (ours)}        & $SO(3)$ & $\mathbf{6.73\pm0.30}$ & $0.66$M & $0.56\pm0.04$ & $0.52\pm0.04$ & $-1.60\ [-2.37,-0.88]$ \\
@@ -493,7 +493,7 @@ axis/depth noise   & $6.77/7.20\,({+}0.47)$  & $6.70/8.24\,({+}1.93)$   & $6.48/
 \end{table}
 
 \textbf{The whole thesis in one grid} (\cref{tab:pareto}). \emph{No model wins all five columns}, and
-that --- not any single stress --- is the claim. PCT is both the most accurate clean model ($6.47$) and
+that --- not any single stress --- is the claim. PCT is both the most accurate clean model ($6.46$) and
 the most node-robust ($7.10$); InvariantGRU is the cheapest at exactly zero degradation yet collapses at
 two dead nodes ($11.64$); and three models clear every stress --- ours, Canon-PCA$+$PCT, and
 rotation-augmented PCT --- so we are not the only survivor. Among those three, ours alone runs at
@@ -527,7 +527,7 @@ Model & Params & Clean & $90^\circ$ & $2$ dead & Mean degr. \\
 InvariantGRU  & $0.21$M & $6.31$ & $6.31$\checkmark & $11.64\times$ & $\mathbf{0}$ \\
 Lighter $E(n)$ (EGNN) & $\sim\!0.6$M & $6.88$ & $6.88$\checkmark & $8.44\times$ & $1.4\!\times\!10^{-5}$ \\
 Canon-PCA $+$ PCT & $4.91$M & $6.85$ & $6.85$\checkmark & $7.79$\checkmark & $\approx\!0^{\dagger}$ \\
-PCT (baseline) & $4.91$M & $6.47$ & $10.06\times$ & $7.10$\checkmark & $9.33$ \\
+PCT (baseline) & $4.91$M & $6.46$ & $10.06\times$ & $7.10$\checkmark & $9.33$ \\
 PCT $+$ rot   & $4.91$M & $7.47$ & $7.67$\checkmark & $7.76$\checkmark & $3.01$ \\
 \bottomrule
 \end{tabular}}
