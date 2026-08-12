@@ -153,7 +153,19 @@ bits, which bf16 trades for exponent range.
 % =====================================================================
 \section{Nondeterminism: Seed Distribution}\label{sec:supp:seed}
 The $0.33$~MAD floor quoted in the main paper is the tighter \emph{fixed-configuration} run-to-run
-component (init held constant, atomic nondeterminism only). \Cref{tab:seed} gives the wider
+component (init held constant, atomic nondeterminism only). It is measured from arms that were run
+twice under a byte-identical argument set, so the two runs differ only in what the hardware did:
+pooled over those repeats the per-fold $|\Delta\mathrm{MAD}|$ has mean $0.31$ and RMS $0.37$ ($0.39$
+and $0.50$ if a pair differing only in evaluation cadence is admitted), which is where $0.33$ comes
+from. It is a central estimate rather than a bound --- about half the repeats exceed it, up to
+$1.34$ --- so it is the conservative choice: a larger floor would make the clean-accuracy ties
+\emph{easier} to claim, not harder. The spread is also not symmetric across architectures. Re-running
+an identical configuration moves the point-cloud baseline's fold MAD by $0.64$ on average (worst
+$1.34$) against our $0.22$ (worst $0.41$): the same input returns the same score roughly $3\times$
+more tightly from the equivariant recurrence than from the transformer, which for a screening
+instrument is the same property as viewpoint invariance measured along a different axis. Regenerated
+by \texttt{src/nondeterminism\_floor.py}, which verifies argument identity rather than assuming it.
+\Cref{tab:seed} gives the wider
 \emph{seed-to-seed} distribution (SO(3) EGRU clean MAD per fold across three initializations): mean
 across-seed std $0.48$, worst pairwise gap $1.30$. Both exceed every model-vs-model clean gap in the
 main accuracy table, so those gaps are ties. cuDNN-deterministic modes remove the cuDNN-GRU atomic

@@ -56,8 +56,8 @@ metric is saturated and the decisive axis lies elsewhere: the augmented baseline
 matches us in aggregate accuracy while still swinging an individual patient's score by up to $20.1$ MAD
 (of $50$) under camera rotation, against our $9\times10^{-6}$. We then map the
 accuracy--exactness--robustness--cost frontier and find that \emph{no model on it dominates}: the
-point-cloud baseline is both the most accurate and the most node-robust, a hand-crafted-invariant
-control is the cheapest and exactly invariant yet collapses under sensor-node failure, and a lighter
+point-cloud baseline is the most node-robust, a hand-crafted-invariant
+control is the most accurate, the cheapest and exactly invariant yet collapses under sensor-node failure, and a lighter
 $E(n)$ encoder behind the identical invariant cut is measurably more brittle. Ours is the only point
 that is exact \emph{by theorem} while clearing every stress up to three simultaneous node failures,
 at $7.4\times$ fewer parameters. We
@@ -493,8 +493,8 @@ axis/depth noise   & $6.77/7.20\,({+}0.47)$  & $6.70/8.24\,({+}1.93)$   & $6.48/
 \end{table}
 
 \textbf{The whole thesis in one grid} (\cref{tab:pareto}). \emph{No model wins all five columns}, and
-that --- not any single stress --- is the claim. PCT is both the most accurate clean model ($6.46$) and
-the most node-robust ($7.10$); InvariantGRU is the cheapest at exactly zero degradation yet collapses at
+that --- not any single stress --- is the claim. PCT is the most node-robust ($7.10$); InvariantGRU is
+both the most accurate clean model ($6.31$) and the cheapest, at exactly zero degradation, yet collapses at
 two dead nodes ($11.64$); and three models clear every stress --- ours, Canon-PCA$+$PCT, and
 rotation-augmented PCT --- so we are not the only survivor. Among those three, ours alone runs at
 $0.66$M rather than $4.91$M parameters and alone rests on a theorem rather than an estimated frame or
